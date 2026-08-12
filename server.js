@@ -3,6 +3,7 @@ import express from 'express';
 import { MongoClient } from 'mongodb';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { registerAuthentication } from './src/auth.js';
 import { registerCoreRoutes } from './src/core-router.js';
 import { registerCorrispettiviRoutes } from './src/corrispettivi-router.js';
 import { registerF24Routes } from './src/f24-router.js';
@@ -10,10 +11,20 @@ import { registerRiscossioneRoutes } from './src/riscossione-router.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const version = '0.6.0';
+const version = '0.7.0';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.disable('x-powered-by');
+if (String(process.env.TRUST_PROXY || 'true').toLowerCase() !== 'false') app.set('trust proxy', 1);
+app.use((_req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'same-origin',
+    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+  });
+  next();
+});
 app.use(express.json({ limit: '10mb' }));
 app.use(express.text({ type: ['application/xml', 'text/xml'], limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -36,6 +47,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, nome: 'Impresa Semplice', versione: version, database: db ? 'connected' : 'not-configured' });
 });
 
+registerAuthentication(app, { getDb: () => db });
 registerCoreRoutes(app, { getDb: () => db });
 registerCorrispettiviRoutes(app, { getDb: () => db, getClient: () => client });
 registerF24Routes(app, { getDb: () => db, getClient: () => client });
