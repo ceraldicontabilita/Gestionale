@@ -5,9 +5,7 @@ export function createGoogleAccessTokenProvider(env = process.env) {
   let expiresAt = 0;
 
   async function refresh() {
-    if (env.GOOGLE_DRIVE_ACCESS_TOKEN) {
-      return env.GOOGLE_DRIVE_ACCESS_TOKEN;
-    }
+    if (env.GOOGLE_DRIVE_ACCESS_TOKEN) return env.GOOGLE_DRIVE_ACCESS_TOKEN;
 
     const clientId = env.GOOGLE_OAUTH_CLIENT_ID;
     const clientSecret = env.GOOGLE_OAUTH_CLIENT_SECRET;
@@ -22,11 +20,20 @@ export function createGoogleAccessTokenProvider(env = process.env) {
       refresh_token: refreshToken,
       grant_type: 'refresh_token'
     });
-    const response = await fetch(TOKEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body
-    });
+    let response;
+    try {
+      response = await fetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+        signal: AbortSignal.timeout(Number(env.GOOGLE_HTTP_TIMEOUT_MS || 15_000))
+      });
+    } catch (error) {
+      throw Object.assign(new Error('Timeout o rete non disponibile durante autenticazione Google'), {
+        code: 'GOOGLE_AUTH_NETWORK_ERROR',
+        cause: error
+      });
+    }
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.access_token) {
       throw Object.assign(new Error('Impossibile ottenere token Google'), {

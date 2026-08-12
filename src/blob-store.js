@@ -1,18 +1,33 @@
+import crypto from 'node:crypto';
 import { GridFSBucket } from 'mongodb';
 
-export async function storeOriginalOnce(db, content, { sha256, filename, contentType, metadata = {} }) {
-  if (!db || !sha256) throw new Error('Database e SHA-256 richiesti');
-  const registry = db.collection('originali_registry');
-  await registry.createIndex({ sha256: 1 }, { unique: true });
+const readyDatabases = new WeakSet();
 
-  const existing = await registry.findOne({ sha256 });
+async function ensureIndex(db) {
+  if (readyDatabases.has(db)) return;
+  await db.collection('originali_registry').createIndex({ sha256: 1 }, { unique: true });
+  readyDatabases.add(db);
+}
+
+export async function storeOriginalOnce(db, content, { sha256 = null, filename, contentType, metadata = {} } = {}) {
+  if (!db) throw new Error('Database richiesto');
+  const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content || []);
+  if (!buffer.length) throw new Error('Originale vuoto');
+  const computed = crypto.createHash('sha256').update(buffer).digest('hex');
+  if (sha256 && String(sha256).toLowerCase() !== computed) {
+    throw Object.assign(new Error('SHA-256 dichiarato non coincide con il contenuto'), { code: 'SHA256_MISMATCH' });
+  }
+  await ensureIndex(db);
+  const registry = db.collection('originali_registry');
+  const existing = await registry.findOne({ sha256: computed });
   if (existing) return existing;
 
   const bucket = new GridFSBucket(db, { bucketName: 'documenti_originali' });
-  const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
-  const upload = bucket.openUploadStream(filename || sha256, {
-    contentType: contentType || 'application/octet-stream',
-    metadata: { sha256, ...metadata }
+  const safeFilename = String(filename || computed).slice(0, 500);
+  const safeContentType = String(contentType || 'application/octet-stream').slice(0, 200);
+  const upload = bucket.openUploadStream(safeFilename, {
+    contentType: safeContentType,
+    metadata: { ...metadata, sha256: computed }
   });
 
   await new Promise((resolve, reject) => {
@@ -22,10 +37,10 @@ export async function storeOriginalOnce(db, content, { sha256, filename, content
   });
 
   const record = {
-    sha256,
+    sha256: computed,
     gridFsId: upload.id,
-    filename: filename || sha256,
-    contentType: contentType || 'application/octet-stream',
+    filename: safeFilename,
+    contentType: safeContentType,
     size: buffer.length,
     creatoIl: new Date()
   };
@@ -34,8 +49,8 @@ export async function storeOriginalOnce(db, content, { sha256, filename, content
     await registry.insertOne(record);
     return record;
   } catch (error) {
-    if (error?.code !== 11000) throw error;
     try { await bucket.delete(upload.id); } catch {}
-    return registry.findOne({ sha256 });
+    if (error?.code === 11000) return registry.findOne({ sha256: computed });
+    throw error;
   }
 }
