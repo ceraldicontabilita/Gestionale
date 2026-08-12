@@ -27,6 +27,10 @@ function inValidity(record, date) {
   return record.validoDal <= when && (!record.validoAl || record.validoAl >= when);
 }
 
+function paymentCause(link) {
+  return [link?.a, link?.b].find((endpoint) => endpoint?.tipo && endpoint.tipo !== 'MOVIMENTO') || null;
+}
+
 export function registerF24Routes(app, { getDb, getClient }) {
   function requireDb(res) {
     const db = getDb();
@@ -322,8 +326,11 @@ export function registerF24Routes(app, { getDb, getClient }) {
           ]
         }, { session }).toArray();
         for (const link of movementLinks) {
-          const other = link.a.tipo === 'F24' ? link.a : link.b.tipo === 'F24' ? link.b : null;
-          if (other && !targetIds.has(other.id)) throw Object.assign(new Error('Il movimento è già collegato a un altro F24'), { code: 'MOVEMENT_ALREADY_LINKED' });
+          const cause = paymentCause(link);
+          const allowed = cause?.tipo === 'F24' && targetIds.has(cause.id);
+          if (cause && !allowed) {
+            throw Object.assign(new Error('Il movimento è già assegnato a un’altra causa amministrativa'), { code: 'MOVEMENT_ALREADY_LINKED' });
+          }
         }
 
         for (const target of targets) {
