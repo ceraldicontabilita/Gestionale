@@ -91,10 +91,27 @@
         <div class="table-wrap compact-table"><table><thead><tr><th>Tipo</th><th>Codice</th><th>Descrizione</th><th>Natura</th><th>Fonte</th><th>Verificato</th></tr></thead><tbody id="tributiRows"></tbody></table></div>
       </section>
 
-      <section class="panel placeholder"><p class="eyebrow">RISCOSSIONE</p><h3>Cartelle · rateizzazioni · snapshot ADER</h3><p>Il dominio è previsto ma resta separato dagli F24: atto originale, pagamenti e situazione debitoria aggiornata non verranno sovrascritti l'uno sull'altro.</p></section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">RISCOSSIONE · ADER</p><h3>Atti, pagamenti e situazione aggiornata</h3></div></div>
+        <p class="muted">L'atto originale resta immutato. Il residuo visualizzato proviene dall'ultimo snapshot acquisito; un pagamento collegato non lo riscrive automaticamente.</p>
+        <form id="riscossioneForm" class="grid-form registry-form">
+          <label>Tipo<select name="tipo"><option value="CARTELLA_PAGAMENTO">Cartella di pagamento</option><option value="INTIMAZIONE">Intimazione</option><option value="AVVISO_ACCERTAMENTO_ESECUTIVO">Accertamento esecutivo</option><option value="AVVISO_ADDEBITO_INPS">Avviso addebito INPS</option><option value="RATEIZZAZIONE">Rateizzazione</option><option value="COMUNICAZIONE_SOMME_DOVUTE">Comunicazione somme dovute</option><option value="ALTRO_ATTO_RISCOSSIONE">Altro</option></select></label>
+          <label>Numero atto<input name="numeroAtto"></label>
+          <label>Data atto<input type="date" name="dataAtto"></label>
+          <label>Data notifica<input type="date" name="dataNotifica"></label>
+          <label>Scadenza<input type="date" name="scadenza"></label>
+          <label>Importo originario<input type="number" step="0.01" min="0" name="importoOriginario"></label>
+          <label>Ente creditore<input name="enteCreditore"></label>
+          <label>Fonte<select name="fonte"><option>MANUALE</option><option>PEC</option><option>DRIVE</option><option>ADER</option></select></label>
+          <label class="wide">Riferimento fonte<input name="fonteRiferimento" placeholder="ID documento, message-id o riferimento"></label>
+          <button class="primary" type="submit">Registra atto</button>
+        </form>
+        <div id="riscossioneResult" class="result"></div>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Atto</th><th>Date</th><th>Ente</th><th>Stato</th><th class="num">Originario</th><th class="num">Residuo ultimo snapshot</th><th>Snapshot</th></tr></thead><tbody id="riscossioneRows"></tbody></table></div>
+      </section>
     </section>
 
-    <section id="view-controllo" class="view"><section class="panel placeholder"><p class="eyebrow">CONTROLLO</p><h3>Anomalie leggibili</h3><p>Movimenti senza causa, documenti senza prova, saldi da riallineare, differenze POS, F24 senza riscontro e codici fiscali non classificati vengono raccolti qui.</p></section></section>
+    <section id="view-controllo" class="view"><section class="panel placeholder"><p class="eyebrow">CONTROLLO</p><h3>Anomalie leggibili</h3><p>Movimenti senza causa, documenti senza prova, saldi da riallineare, differenze POS, F24 senza riscontro, codici non classificati e atti della riscossione senza situazione aggiornata vengono raccolti qui.</p></section></section>
   </main>
 
   <dialog id="movementDialog">
