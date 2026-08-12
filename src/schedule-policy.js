@@ -50,6 +50,31 @@ export function isDue(lastRunAt, now, everyMinutes) {
   return current.getTime() - last.getTime() >= Number(everyMinutes) * 60 * 1000;
 }
 
+function localParts(value, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+    hourCycle: 'h23'
+  }).formatToParts(new Date(value));
+  const read = (type) => parts.find((part) => part.type === type)?.value;
+  return {
+    dateKey: `${read('year')}-${read('month')}-${read('day')}`,
+    hour: Number(read('hour'))
+  };
+}
+
+export function isPolicyDue(lastRunAt, now, policy, { timeZone = 'Europe/Rome' } = {}) {
+  const current = now instanceof Date ? now : new Date(now || Date.now());
+  if (policy?.localHour !== undefined && policy?.localHour !== null) {
+    const currentLocal = localParts(current, timeZone);
+    if (currentLocal.hour < Number(policy.localHour)) return false;
+    if (!lastRunAt) return true;
+    const lastLocal = localParts(lastRunAt, timeZone);
+    return lastLocal.dateKey !== currentLocal.dateKey;
+  }
+  return isDue(lastRunAt, current, policy?.everyMinutes);
+}
+
 export function overlapStart(lastSuccessfulAt, jobName) {
   if (!lastSuccessfulAt) return null;
   const policy = policyFor(jobName);
