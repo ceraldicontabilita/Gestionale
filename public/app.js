@@ -161,11 +161,12 @@ async function loadDriveDocuments() {
 
 async function submitLogin(event) {
   event.preventDefault();
-  const pin = new FormData(event.currentTarget).get('pin');
+  const formElement = event.currentTarget;
+  const pin = new FormData(formElement).get('pin');
   $('#loginError').textContent = '';
   try {
     await api('/api/auth/pin-login', { method: 'POST', body: JSON.stringify({ pin }) });
-    event.currentTarget.reset(); hideLogin(); await initializeApplication();
+    formElement.reset(); hideLogin(); await initializeApplication();
   } catch (error) { $('#loginError').textContent = error.message; }
 }
 
@@ -185,8 +186,8 @@ async function logout() {
 }
 
 async function submitMovement(event) {
-  event.preventDefault(); const form = new FormData(event.currentTarget); const body = Object.fromEntries(form.entries()); body.importo = Number(body.importo);
-  try { await api('/api/movimenti', { method: 'POST', body: JSON.stringify(body) }); $('#movementDialog').close(); event.currentTarget.reset(); $('#movementForm [name=data]').valueAsDate = new Date(); await Promise.all([loadLedger(), loadDashboard()]); } catch (error) { $('#formError').textContent = error.message; }
+  event.preventDefault(); const formElement = event.currentTarget; const form = new FormData(formElement); const body = Object.fromEntries(form.entries()); body.importo = Number(body.importo);
+  try { await api('/api/movimenti', { method: 'POST', body: JSON.stringify(body) }); $('#movementDialog').close(); formElement.reset(); $('#movementForm [name=data]').valueAsDate = new Date(); await Promise.all([loadLedger(), loadDashboard()]); } catch (error) { $('#formError').textContent = error.message; }
 }
 
 async function submitReceipts(event) {
@@ -196,8 +197,8 @@ async function submitReceipts(event) {
 }
 
 async function submitTributo(event) {
-  event.preventDefault(); const body = Object.fromEntries(new FormData(event.currentTarget).entries());
-  try { const saved = await api('/api/tributi', { method: 'POST', body: JSON.stringify(body) }); $('#tributoResult').innerHTML = `<strong>${escapeHtml(saved.codice)}</strong><span>versione registrata</span>`; event.currentTarget.reset(); await Promise.all([loadTributi(), loadF24(), loadDashboard()]); } catch (error) { $('#tributoResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
+  event.preventDefault(); const formElement = event.currentTarget; const body = Object.fromEntries(new FormData(formElement).entries());
+  try { const saved = await api('/api/tributi', { method: 'POST', body: JSON.stringify(body) }); $('#tributoResult').innerHTML = `<strong>${escapeHtml(saved.codice)}</strong><span>versione registrata</span>`; formElement.reset(); await Promise.all([loadTributi(), loadF24(), loadDashboard()]); } catch (error) { $('#tributoResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
 }
 
 function setView(name) { $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`)); $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === name)); if (name === 'prima-nota') loadLedger().catch((e) => showLogin(e.message)); if (name === 'documenti') loadDriveIndex().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); if (name === 'amministrazione') Promise.all([loadF24(), loadTributi()]).catch((e) => showLogin(e.message)); }
