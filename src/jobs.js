@@ -1,13 +1,13 @@
 import crypto from 'node:crypto';
 
-export const JOB_TYPES = [
+export const JOB_TYPES = Object.freeze([
   'EMAIL_PEC_SCAN',
   'DRIVE_FISCALE_SCAN',
   'DOCUMENTI_RIPROCESSA',
   'SCADENZE_FISCALI',
   'CODICI_TRIBUTO_REFRESH',
   'ADER_SNAPSHOT_IMPORT'
-];
+]);
 
 export function normalizeJobName(value) {
   const job = String(value || '').trim().toUpperCase();
@@ -19,28 +19,44 @@ export async function acquireJobLease(db, jobName, options = {}) {
   const job = normalizeJobName(jobName);
   const now = options.now || new Date();
   const leaseMs = Number(options.leaseMs || 15 * 60 * 1000);
+  if (!Number.isFinite(leaseMs) || leaseMs < 5_000) throw new Error('Durata lease non valida');
   const owner = options.owner || crypto.randomUUID();
   const expiresAt = new Date(now.getTime() + leaseMs);
 
-  const result = await db.collection('job_locks').findOneAndUpdate(
-    {
-      _id: job,
-      $or: [
-        { expiresAt: { $lte: now } },
-        { expiresAt: { $exists: false } },
-        { owner }
-      ]
-    },
-    {
-      $set: { owner, acquiredAt: now, expiresAt, updatedAt: now },
-      $setOnInsert: { createdAt: now }
-    },
-    { upsert: true, returnDocument: 'after' }
+  const updated = await db.collection('job_locks').findOneAndUpdate(
+    { _id: job, expiresAt: { $lte: now } },
+    { $set: { owner, acquiredAt: now, expiresAt, updatedAt: now } },
+    { returnDocument: 'after' }
   );
+  const renewed = updated?.value ?? updated;
+  if (renewed?.owner === owner) return { job, owner, expiresAt, leaseMs };
 
-  const lock = result?.value ?? result;
-  if (!lock || lock.owner !== owner) return null;
-  return { job, owner, expiresAt };
+  try {
+    await db.collection('job_locks').insertOne({
+      _id: job,
+      owner,
+      acquiredAt: now,
+      expiresAt,
+      updatedAt: now,
+      createdAt: now
+    });
+    return { job, owner, expiresAt, leaseMs };
+  } catch (error) {
+    if (error?.code === 11000) return null;
+    throw error;
+  }
+}
+
+export async function renewJobLease(db, lease, { now = new Date() } = {}) {
+  if (!lease?.job || !lease?.owner) return false;
+  const leaseMs = Number(lease.leaseMs || 15 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + leaseMs);
+  const result = await db.collection('job_locks').updateOne(
+    { _id: lease.job, owner: lease.owner, expiresAt: { $gt: now } },
+    { $set: { expiresAt, heartbeatAt: now, updatedAt: now } }
+  );
+  if (result.modifiedCount > 0) lease.expiresAt = expiresAt;
+  return result.modifiedCount > 0;
 }
 
 export async function releaseJobLease(db, lease, { now = new Date() } = {}) {
@@ -82,13 +98,7 @@ export async function startJobRun(db, jobName, metadata = {}, { now = new Date()
     status: 'RUNNING',
     startedAt: now,
     endedAt: null,
-    counts: {
-      scanned: 0,
-      new: 0,
-      duplicates: 0,
-      review: 0,
-      errors: 0
-    },
+    counts: defaultCounts(),
     metadata: sanitizeMetadata(metadata),
     errors: []
   };
@@ -116,13 +126,15 @@ export async function registerDocumentSource(db, documentId, source, { now = new
   if (!sourceKey) throw new Error('Fonte senza chiave stabile');
 
   const path = `fontiByKey.${safeMongoKey(sourceKey)}`;
-  const update = {};
-  update[path] = { sourceKey, tipo, riferimento, rilevataIl: now };
   await db.collection('documenti').updateOne(
     { _id: documentId },
-    { $set: { ...update, aggiornatoIl: now } }
+    { $set: { [path]: { sourceKey, tipo, riferimento, rilevataIl: now }, aggiornatoIl: now } }
   );
   return sourceKey;
+}
+
+function defaultCounts() {
+  return { scanned: 0, new: 0, duplicates: 0, review: 0, errors: 0 };
 }
 
 function sanitizeCheckpoint(value) {
@@ -136,8 +148,13 @@ function sanitizeMetadata(value) {
 }
 
 function normalizeCounts(value = {}) {
-  const keys = ['scanned', 'new', 'duplicates', 'review', 'errors'];
-  return Object.fromEntries(keys.map((key) => [key, Math.max(0, Number(value[key] || 0))]));
+  const out = defaultCounts();
+  for (const [key, raw] of Object.entries(value || {}).slice(0, 100)) {
+    if (!/^[A-Za-z0-9_]{1,80}$/.test(key)) continue;
+    const number = Number(raw || 0);
+    if (Number.isFinite(number)) out[key] = Math.max(0, number);
+  }
+  return out;
 }
 
 function normalizeErrors(value) {

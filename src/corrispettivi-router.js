@@ -1,7 +1,8 @@
 import { normalizeMovement } from './domain.js';
-import { normalizeCorrispettivoDay, POS_GESTORI } from './corrispettivi.js';
+import { normalizeCorrispettivoDay } from './corrispettivi.js';
 import { roundMoney } from './money.js';
 import { upsertProjectedMovement } from './ledger.js';
+import { withMongoTransaction } from './mongo-transaction.js';
 
 function hasOwn(object, key) {
   return Object.prototype.hasOwnProperty.call(object || {}, key);
@@ -22,20 +23,6 @@ function creditState(sold, credited) {
   return { residuo: residual, stato: 'IN_ATTESA_ACCREDITO' };
 }
 
-async function runTransaction(client, work) {
-  if (!client) throw new Error('Connessione MongoDB non disponibile');
-  const session = client.startSession();
-  try {
-    let output;
-    await session.withTransaction(async () => {
-      output = await work(session);
-    });
-    return output;
-  } finally {
-    await session.endSession();
-  }
-}
-
 export function registerCorrispettiviRoutes(app, { getDb, getClient }) {
   app.post('/api/corrispettivi/giornata', async (req, res) => {
     try {
@@ -43,7 +30,7 @@ export function registerCorrispettiviRoutes(app, { getDb, getClient }) {
       const client = getClient();
       if (!db || !client) return res.status(503).json({ error: 'MongoDB non configurato' });
 
-      const response = await runTransaction(client, async (session) => {
+      const response = await withMongoTransaction(client, async (session) => {
         const rawDate = String(req.body.data || req.body.dataGiorno || '').slice(0, 10);
         const existing = rawDate
           ? await db.collection('giornate_corrispettivi').findOne({ dataGiorno: rawDate }, { session })

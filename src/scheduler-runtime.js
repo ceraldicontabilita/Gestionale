@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { MongoClient } from 'mongodb';
 import { createGoogleAccessTokenProvider } from './google-auth.js';
 import { createGoogleDriveClient } from './google-drive-client.js';
@@ -32,7 +33,7 @@ async function startRuntime(env = process.env) {
     return;
   }
 
-  runtimeClient = new MongoClient(env.MONGODB_URI);
+  runtimeClient = new MongoClient(env.MONGODB_URI, { maxPoolSize: 10, minPoolSize: 0 });
   await runtimeClient.connect();
   const db = runtimeClient.db(env.MONGODB_DB || 'impresa_semplice');
   const handlers = {
@@ -45,7 +46,8 @@ async function startRuntime(env = process.env) {
     const driveClient = createGoogleDriveClient({ getAccessToken });
     handlers.DRIVE_FISCALE_SCAN = createDriveFiscalHandler({
       driveClient,
-      rootFolder: env.DRIVE_FISCALE_ROOT_FOLDER_ID
+      rootFolder: env.DRIVE_FISCALE_ROOT_FOLDER_ID,
+      maxFileBytes: Number(env.DRIVE_MAX_FILE_BYTES || 25 * 1024 * 1024)
     });
   } else {
     console.warn('[scheduler] Drive fiscale non attivato: configurazione incompleta');
@@ -62,6 +64,7 @@ async function startRuntime(env = process.env) {
         mailbox: env.PEC_IMAP_MAILBOX || 'INBOX',
         maxMessages: Number(env.PEC_IMAP_MAX_MESSAGES || 200),
         overlapUids: Number(env.PEC_IMAP_OVERLAP_UIDS || 50),
+        maxMessageBytes: Number(env.PEC_IMAP_MAX_MESSAGE_BYTES || 50 * 1024 * 1024),
         channel: 'pec'
       }
     });
@@ -72,22 +75,19 @@ async function startRuntime(env = process.env) {
   scheduler = createScheduler({
     db,
     handlers,
-    instanceId: env.RENDER_INSTANCE_ID || env.HOSTNAME || `runtime-${process.pid}`
+    instanceId: env.RENDER_INSTANCE_ID || env.HOSTNAME || `runtime-${process.pid}`,
+    timeZone: env.APP_TIME_ZONE || 'Europe/Rome'
   });
   scheduler.start({ tickEveryMs: Number(env.SCHEDULER_TICK_MS || 60_000), runImmediately: true });
   console.info(`[scheduler] attivo con ${Object.keys(handlers).length} handler`);
 }
 
-startRuntime().catch((error) => {
-  console.error('[scheduler] avvio fallito:', error.message);
-});
+startRuntime().catch((error) => console.error('[scheduler] avvio fallito:', error.message));
 
-process.once('SIGTERM', () => {
+async function stopRuntime() {
   scheduler?.stop();
-  runtimeClient?.close().catch(() => {});
-});
+  await runtimeClient?.close().catch(() => {});
+}
 
-process.once('SIGINT', () => {
-  scheduler?.stop();
-  runtimeClient?.close().catch(() => {});
-});
+process.once('SIGTERM', () => { stopRuntime().catch(() => {}); });
+process.once('SIGINT', () => { stopRuntime().catch(() => {}); });
