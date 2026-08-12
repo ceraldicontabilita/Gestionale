@@ -41,7 +41,21 @@
       </section>
     </section>
 
-    <section id="view-documenti" class="view"><section class="panel placeholder"><p class="eyebrow">DOCUMENTI</p><h3>Un solo ingresso documentale</h3><p>Acquisizione, SHA-256, deduplica, riconoscimento, estrazione, verifica e collegamenti.</p></section></section>
+    <section id="view-documenti" class="view">
+      <section class="cards" id="driveIndexCards"></section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">ARCHIVIO GOOGLE DRIVE</p><h3>Indice documentale verificato</h3></div><button id="refreshDriveIndex" type="button">Rileggi indice</button></div>
+        <p class="muted">Il gestionale legge l'indice Excel. Gli originali restano su Drive e non vengono caricati in MongoDB.</p>
+        <div class="filters"><input id="driveDocumentQuery" type="search" placeholder="Cerca nome, categoria o percorso"><select id="driveDocumentYear" aria-label="Anno"><option value="">Tutti gli anni</option></select><button id="searchDriveDocuments" type="button" class="primary">Cerca</button></div>
+        <p id="driveIndexMessage" class="muted"></p>
+        <div class="table-wrap"><table><thead><tr><th>Documento</th><th>Dominio</th><th>Anno</th><th>Stato</th><th>Fonte</th></tr></thead><tbody id="driveDocumentRows"></tbody></table></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">COLLEGAMENTI FISCALI</p><h3>Dichiarazioni indicizzate</h3></div></div>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Anno</th><th>Tipo</th><th>Protocollo</th><th>Documento</th></tr></thead><tbody id="driveDeclarationRows"></tbody></table></div>
+      </section>
+      <section class="warning">Modello F24, quietanza e movimento bancario sono prove distinte. L'indice documentale non attribuisce automaticamente un pagamento.</section>
+    </section>
     <section id="view-riconciliazione" class="view"><section class="panel placeholder"><p class="eyebrow">RICONCILIAZIONE</p><h3>Prova finanziaria ↔ causa amministrativa</h3><p>Il movimento finanziario resta la fonte autorevole del pagamento.</p></section></section>
 
     <section id="view-amministrazione" class="view">

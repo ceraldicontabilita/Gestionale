@@ -31,6 +31,7 @@ main { max-width: 1180px; margin: auto; padding: 1rem; }
 select, input { border: 1px solid #d7dae0; border-radius: .65rem; padding: .65rem .75rem; background: white; }
 button { border: 1px solid #d7dae0; border-radius: .65rem; padding: .65rem .85rem; background: white; }
 button.primary, #newMovement { background: #111318; color: white; border-color: #111318; }
+.drive-open { padding: .4rem .6rem; white-space: nowrap; }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; min-width: 830px; }
 th, td { padding: .75rem .65rem; border-bottom: 1px solid #eceef1; text-align: left; vertical-align: top; }

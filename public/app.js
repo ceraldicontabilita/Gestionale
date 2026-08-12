@@ -130,6 +130,35 @@ async function loadTributi() {
   $('#tributiRows').innerHTML = rows.length ? rows.slice(0, 200).map((row) => `<tr><td>${escapeHtml(row.namespace)}</td><td><strong>${escapeHtml(row.codice)}</strong></td><td>${escapeHtml(row.descrizione)}</td><td>${escapeHtml(row.natura || '—')}</td><td>${escapeHtml(row.fonte)}</td><td>${fmtDate(row.verificatoIl)}</td></tr>`).join('') : '<tr><td colspan="6" class="muted">Registro vuoto.</td></tr>';
 }
 
+async function openDriveDocument(id) {
+  const document = await api(`/api/drive-index/documents/${encodeURIComponent(id)}`);
+  window.open(document.drive.webViewLink, '_blank', 'noopener,noreferrer');
+}
+
+async function loadDriveIndex(force = false) {
+  $('#driveIndexMessage').textContent = 'Lettura indice in corso…';
+  const overview = await api(`/api/drive-index/overview${force ? '?refresh=true' : ''}`);
+  const counts = overview.counts;
+  $('#driveIndexCards').innerHTML = [
+    [counts.documents, 'documenti su Drive'], [counts.f24Rows, 'righe F24'], [counts.declarations, 'dichiarazioni'], [counts.duplicates, 'duplicati scartati']
+  ].map(([value, label]) => `<article class="card"><small>${label}</small><strong>${value}</strong></article>`).join('');
+  $('#driveIndexMessage').textContent = `Indice letto ${fmtDate(overview.loadedAt)} · originali nel database: no`;
+  const declarations = await api('/api/drive-index/declarations');
+  $('#driveDeclarationRows').innerHTML = declarations.map((row) => `<tr><td>${escapeHtml(row.year)}</td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.protocol || '—')}</td><td><button type="button" class="drive-open" data-document-id="${escapeHtml(row.documentId)}">Apri su Drive</button><small>${escapeHtml(row.archivePath)}</small></td></tr>`).join('');
+  await loadDriveDocuments();
+}
+
+async function loadDriveDocuments() {
+  const params = new URLSearchParams({ limit: '200' });
+  const query = $('#driveDocumentQuery').value.trim();
+  const year = $('#driveDocumentYear').value;
+  if (query) params.set('q', query);
+  if (year) params.set('year', year);
+  const data = await api(`/api/drive-index/documents?${params}`);
+  $('#driveIndexMessage').textContent = `${data.total} documenti trovati · visualizzati ${data.rows.length}`;
+  $('#driveDocumentRows').innerHTML = data.rows.length ? data.rows.map((row) => `<tr><td><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.category || row.extension)}</small></td><td>${escapeHtml(row.domain)}</td><td>${escapeHtml(row.year || '—')}</td><td>${badge(row.status)}</td><td><button type="button" class="drive-open" data-document-id="${escapeHtml(row.id)}">Apri su Drive</button><small>${escapeHtml(row.path)}</small></td></tr>`).join('') : '<tr><td colspan="5" class="muted">Nessun documento trovato.</td></tr>';
+}
+
 async function submitLogin(event) {
   event.preventDefault();
   const pin = new FormData(event.currentTarget).get('pin');
@@ -171,7 +200,7 @@ async function submitTributo(event) {
   try { const saved = await api('/api/tributi', { method: 'POST', body: JSON.stringify(body) }); $('#tributoResult').innerHTML = `<strong>${escapeHtml(saved.codice)}</strong><span>versione registrata</span>`; event.currentTarget.reset(); await Promise.all([loadTributi(), loadF24(), loadDashboard()]); } catch (error) { $('#tributoResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
 }
 
-function setView(name) { $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`)); $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === name)); if (name === 'prima-nota') loadLedger().catch((e) => showLogin(e.message)); if (name === 'amministrazione') Promise.all([loadF24(), loadTributi()]).catch((e) => showLogin(e.message)); }
+function setView(name) { $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`)); $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === name)); if (name === 'prima-nota') loadLedger().catch((e) => showLogin(e.message)); if (name === 'documenti') loadDriveIndex().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); if (name === 'amministrazione') Promise.all([loadF24(), loadTributi()]).catch((e) => showLogin(e.message)); }
 
 function bindEvents() {
   $$('.nav-item').forEach((button) => button.addEventListener('click', () => setView(button.dataset.view)));
@@ -179,6 +208,10 @@ function bindEvents() {
   $('#ledgerAccount').addEventListener('change', () => loadLedger().catch((e) => showLogin(e.message)));
   $('#ledgerYear').addEventListener('change', () => loadLedger().catch((e) => showLogin(e.message)));
   $('#f24Year').addEventListener('change', () => loadF24().catch((e) => showLogin(e.message)));
+  $('#refreshDriveIndex').addEventListener('click', () => loadDriveIndex(true).catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
+  $('#searchDriveDocuments').addEventListener('click', () => loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
+  $('#driveDocumentQuery').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
+  document.addEventListener('click', (event) => { const button = event.target.closest('.drive-open'); if (button) openDriveDocument(button.dataset.documentId).catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
   $('#newMovement').addEventListener('click', () => $('#movementDialog').showModal()); $('#closeDialog').addEventListener('click', () => $('#movementDialog').close());
   $('#movementForm').addEventListener('submit', submitMovement); $('#receiptsForm').addEventListener('submit', submitReceipts); $('#tributoForm').addEventListener('submit', submitTributo);
   $('#loginForm').addEventListener('submit', submitLogin); $('#mfaForm').addEventListener('submit', submitMfa); $('#cancelMfa').addEventListener('click', hideMfa); $('#logoutButton').addEventListener('click', logout);
@@ -190,7 +223,7 @@ async function initializeApplication() {
 }
 
 async function boot() {
-  ensureMfaDialog(); $('#movementForm [name=data]').valueAsDate = new Date(); $('#receiptsForm [name=data]').valueAsDate = new Date(); bindEvents(); await loadHealth();
+  ensureMfaDialog(); $('#movementForm [name=data]').valueAsDate = new Date(); $('#receiptsForm [name=data]').valueAsDate = new Date(); fillSelect($('#driveDocumentYear'), ['', ...years()]); $('#driveDocumentYear option:first-child').textContent = 'Tutti gli anni'; bindEvents(); await loadHealth();
   try { if (await checkAuth()) await initializeApplication(); } catch (error) { showLogin(error.message); }
 }
 

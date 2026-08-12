@@ -34,6 +34,17 @@ Leggere prima:
 - scheduler con lease, heartbeat, retry, checkpoint e audit;
 - accesso PIN, sessione HttpOnly, CSRF e MFA TOTP per operazioni sensibili.
 
+## Indice documentale Google Drive
+
+Impostando `DRIVE_DOCUMENT_INDEX_ROOT_FOLDER_ID`, la pagina **Documenti** legge il file unico
+`INDICI GESTIONALE/INDICE_DOCUMENTALE_DRIVE.xlsx` direttamente da Google Drive. Il backend valida
+ID, SHA-256, percorsi e collegamenti F24/dichiarazioni, ma non salva in MongoDB né il foglio né gli
+originali. Il link a un documento viene risolto seguendo ogni cartella genitore con corrispondenza
+esatta; nomi simili non vengono accettati.
+
+Modello F24, quietanza e movimento bancario restano evidenze distinte: la presenza nell'indice non
+dimostra da sola il pagamento.
+
 ## Avvio locale
 
 Requisiti:
