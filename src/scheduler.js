@@ -6,9 +6,9 @@ import {
   saveCheckpoint,
   startJobRun
 } from './jobs.js';
-import { SCHEDULE_POLICY, isDue, policyFor } from './schedule-policy.js';
+import { SCHEDULE_POLICY, isPolicyDue, policyFor } from './schedule-policy.js';
 
-export function createScheduler({ db, handlers = {}, logger = console, instanceId = `instance-${process.pid}` }) {
+export function createScheduler({ db, handlers = {}, logger = console, instanceId = `instance-${process.pid}`, timeZone = 'Europe/Rome' }) {
   if (!db) throw new Error('Database richiesto per lo scheduler');
   let timer = null;
   let stopped = false;
@@ -21,7 +21,7 @@ export function createScheduler({ db, handlers = {}, logger = console, instanceI
 
     const checkpoint = await getCheckpoint(db, jobName);
     const lastSuccessfulAt = checkpoint?.value?.lastSuccessfulAt || null;
-    if (!force && !isDue(lastSuccessfulAt, now, policy.everyMinutes)) {
+    if (!force && !isPolicyDue(lastSuccessfulAt, now, policy, { timeZone })) {
       return { skipped: true, reason: 'NON_ANCORA_DOVUTO' };
     }
 
@@ -32,7 +32,7 @@ export function createScheduler({ db, handlers = {}, logger = console, instanceI
     });
     if (!lease) return { skipped: true, reason: 'JOB_GIA_IN_ESECUZIONE' };
 
-    const run = await startJobRun(db, jobName, { instanceId, forced: force }, { now });
+    const run = await startJobRun(db, jobName, { instanceId, forced: force, timeZone }, { now });
     try {
       const result = await handler({
         db,
@@ -46,7 +46,7 @@ export function createScheduler({ db, handlers = {}, logger = console, instanceI
         status: 'SUCCESS',
         counts: result?.counts || {},
         errors: result?.errors || [],
-        metadata: { instanceId, ...(result?.metadata || {}) }
+        metadata: { instanceId, timeZone, ...(result?.metadata || {}) }
       }, { now: endedAt });
       await saveCheckpoint(db, jobName, {
         ...(checkpoint?.value || {}),
@@ -60,7 +60,7 @@ export function createScheduler({ db, handlers = {}, logger = console, instanceI
         status: 'ERROR',
         counts: { errors: 1 },
         errors: [{ code: error.code || 'JOB_ERROR', message: error.message }],
-        metadata: { instanceId }
+        metadata: { instanceId, timeZone }
       }, { now: endedAt });
       logger.error?.(`[scheduler:${jobName}]`, error);
       return { ok: false, runId: run._id, error: error.message };
