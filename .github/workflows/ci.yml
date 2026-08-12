@@ -25,6 +25,14 @@ jobs:
       - name: Installa dipendenze
         run: npm install --no-audit --no-fund
 
+      - name: Esporta lockfile generato
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Controlla sintassi
         run: npm run check
 
