@@ -9,6 +9,7 @@ import {
 import { withMongoTransaction } from './mongo-transaction.js';
 
 const readyDatabases = new WeakSet();
+const NUMBER_INDEX = 'riscossione_numero_unique';
 
 function hasOwn(object, key) {
   return Object.prototype.hasOwnProperty.call(object || {}, key);
@@ -16,6 +17,10 @@ function hasOwn(object, key) {
 
 function transactionStatus(error) {
   return /Transaction numbers|replica set|mongos/i.test(error.message) ? 503 : 400;
+}
+
+function paymentCause(link) {
+  return [link?.a, link?.b].find((endpoint) => endpoint?.tipo && endpoint.tipo !== 'MOVIMENTO') || null;
 }
 
 export function registerRiscossioneRoutes(app, { getDb, getClient }) {
@@ -28,12 +33,31 @@ export function registerRiscossioneRoutes(app, { getDb, getClient }) {
     return db;
   }
 
+  async function migrateNumberIndex(collection) {
+    await collection.updateMany({ numeroAtto: null }, { $unset: { numeroAtto: '' } });
+    const indexes = await collection.indexes();
+    const sameKey = indexes.filter((index) => index.key?.tipo === 1 && index.key?.numeroAtto === 1);
+    for (const index of sameKey) {
+      const valid = index.name === NUMBER_INDEX && index.unique === true && index.partialFilterExpression?.numeroAtto?.$type === 'string';
+      if (!valid) await collection.dropIndex(index.name);
+    }
+    await collection.createIndex(
+      { tipo: 1, numeroAtto: 1 },
+      {
+        unique: true,
+        name: NUMBER_INDEX,
+        partialFilterExpression: { numeroAtto: { $type: 'string' } }
+      }
+    );
+  }
+
   async function ready(db) {
     if (readyDatabases.has(db)) return;
+    const acts = db.collection('atti_riscossione');
+    await migrateNumberIndex(acts);
     await Promise.all([
-      db.collection('atti_riscossione').createIndex({ tipo: 1, stato: 1, dataAtto: -1 }),
-      db.collection('atti_riscossione').createIndex({ tipo: 1, numeroAtto: 1 }, { unique: true, sparse: true }),
-      db.collection('atti_riscossione').createIndex(
+      acts.createIndex({ tipo: 1, stato: 1, dataAtto: -1 }),
+      acts.createIndex(
         { fonte: 1, fonteRiferimento: 1 },
         { unique: true, partialFilterExpression: { fonteRiferimento: { $type: 'string' } }, name: 'riscossione_source_unique' }
       ),
@@ -89,8 +113,9 @@ export function registerRiscossioneRoutes(app, { getDb, getClient }) {
         const filter = atto.numeroAtto
           ? { tipo: atto.tipo, numeroAtto: atto.numeroAtto }
           : { fonte: atto.fonte, fonteRiferimento: atto.fonteRiferimento };
-        const { creatoIl, stato, ...mutable } = atto;
+        const { creatoIl, stato, numeroAtto, ...mutable } = atto;
         const update = { ...mutable, aggiornatoIl: new Date() };
+        if (numeroAtto) update.numeroAtto = numeroAtto;
         if (hasOwn(req.body, 'stato')) update.stato = stato;
         await db.collection('atti_riscossione').updateOne(
           filter,
@@ -104,7 +129,10 @@ export function registerRiscossioneRoutes(app, { getDb, getClient }) {
         return saved;
       });
       res.status(201).json(result);
-    } catch (error) { res.status(transactionStatus(error)).json({ error: error.message }); }
+    } catch (error) {
+      if (error?.code === 11000) return res.status(409).json({ error: 'Atto della riscossione già presente' });
+      res.status(transactionStatus(error)).json({ error: error.message });
+    }
   });
 
   app.get('/api/riscossione/atti/:id', async (req, res) => {
@@ -208,10 +236,12 @@ export function registerRiscossioneRoutes(app, { getDb, getClient }) {
           ]
         }, { session }).toArray();
         const linkedElsewhere = existingLinks.some((link) => {
-          const endpoint = link.a.tipo === 'RISCOSSIONE_ATTO' ? link.a : link.b.tipo === 'RISCOSSIONE_ATTO' ? link.b : null;
-          return endpoint && endpoint.id !== String(attoId);
+          const cause = paymentCause(link);
+          return cause && !(cause.tipo === 'RISCOSSIONE_ATTO' && cause.id === String(attoId));
         });
-        if (linkedElsewhere) throw Object.assign(new Error('Il movimento è già collegato a un altro atto della riscossione'), { code: 'MOVEMENT_ALREADY_LINKED' });
+        if (linkedElsewhere) {
+          throw Object.assign(new Error('Il movimento è già assegnato a un’altra causa amministrativa'), { code: 'MOVEMENT_ALREADY_LINKED' });
+        }
 
         await ensureRelation(db, 'RISCOSSIONE_ATTO', attoId, 'MOVIMENTO', movimentoId, 'PAGATO_DA', session);
         const links = await db.collection('collegamenti').find({
