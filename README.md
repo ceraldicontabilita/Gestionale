@@ -48,6 +48,15 @@ in entrambi i casi il gestionale richiede soltanto l'autorizzazione Drive in let
 Modello F24, quietanza e movimento bancario restano evidenze distinte: la presenza nell'indice non
 dimostra da sola il pagamento.
 
+## Pagine operative
+
+- **Riconciliazione** mostra soltanto movimenti finanziari non già utilizzati e richiede una scelta
+  manuale della causa. L'importo non produce mai un collegamento automatico; F24 e riscossione
+  applicano nuovamente le verifiche nel backend e richiedono MFA.
+- **Controllo** raccoglie riporti da riallineare, movimenti senza prova, F24 da riscontrare, documenti
+  interni da verificare e atti ADER privi di snapshot, senza correggere silenziosamente i dati.
+- **Riscossione** conserva separati atto originario, pagamenti collegati e ultimo snapshot ADER.
+
 ## Avvio locale
 
 Requisiti:

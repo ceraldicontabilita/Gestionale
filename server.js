@@ -9,6 +9,7 @@ import { registerCorrispettiviRoutes } from './src/corrispettivi-router.js';
 import { registerF24Routes } from './src/f24-router.js';
 import { registerRiscossioneRoutes } from './src/riscossione-router.js';
 import { registerDriveIndexRoutes } from './src/drive-index-router.js';
+import { registerReconciliationRoutes } from './src/reconciliation-router.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -54,6 +55,7 @@ registerCorrispettiviRoutes(app, { getDb: () => db, getClient: () => client });
 registerF24Routes(app, { getDb: () => db, getClient: () => client });
 registerRiscossioneRoutes(app, { getDb: () => db, getClient: () => client });
 registerDriveIndexRoutes(app);
+registerReconciliationRoutes(app, { getDb: () => db });
 
 const server = app.listen(port, () => console.log(`Impresa Semplice v${version} in ascolto sulla porta ${port}`));
 

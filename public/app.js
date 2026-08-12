@@ -3,6 +3,8 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const euro = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
 let config = { conti: [], stati: [] };
 let appReady = false;
+let reconciliationData = null;
+let reconciliationSelection = { movementId: null, causeId: null, causeType: 'F24' };
 
 function currentYear() { return new Date().getFullYear(); }
 function years() { const now = currentYear(); return Array.from({ length: 9 }, (_, i) => now - i); }
@@ -86,6 +88,8 @@ async function loadConfig() {
   fillSelect($('#ledgerYear'), years());
   fillSelect($('#homeYear'), years());
   fillSelect($('#f24Year'), years());
+  fillSelect($('#reconciliationYear'), years());
+  fillSelect($('#controlYear'), years());
 }
 
 async function loadDashboard() {
@@ -128,6 +132,117 @@ async function loadF24() {
 async function loadTributi() {
   const rows = await api('/api/tributi');
   $('#tributiRows').innerHTML = rows.length ? rows.slice(0, 200).map((row) => `<tr><td>${escapeHtml(row.namespace)}</td><td><strong>${escapeHtml(row.codice)}</strong></td><td>${escapeHtml(row.descrizione)}</td><td>${escapeHtml(row.natura || '—')}</td><td>${escapeHtml(row.fonte)}</td><td>${fmtDate(row.verificatoIl)}</td></tr>`).join('') : '<tr><td colspan="6" class="muted">Registro vuoto.</td></tr>';
+}
+
+function selectedMovement() {
+  return reconciliationData?.movimenti.find((row) => String(row._id) === reconciliationSelection.movementId) || null;
+}
+
+function availableCauses() {
+  return reconciliationSelection.causeType === 'F24' ? (reconciliationData?.f24 || []) : (reconciliationData?.atti || []);
+}
+
+function selectedCause() {
+  return availableCauses().find((row) => String(row._id) === reconciliationSelection.causeId) || null;
+}
+
+function causeIdentity(row) {
+  if (reconciliationSelection.causeType === 'F24') return row.protocollo || row.file || 'F24 senza protocollo';
+  return row.numeroAtto || `${String(row.tipo || '').replaceAll('_', ' ')} senza numero`;
+}
+
+function causeAmount(row) {
+  if (reconciliationSelection.causeType === 'F24') return Number(row.importoAtteso || 0);
+  return Number(row.importoResiduo ?? row.importoOriginario ?? 0);
+}
+
+function renderReconciliationSelection() {
+  const movement = selectedMovement(); const cause = selectedCause();
+  $('#confirmReconciliation').disabled = !(movement && cause && movement.provaFinanziaria);
+  if (!movement && !cause) { $('#reconciliationSelection').textContent = 'Seleziona un movimento e una causa.'; return; }
+  const movementText = movement ? `${fmtDate(movement.data)} · ${movement.conto} · ${euro.format(movement.importo)} · ${movement.descrizione}` : 'movimento non selezionato';
+  const causeText = cause ? `${causeIdentity(cause)} · ${euro.format(causeAmount(cause))}` : 'causa non selezionata';
+  $('#reconciliationSelection').innerHTML = `<strong>${escapeHtml(movementText)}</strong><span>↔</span><strong>${escapeHtml(causeText)}</strong>`;
+}
+
+function renderReconciliationCauses() {
+  const causes = availableCauses();
+  $('#reconciliationCauseRows').innerHTML = causes.length ? causes.map((row) => {
+    const id = String(row._id); const date = reconciliationSelection.causeType === 'F24' ? row.dataVersamento : (row.dataNotifica || row.dataAtto);
+    const detail = reconciliationSelection.causeType === 'F24' ? `${fmtDate(date)} · ${row.tipoDocumento || 'modello'}` : `${fmtDate(date)} · ${(row.entiCreditori || []).join(', ') || row.tipo}`;
+    return `<tr class="selectable-row ${reconciliationSelection.causeId === id ? 'selected' : ''}"><td><input class="reconciliation-cause" type="radio" name="reconciliationCause" value="${escapeHtml(id)}" ${reconciliationSelection.causeId === id ? 'checked' : ''}></td><td><strong>${escapeHtml(causeIdentity(row))}</strong><small>${escapeHtml(detail)}</small></td><td>${badge(row.stato)}</td><td class="num balance">${euro.format(causeAmount(row))}</td></tr>`;
+  }).join('') : '<tr><td colspan="4" class="muted">Nessuna causa aperta per questa selezione.</td></tr>';
+  renderReconciliationSelection();
+}
+
+async function loadReconciliation() {
+  const year = $('#reconciliationYear').value || currentYear();
+  $('#reconciliationResult').textContent = 'Caricamento…';
+  reconciliationData = await api(`/api/riconciliazione?anno=${year}`);
+  reconciliationSelection = { movementId: null, causeId: null, causeType: $('#reconciliationCauseType').value || 'F24' };
+  const summary = reconciliationData.riepilogo;
+  $('#reconciliationCards').innerHTML = [[summary.movimentiAperti, 'movimenti disponibili'], [summary.movimentiSenzaProva, 'movimenti senza prova'], [summary.f24Aperti, 'F24 aperti'], [summary.attiAperti, 'atti riscossione aperti'], [summary.collegamentiConfermati, 'collegamenti confermati']].map(([value, label]) => `<article class="card"><small>${label}</small><strong>${value}</strong></article>`).join('');
+  $('#reconciliationMovementRows').innerHTML = reconciliationData.movimenti.length ? reconciliationData.movimenti.map((row) => {
+    const id = String(row._id); const disabled = !row.provaFinanziaria;
+    return `<tr class="selectable-row ${disabled ? 'disabled-row' : ''}"><td><input class="reconciliation-movement" type="radio" name="reconciliationMovement" value="${escapeHtml(id)}" ${disabled ? 'disabled' : ''}></td><td><strong>${fmtDate(row.data)} · ${escapeHtml(row.descrizione)}</strong><small>${escapeHtml(row.fonte || 'fonte non indicata')}</small></td><td>${escapeHtml(row.conto)}</td><td class="num balance">${euro.format(row.importo)}</td><td>${row.provaFinanziaria ? badge('DOCUMENTATO') : '<span class="badge da_verificare">Manca prova</span>'}</td></tr>`;
+  }).join('') : '<tr><td colspan="5" class="muted">Nessun movimento finanziario disponibile.</td></tr>';
+  renderReconciliationCauses();
+  $('#reconciliationResult').textContent = '';
+}
+
+async function confirmReconciliation() {
+  const movement = selectedMovement(); const cause = selectedCause();
+  if (!movement || !cause || !movement.provaFinanziaria) return;
+  $('#reconciliationResult').textContent = 'Verifica del collegamento…';
+  try {
+    const endpoint = reconciliationSelection.causeType === 'F24'
+      ? `/api/f24/${encodeURIComponent(cause._id)}/riconcilia`
+      : `/api/riscossione/atti/${encodeURIComponent(cause._id)}/collega-movimento`;
+    await api(endpoint, { method: 'POST', body: JSON.stringify({ movimentoId: movement._id }) });
+    $('#reconciliationResult').textContent = 'Collegamento verificato e registrato.';
+    await Promise.all([loadReconciliation(), loadDashboard()]);
+  } catch (error) {
+    $('#reconciliationResult').textContent = error.message.includes('MFA') ? 'Conferma il codice MFA, poi premi nuovamente Conferma collegamento.' : error.message;
+  }
+}
+
+async function loadRiscossione() {
+  const rows = await api('/api/riscossione/atti');
+  $('#riscossioneRows').innerHTML = rows.length ? rows.map((row) => {
+    const snapshot = row.ultimoSnapshot || null; const dateParts = [row.dataAtto ? `Atto ${fmtDate(row.dataAtto)}` : null, row.dataNotifica ? `Notifica ${fmtDate(row.dataNotifica)}` : null, row.scadenza ? `Scade ${fmtDate(row.scadenza)}` : null].filter(Boolean);
+    return `<tr><td><strong>${escapeHtml(row.numeroAtto || 'senza numero')}</strong><small>${escapeHtml(String(row.tipo || '').replaceAll('_', ' '))}</small></td><td>${dateParts.join('<br>') || '—'}</td><td>${escapeHtml((row.entiCreditori || []).join(', ') || '—')}</td><td>${badge(row.stato)}</td><td class="num">${row.importoOriginario == null ? '—' : euro.format(row.importoOriginario)}</td><td class="num balance">${snapshot?.importoResiduo == null ? '—' : euro.format(snapshot.importoResiduo)}</td><td>${snapshot ? `${fmtDate(snapshot.acquisitoIl)}<small>${escapeHtml(snapshot.statoAder || '')}</small>` : '<span class="mini-warning">Manca snapshot</span>'}</td></tr>`;
+  }).join('') : '<tr><td colspan="7" class="muted">Nessun atto registrato.</td></tr>';
+}
+
+async function submitRiscossione(event) {
+  event.preventDefault(); const formElement = event.currentTarget; const body = Object.fromEntries(new FormData(formElement).entries());
+  for (const key of ['numeroAtto', 'dataAtto', 'dataNotifica', 'scadenza', 'importoOriginario', 'enteCreditore', 'fonteRiferimento']) if (body[key] === '') delete body[key];
+  if (body.importoOriginario !== undefined) body.importoOriginario = Number(body.importoOriginario);
+  try { const saved = await api('/api/riscossione/atti', { method: 'POST', body: JSON.stringify(body) }); $('#riscossioneResult').innerHTML = `<strong>${escapeHtml(saved.numeroAtto || saved.tipo)}</strong><span>Atto registrato; lo snapshot ADER resta separato.</span>`; formElement.reset(); await Promise.all([loadRiscossione(), loadDashboard()]); } catch (error) { $('#riscossioneResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
+}
+
+function issue(level, title, detail) {
+  return `<article class="issue ${level.toLowerCase()}"><span class="issue-level">${escapeHtml(level)}</span><div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(detail)}</p></div></article>`;
+}
+
+async function loadControls() {
+  const year = $('#controlYear').value || currentYear();
+  const [dashboard, reconciliation, documents, riscossione, drive] = await Promise.all([
+    api(`/api/dashboard?anno=${year}`), api(`/api/riconciliazione?anno=${year}`), api('/api/documenti?stato=DA_VERIFICARE'), api('/api/riscossione/controlli'), api('/api/drive-index/overview')
+  ]);
+  const summary = reconciliation.riepilogo;
+  $('#controlCards').innerHTML = [[dashboard.daVerificare, 'movimenti da verificare'], [summary.movimentiSenzaProva, 'senza prova finanziaria'], [dashboard.f24DaRiscontrare, 'F24 da riscontrare'], [documents.length, 'documenti interni da verificare'], [riscossione.senzaSnapshot, 'atti senza snapshot'], [drive.counts.documents, 'documenti indicizzati Drive']].map(([value, label]) => `<article class="card"><small>${label}</small><strong>${value}</strong></article>`).join('');
+  const issues = [];
+  for (const [account, value] of Object.entries(dashboard.saldi || {})) if (value.daRiallineare) issues.push(issue('ALTA', `Riporto ${account} da riallineare`, `Saldo salvato ${euro.format(value.riporto)}; nessuna correzione automatica eseguita.`));
+  for (const row of reconciliation.movimenti.filter((item) => !item.provaFinanziaria).slice(0, 20)) issues.push(issue('ALTA', `Movimento senza prova: ${row.descrizione}`, `${fmtDate(row.data)} · ${row.conto} · ${euro.format(row.importo)}`));
+  if (dashboard.f24DaRiscontrare) issues.push(issue('MEDIA', 'F24 in attesa di riscontro finanziario', `${dashboard.f24DaRiscontrare} operazioni richiedono verifica; modello e quietanza non provano da soli l'addebito.`));
+  if (riscossione.scadutiAperti) issues.push(issue('ALTA', 'Atti scaduti ancora aperti', `${riscossione.scadutiAperti} atti richiedono controllo amministrativo.`));
+  if (riscossione.senzaSnapshot) issues.push(issue('MEDIA', 'Situazione ADER non aggiornata', `${riscossione.senzaSnapshot} atti non hanno uno snapshot ufficiale.`));
+  if (documents.length) issues.push(issue('MEDIA', 'Documenti interni da verificare', `${documents.length} documenti non possono ancora guidare registrazioni contabili.`));
+  if (!issues.length) issues.push(issue('OK', 'Nessuna anomalia aperta per i controlli disponibili', "L'indice Drive resta consultabile; continuare con i controlli periodici."));
+  $('#controlIssues').innerHTML = issues.join('');
+  $('#controlMovementRows').innerHTML = reconciliation.movimenti.length ? reconciliation.movimenti.slice(0, 100).map((row) => `<tr><td>${fmtDate(row.data)}</td><td>${escapeHtml(row.conto)}</td><td><strong>${escapeHtml(row.descrizione)}</strong><small>${escapeHtml(row.fonte || '')}</small></td><td>${badge(row.stato)}</td><td>${row.provaFinanziaria ? badge('DOCUMENTATO') : '<span class="badge da_verificare">Manca prova</span>'}</td><td class="num balance">${euro.format(row.importo)}</td></tr>`).join('') : '<tr><td colspan="6" class="muted">Nessun movimento aperto.</td></tr>';
+  $('#controlDocumentRows').innerHTML = documents.length ? documents.slice(0, 100).map((row) => `<tr><td><strong>${escapeHtml(row.nomeOriginale || 'documento')}</strong><small>${escapeHtml(row.protocollo || row.sha256 || '')}</small></td><td>${escapeHtml(row.tipo || '—')}</td><td>${badge(row.stato)}</td><td>${fmtDate(row.aggiornatoIl)}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">Nessun documento interno in attesa.</td></tr>';
 }
 
 async function openDriveDocument(id) {
@@ -201,7 +316,7 @@ async function submitTributo(event) {
   try { const saved = await api('/api/tributi', { method: 'POST', body: JSON.stringify(body) }); $('#tributoResult').innerHTML = `<strong>${escapeHtml(saved.codice)}</strong><span>versione registrata</span>`; formElement.reset(); await Promise.all([loadTributi(), loadF24(), loadDashboard()]); } catch (error) { $('#tributoResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
 }
 
-function setView(name) { $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`)); $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === name)); if (name === 'prima-nota') loadLedger().catch((e) => showLogin(e.message)); if (name === 'documenti') loadDriveIndex().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); if (name === 'amministrazione') Promise.all([loadF24(), loadTributi()]).catch((e) => showLogin(e.message)); }
+function setView(name) { $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`)); $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === name)); if (name === 'prima-nota') loadLedger().catch((e) => showLogin(e.message)); if (name === 'documenti') loadDriveIndex().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); if (name === 'riconciliazione') loadReconciliation().catch((e) => { $('#reconciliationResult').textContent = e.message; }); if (name === 'amministrazione') Promise.all([loadF24(), loadTributi(), loadRiscossione()]).catch((e) => showLogin(e.message)); if (name === 'controllo') loadControls().catch((e) => { $('#controlIssues').innerHTML = issue('ALTA', 'Controllo non disponibile', e.message); }); }
 
 function bindEvents() {
   $$('.nav-item').forEach((button) => button.addEventListener('click', () => setView(button.dataset.view)));
@@ -209,12 +324,20 @@ function bindEvents() {
   $('#ledgerAccount').addEventListener('change', () => loadLedger().catch((e) => showLogin(e.message)));
   $('#ledgerYear').addEventListener('change', () => loadLedger().catch((e) => showLogin(e.message)));
   $('#f24Year').addEventListener('change', () => loadF24().catch((e) => showLogin(e.message)));
+  $('#reconciliationYear').addEventListener('change', () => loadReconciliation().catch((e) => { $('#reconciliationResult').textContent = e.message; }));
+  $('#reloadReconciliation').addEventListener('click', () => loadReconciliation().catch((e) => { $('#reconciliationResult').textContent = e.message; }));
+  $('#reconciliationCauseType').addEventListener('change', (event) => { reconciliationSelection.causeType = event.target.value; reconciliationSelection.causeId = null; renderReconciliationCauses(); });
+  $('#reconciliationMovementRows').addEventListener('change', (event) => { if (event.target.matches('.reconciliation-movement')) { reconciliationSelection.movementId = event.target.value; renderReconciliationSelection(); } });
+  $('#reconciliationCauseRows').addEventListener('change', (event) => { if (event.target.matches('.reconciliation-cause')) { reconciliationSelection.causeId = event.target.value; renderReconciliationCauses(); } });
+  $('#confirmReconciliation').addEventListener('click', confirmReconciliation);
+  $('#controlYear').addEventListener('change', () => loadControls().catch((e) => { $('#controlIssues').innerHTML = issue('ALTA', 'Controllo non disponibile', e.message); }));
+  $('#reloadControls').addEventListener('click', () => loadControls().catch((e) => { $('#controlIssues').innerHTML = issue('ALTA', 'Controllo non disponibile', e.message); }));
   $('#refreshDriveIndex').addEventListener('click', () => loadDriveIndex(true).catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
   $('#searchDriveDocuments').addEventListener('click', () => loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
   $('#driveDocumentQuery').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
   document.addEventListener('click', (event) => { const button = event.target.closest('.drive-open'); if (button) openDriveDocument(button.dataset.documentId).catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
   $('#newMovement').addEventListener('click', () => $('#movementDialog').showModal()); $('#closeDialog').addEventListener('click', () => $('#movementDialog').close());
-  $('#movementForm').addEventListener('submit', submitMovement); $('#receiptsForm').addEventListener('submit', submitReceipts); $('#tributoForm').addEventListener('submit', submitTributo);
+  $('#movementForm').addEventListener('submit', submitMovement); $('#receiptsForm').addEventListener('submit', submitReceipts); $('#tributoForm').addEventListener('submit', submitTributo); $('#riscossioneForm').addEventListener('submit', submitRiscossione);
   $('#loginForm').addEventListener('submit', submitLogin); $('#mfaForm').addEventListener('submit', submitMfa); $('#cancelMfa').addEventListener('click', hideMfa); $('#logoutButton').addEventListener('click', logout);
 }
 

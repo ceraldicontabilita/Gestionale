@@ -56,14 +56,39 @@
       </section>
       <section class="warning">Modello F24, quietanza e movimento bancario sono prove distinte. L'indice documentale non attribuisce automaticamente un pagamento.</section>
     </section>
-    <section id="view-riconciliazione" class="view"><section class="panel placeholder"><p class="eyebrow">RICONCILIAZIONE</p><h3>Prova finanziaria ↔ causa amministrativa</h3><p>Il movimento finanziario resta la fonte autorevole del pagamento.</p></section></section>
+    <section id="view-riconciliazione" class="view">
+      <div class="hero compact-hero"><div><p class="eyebrow">RICONCILIAZIONE</p><h2>Una prova finanziaria.<br>Una causa verificata.</h2><p>Nessun collegamento viene proposto o confermato usando soltanto l'importo.</p></div><select id="reconciliationYear" aria-label="Anno riconciliazione"></select></div>
+      <section class="cards" id="reconciliationCards"></section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">SELEZIONE MANUALE</p><h3>Movimento finanziario ↔ causa amministrativa</h3></div><button id="reloadReconciliation" type="button">Aggiorna</button></div>
+        <div class="reconciliation-grid">
+          <div><h4>1. Movimento non utilizzato</h4><p class="muted">Sono selezionabili soltanto addebiti con una prova finanziaria reale.</p><div class="table-wrap selection-table"><table><thead><tr><th>Seleziona</th><th>Movimento</th><th>Conto</th><th class="num">Importo</th><th>Prova</th></tr></thead><tbody id="reconciliationMovementRows"></tbody></table></div></div>
+          <div><div class="cause-heading"><div><h4>2. Causa amministrativa</h4><p class="muted">Scegli il documento identificato, non un semplice importo.</p></div><select id="reconciliationCauseType"><option value="F24">F24</option><option value="RISCOSSIONE_ATTO">Riscossione</option></select></div><div class="table-wrap selection-table"><table><thead><tr><th>Seleziona</th><th>Identità</th><th>Stato</th><th class="num">Importo</th></tr></thead><tbody id="reconciliationCauseRows"></tbody></table></div></div>
+        </div>
+        <div id="reconciliationSelection" class="selection-summary muted">Seleziona un movimento e una causa.</div>
+        <div class="action-row"><button id="confirmReconciliation" class="primary" type="button" disabled>Conferma collegamento</button><span id="reconciliationResult" class="muted"></span></div>
+      </section>
+      <section class="warning">La conferma richiede MFA. Il backend verifica prova finanziaria, centesimi, identità della causa e assenza di doppio utilizzo. Un F24 a saldo zero non richiede un addebito.</section>
+    </section>
 
     <section id="view-amministrazione" class="view">
       <section class="panel"><div class="panel-head"><div><p class="eyebrow">FISCO · F24</p><h3>F24, quietanze e riscontro finanziario</h3></div><select id="f24Year" aria-label="Anno F24"></select></div><div class="table-wrap"><table><thead><tr><th>Data</th><th>Protocollo</th><th>Documento</th><th>Controllo righe</th><th>Stato</th><th class="num">Saldo</th></tr></thead><tbody id="f24Rows"></tbody></table></div></section>
       <section class="panel"><div class="panel-head"><div><p class="eyebrow">REGISTRO CODICI</p><h3>Codici tributo e causali contributive</h3></div></div><p class="muted">Il registro è versionato. Le classificazioni senza fonte verificabile non entrano.</p><form id="tributoForm" class="grid-form registry-form"><label>Tipo<select name="namespace"><option value="CODICE_TRIBUTO_AE">Codice tributo AE</option><option value="CAUSALE_INPS">Causale INPS</option><option value="CAUSALE_INAIL">Causale INAIL</option></select></label><label>Codice<input name="codice" required maxlength="20"></label><label class="wide">Descrizione<input name="descrizione" required></label><label>Natura<input name="natura"></label><label>Conto gestionale<input name="conto"></label><label class="wide">Fonte<input name="fonte" required></label><button class="primary" type="submit">Salva versione</button></form><div id="tributoResult" class="result"></div><div class="table-wrap compact-table"><table><thead><tr><th>Tipo</th><th>Codice</th><th>Descrizione</th><th>Natura</th><th>Fonte</th><th>Verificato</th></tr></thead><tbody id="tributiRows"></tbody></table></div></section>
-      <section class="panel placeholder"><p class="eyebrow">RISCOSSIONE</p><h3>Cartelle · rateizzazioni · snapshot ADER</h3><p>Atto originale, pagamenti e situazione debitoria aggiornata restano separati.</p></section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">RISCOSSIONE · ADER</p><h3>Atti e situazione aggiornata</h3></div></div>
+        <p class="muted">L'atto originale, i pagamenti collegati e l'ultimo snapshot ADER restano evidenze distinte.</p>
+        <form id="riscossioneForm" class="grid-form registry-form"><label>Tipo<select name="tipo"><option value="CARTELLA_PAGAMENTO">Cartella di pagamento</option><option value="INTIMAZIONE">Intimazione</option><option value="AVVISO_ACCERTAMENTO_ESECUTIVO">Accertamento esecutivo</option><option value="AVVISO_ADDEBITO_INPS">Avviso addebito INPS</option><option value="RATEIZZAZIONE">Rateizzazione</option><option value="COMUNICAZIONE_SOMME_DOVUTE">Comunicazione somme dovute</option><option value="ALTRO_ATTO_RISCOSSIONE">Altro atto</option></select></label><label>Numero atto<input name="numeroAtto"></label><label>Data atto<input type="date" name="dataAtto"></label><label>Data notifica<input type="date" name="dataNotifica"></label><label>Scadenza<input type="date" name="scadenza"></label><label>Importo originario<input type="number" step="0.01" min="0" name="importoOriginario"></label><label>Ente creditore<input name="enteCreditore"></label><label>Fonte<select name="fonte"><option>MANUALE</option><option>PEC</option><option>DRIVE</option><option>ADER</option></select></label><label class="wide">Riferimento fonte<input name="fonteRiferimento" placeholder="ID documento, messaggio PEC o percorso Drive"></label><button class="primary" type="submit">Registra atto</button></form>
+        <div id="riscossioneResult" class="result"></div>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Atto</th><th>Date</th><th>Ente</th><th>Stato</th><th class="num">Originario</th><th class="num">Residuo snapshot</th><th>Aggiornamento</th></tr></thead><tbody id="riscossioneRows"></tbody></table></div>
+      </section>
     </section>
-    <section id="view-controllo" class="view"><section class="panel placeholder"><p class="eyebrow">CONTROLLO</p><h3>Anomalie leggibili</h3><p>Movimenti senza causa, documenti senza prova, differenze POS e anomalie fiscali confluiscono qui.</p></section></section>
+    <section id="view-controllo" class="view">
+      <div class="hero compact-hero"><div><p class="eyebrow">CONTROLLO</p><h2>Problemi leggibili.<br>Senza correzioni silenziose.</h2><p>Ogni anomalia conserva la propria fonte e resta aperta finché non viene verificata.</p></div><div class="filters"><select id="controlYear" aria-label="Anno controllo"></select><button id="reloadControls" type="button">Aggiorna</button></div></div>
+      <section class="cards" id="controlCards"></section>
+      <section class="panel"><div class="panel-head"><div><p class="eyebrow">PRIORITÀ</p><h3>Anomalie operative</h3></div></div><div id="controlIssues" class="issue-list"></div></section>
+      <section class="panel"><div class="panel-head"><div><p class="eyebrow">MOVIMENTI</p><h3>Da verificare o senza prova</h3></div></div><div class="table-wrap"><table><thead><tr><th>Data</th><th>Conto</th><th>Descrizione</th><th>Stato</th><th>Prova finanziaria</th><th class="num">Importo</th></tr></thead><tbody id="controlMovementRows"></tbody></table></div></section>
+      <section class="panel"><div class="panel-head"><div><p class="eyebrow">DOCUMENTI INTERNI</p><h3>In attesa di verifica</h3></div></div><div class="table-wrap compact-table"><table><thead><tr><th>Documento</th><th>Tipo</th><th>Stato</th><th>Aggiornato</th></tr></thead><tbody id="controlDocumentRows"></tbody></table></div></section>
+    </section>
   </main>
 
   <dialog id="loginDialog" class="login-dialog">
