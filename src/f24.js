@@ -1,3 +1,5 @@
+import { parseMoney, roundMoney } from './money.js';
+
 const SECTION_ALIASES = new Map([
   ['ERARIO', 'ERARIO'],
   ['INPS', 'INPS'],
@@ -9,43 +11,28 @@ const SECTION_ALIASES = new Map([
   ['ALTRI ENTI', 'ALTRI_ENTI']
 ]);
 
-export const F24_DOCUMENT_TYPES = [
+export const F24_DOCUMENT_TYPES = Object.freeze([
   'F24_MODELLO',
   'F24_QUIETANZA_AE',
   'F24_FORMATO_STAMPABILE'
-];
+]);
 
-export const F24_STATES = [
+export const F24_STATES = Object.freeze([
   'DA_VERIFICARE',
   'DOCUMENTATO',
   'IN_ATTESA_RISCONTRO',
   'RICONCILIATO',
   'COMPENSATO'
-];
+]);
 
 export function parseItalianAmount(value) {
-  if (value === null || value === undefined || value === '') return null;
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) throw new Error('Importo F24 non valido');
-    return Math.round(value * 100) / 100;
-  }
-
-  const text = String(value)
-    .replace(/\s/g, '')
-    .replace(/€/g, '')
-    .replace(/\./g, '')
-    .replace(',', '.')
-    .trim();
-  if (!text) return null;
-  const parsed = Number(text);
-  if (!Number.isFinite(parsed)) throw new Error(`Importo F24 non valido: ${value}`);
-  return Math.round(parsed * 100) / 100;
+  return parseMoney(value, { label: 'Importo F24' });
 }
 
 export function normalizeProtocol(value) {
   const raw = String(value || '').trim();
   if (!raw || raw === '-') return null;
-  const clean = raw.replace(/\s+/g, '').replace('-', '/');
+  const clean = raw.replace(/\s+/g, '').replace(/-(\d{6})$/, '/$1');
   const match = clean.match(/^(\d{10,20})\/?(\d{6})?$/);
   if (!match) return raw;
   return match[2] ? `${match[1]}/${match[2]}` : match[1];
@@ -67,31 +54,37 @@ export function buildF24FromIndexRow(input = {}) {
   const annoElenco = Number(input.anno_elenco ?? input.annoElenco);
   const indicePortale = Number(input.indice_portale ?? input.indicePortale);
   const numeroModello = Number(input.numero_modello_nel_gruppo ?? input.numeroModelloNelGruppo ?? 1);
-  if (!Number.isInteger(annoElenco)) throw new Error('Anno elenco F24 non valido');
-  if (!Number.isInteger(indicePortale)) throw new Error('Indice portale F24 non valido');
+  const numeroModelliF24 = Number(input.numero_modelli_f24 ?? input.numeroModelliF24 ?? 1);
+  if (!Number.isInteger(annoElenco) || annoElenco < 2000 || annoElenco > 2100) throw new Error('Anno elenco F24 non valido');
+  if (!Number.isInteger(indicePortale) || indicePortale < 0) throw new Error('Indice portale F24 non valido');
+  if (!Number.isInteger(numeroModello) || numeroModello < 1) throw new Error('Numero modello F24 non valido');
+  if (!Number.isInteger(numeroModelliF24) || numeroModelliF24 < 1) throw new Error('Numero modelli F24 non valido');
 
   const rawType = String(input.tipo_documento ?? input.tipoDocumento ?? '').toUpperCase();
-  const tipoDocumento = rawType.includes('QUIETANZA')
-    ? 'F24_QUIETANZA_AE'
-    : rawType.includes('FORMATO STAMPABILE')
-      ? 'F24_FORMATO_STAMPABILE'
+  const tipoDocumento = rawType.includes('FORMATO STAMPABILE')
+    ? 'F24_FORMATO_STAMPABILE'
+    : rawType.includes('QUIETANZA')
+      ? 'F24_QUIETANZA_AE'
       : 'F24_MODELLO';
 
   const sha256 = String(input.sha256 || '').trim().toLowerCase() || null;
+  if (sha256 && !/^[a-f0-9]{64}$/.test(sha256)) throw new Error('SHA-256 F24 non valido');
   const file = String(input.file || input.nomeFile || '').trim() || null;
   const protocollo = normalizeProtocol(input.protocollo_telematico ?? input.protocolloTelematico);
   const protocolloPdf = normalizeProtocol(input.protocollo_letto_nel_pdf ?? input.protocolloLettoNelPdf);
-  const sourceKey = [annoElenco, indicePortale, numeroModello, sha256 || file || 'senza-file'].join(':');
-
+  const operationKey = `${annoElenco}:${indicePortale}`;
+  const sourceKey = [operationKey, numeroModello, sha256 || file || 'senza-file'].join(':');
   const saldoOperazione = parseItalianAmount(input.saldo_operazione ?? input.saldoOperazione);
   const saldoModello = parseItalianAmount(input.saldo_del_modello ?? input.saldoDelModello);
+  const saldoRilevante = saldoModello ?? saldoOperazione ?? 0;
 
   return {
     sourceKey,
+    operationKey,
     annoElenco,
     indicePortale,
     dataVersamento: parseItalianDate(input.data_versamento ?? input.dataVersamento),
-    numeroModelliF24: Number(input.numero_modelli_f24 ?? input.numeroModelliF24 ?? 1),
+    numeroModelliF24,
     numeroModelloNelGruppo: numeroModello,
     saldoOperazione,
     saldoModello,
@@ -106,7 +99,7 @@ export function buildF24FromIndexRow(input = {}) {
     urlSorgente: String(input.url_sorgente ?? input.urlSorgente ?? '').trim() || null,
     nota: String(input.nota || '').trim() || null,
     provaPagamento: false,
-    stato: saldoModello === 0 ? 'DOCUMENTATO' : 'IN_ATTESA_RISCONTRO'
+    stato: saldoRilevante === 0 ? 'COMPENSATO' : 'IN_ATTESA_RISCONTRO'
   };
 }
 
@@ -117,8 +110,9 @@ export function normalizeF24Row(input = {}, registryEntry = null) {
   if (debito < 0 || credito < 0) throw new Error('Debito/credito F24 non possono essere negativi');
   if (debito > 0 && credito > 0) throw new Error('Una riga F24 non può essere contemporaneamente a debito e a credito');
 
-  const codice = sezione === 'INPS'
-    ? String(input.causaleContributo ?? input.codice ?? '').trim().toUpperCase()
+  const contributiva = ['INPS', 'INAIL'].includes(sezione);
+  const codice = contributiva
+    ? String(input.causaleContributo ?? input.causale ?? input.codice ?? '').trim().toUpperCase()
     : String(input.codiceTributo ?? input.codice ?? '').trim().toUpperCase();
   if (!codice) throw new Error('Codice/causale F24 mancante');
 
@@ -126,37 +120,41 @@ export function normalizeF24Row(input = {}, registryEntry = null) {
     sezione,
     namespace: registryNamespaceForSection(sezione),
     codice,
-    codiceTributo: sezione === 'INPS' ? null : codice,
-    causaleContributo: sezione === 'INPS' ? codice : null,
-    codiceSede: input.codiceSede ? String(input.codiceSede).trim() : null,
-    codiceEnteComune: input.codiceEnteComune ? String(input.codiceEnteComune).trim().toUpperCase() : null,
-    matricolaCodiceInps: input.matricolaCodiceInps ? String(input.matricolaCodiceInps).trim() : null,
-    rateazioneMeseRif: input.rateazioneMeseRif ? String(input.rateazioneMeseRif).trim() : null,
+    codiceTributo: contributiva ? null : codice,
+    causaleContributo: contributiva ? codice : null,
+    codiceSede: clean(input.codiceSede),
+    codiceEnteComune: clean(input.codiceEnteComune)?.toUpperCase() || null,
+    matricolaCodiceInps: clean(input.matricolaCodiceInps),
+    codiceDittaInail: clean(input.codiceDittaInail ?? input.codiceDitta),
+    numeroRiferimentoInail: clean(input.numeroRiferimentoInail ?? input.numeroRiferimento),
+    rateazioneMeseRif: clean(input.rateazioneMeseRif),
     periodoDa: normalizePeriod(input.periodoDa),
     periodoA: normalizePeriod(input.periodoA),
     annoRiferimento: toIntegerOrNull(input.annoRiferimento),
     debito,
     credito,
-    netto: round2(debito - credito),
+    netto: roundMoney(debito - credito),
     raw: input.raw ? String(input.raw) : null,
-    classificazione: registryEntry
-      ? {
-          stato: 'CLASSIFICATO',
-          registroId: registryEntry._id || null,
-          descrizione: registryEntry.descrizione || null,
-          natura: registryEntry.natura || null,
-          conto: registryEntry.conto || null,
-          fonte: registryEntry.fonte || null,
-          verificatoIl: registryEntry.verificatoIl || null
-        }
-      : { stato: 'DA_VERIFICARE' }
+    classificazione: registryEntry ? classificationFromRegistry(registryEntry) : { stato: 'DA_VERIFICARE' }
+  };
+}
+
+export function classificationFromRegistry(registryEntry) {
+  return {
+    stato: 'CLASSIFICATO',
+    registroId: registryEntry._id || null,
+    descrizione: registryEntry.descrizione || null,
+    natura: registryEntry.natura || null,
+    conto: registryEntry.conto || null,
+    fonte: registryEntry.fonte || null,
+    verificatoIl: registryEntry.verificatoIl || null
   };
 }
 
 export function calculateF24Totals(rows = []) {
-  const debiti = round2(rows.reduce((sum, row) => sum + Number(row.debito || 0), 0));
-  const crediti = round2(rows.reduce((sum, row) => sum + Number(row.credito || 0), 0));
-  return { debiti, crediti, saldo: round2(debiti - crediti) };
+  const debiti = roundMoney(rows.reduce((sum, row) => sum + Number(row.debito || 0), 0));
+  const crediti = roundMoney(rows.reduce((sum, row) => sum + Number(row.credito || 0), 0));
+  return { debiti, crediti, saldo: roundMoney(debiti - crediti) };
 }
 
 export function parseQuietanzaText(text = '') {
@@ -216,10 +214,13 @@ export function parseQuietanzaText(text = '') {
 
 function parseItalianDate(value) {
   if (!value) return null;
-  if (value instanceof Date) return value;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
   const raw = String(value).trim();
   const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (match) return new Date(`${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}T12:00:00.000Z`);
+  if (match) {
+    const date = new Date(`${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}T12:00:00.000Z`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
   const parsed = new Date(raw);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
@@ -237,6 +238,8 @@ function toIntegerOrNull(value) {
   return Number.isInteger(n) ? n : null;
 }
 
-function round2(value) {
-  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+function clean(value) {
+  if (value === null || value === undefined) return null;
+  const result = String(value).trim();
+  return result || null;
 }

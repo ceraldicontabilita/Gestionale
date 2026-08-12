@@ -38,8 +38,8 @@ app.get('/api/health', (_req, res) => {
 
 registerCoreRoutes(app, { getDb: () => db });
 registerCorrispettiviRoutes(app, { getDb: () => db, getClient: () => client });
-registerF24Routes(app, () => db);
-registerRiscossioneRoutes(app, () => db);
+registerF24Routes(app, { getDb: () => db, getClient: () => client });
+registerRiscossioneRoutes(app, { getDb: () => db, getClient: () => client });
 
 const server = app.listen(port, () => console.log(`Impresa Semplice v${version} in ascolto sulla porta ${port}`));
 

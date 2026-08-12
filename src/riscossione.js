@@ -1,4 +1,6 @@
-export const RISCOSSIONE_TYPES = [
+import { parseMoney, roundMoney } from './money.js';
+
+export const RISCOSSIONE_TYPES = Object.freeze([
   'CARTELLA_PAGAMENTO',
   'INTIMAZIONE',
   'AVVISO_ACCERTAMENTO_ESECUTIVO',
@@ -9,27 +11,23 @@ export const RISCOSSIONE_TYPES = [
   'QUIETANZA_RISCOSSIONE',
   'SNAPSHOT_ADER',
   'ALTRO_ATTO_RISCOSSIONE'
-];
+]);
 
-export const RISCOSSIONE_STATES = [
+export const RISCOSSIONE_STATES = Object.freeze([
   'DA_VERIFICARE',
   'APERTO',
   'RATEIZZATO',
   'SOSPESO',
   'PAGATO',
   'ANNULLATO'
-];
+]);
 
 export function normalizeRiscossioneAtto(input = {}, { now = new Date() } = {}) {
   const tipo = normalizeType(input.tipo);
-  const importoOriginario = moneyOrNull(input.importoOriginario ?? input.importo);
   const numeroAtto = clean(input.numeroAtto ?? input.identificativoAtto);
   const fonte = clean(input.fonte) || 'MANUALE';
   const fonteRiferimento = clean(input.fonteRiferimento ?? input.url ?? input.documentoId);
-
-  if (!numeroAtto && !fonteRiferimento) {
-    throw new Error('Serve numero atto o riferimento della fonte');
-  }
+  if (!numeroAtto && !fonteRiferimento) throw new Error('Serve numero atto o riferimento della fonte');
 
   return {
     tipo,
@@ -38,10 +36,10 @@ export function normalizeRiscossioneAtto(input = {}, { now = new Date() } = {}) 
     contribuente: clean(input.contribuente),
     codiceFiscale: clean(input.codiceFiscale),
     entiCreditori: normalizeList(input.entiCreditori ?? input.enteCreditore),
-    dataAtto: dateOrNull(input.dataAtto),
-    dataNotifica: dateOrNull(input.dataNotifica),
-    scadenza: dateOrNull(input.scadenza),
-    importoOriginario,
+    dataAtto: dateOrNull(input.dataAtto, 'Data atto'),
+    dataNotifica: dateOrNull(input.dataNotifica, 'Data notifica'),
+    scadenza: dateOrNull(input.scadenza, 'Scadenza'),
+    importoOriginario: moneyOrNull(input.importoOriginario ?? input.importo, 'Importo originario'),
     componenti: normalizeComponents(input.componenti),
     documentoId: clean(input.documentoId),
     fonte: String(fonte).toUpperCase(),
@@ -53,19 +51,15 @@ export function normalizeRiscossioneAtto(input = {}, { now = new Date() } = {}) 
 }
 
 export function normalizeAderSnapshot(input = {}, { now = new Date() } = {}) {
-  const acquisitoIl = dateOrNull(input.acquisitoIl) || now;
-  const residuo = moneyOrNull(input.residuo ?? input.importoResiduo);
-  const pagato = moneyOrNull(input.pagato ?? input.importoPagato) ?? 0;
-  const originario = moneyOrNull(input.importoOriginario);
+  const acquisitoIl = dateOrNull(input.acquisitoIl, 'Data acquisizione') || now;
   const sourceKey = clean(input.sourceKey ?? input.sha256 ?? input.riferimento);
   if (!sourceKey) throw new Error('Snapshot ADER senza identificatore sorgente');
-
   return {
     sourceKey,
     acquisitoIl,
-    importoOriginario: originario,
-    importoPagato: pagato,
-    importoResiduo: residuo,
+    importoOriginario: moneyOrNull(input.importoOriginario, 'Importo originario'),
+    importoPagato: moneyOrNull(input.pagato ?? input.importoPagato, 'Importo pagato') ?? 0,
+    importoResiduo: moneyOrNull(input.residuo ?? input.importoResiduo, 'Importo residuo'),
     statoAder: normalizeAderState(input.statoAder),
     rateizzazione: normalizeRatePlan(input.rateizzazione),
     procedure: normalizeList(input.procedure),
@@ -86,25 +80,15 @@ export function recognizeRiscossioneText(text = '') {
   let confidence = 0.25;
 
   if (upper.includes('CARTELLA DI PAGAMENTO')) {
-    tipo = 'CARTELLA_PAGAMENTO';
-    confidence = 0.95;
-    signals.push('CARTELLA_DI_PAGAMENTO');
+    tipo = 'CARTELLA_PAGAMENTO'; confidence = 0.95; signals.push('CARTELLA_DI_PAGAMENTO');
   } else if (upper.includes('AVVISO DI ADDEBITO') && upper.includes('INPS')) {
-    tipo = 'AVVISO_ADDEBITO_INPS';
-    confidence = 0.95;
-    signals.push('AVVISO_ADDEBITO', 'INPS');
+    tipo = 'AVVISO_ADDEBITO_INPS'; confidence = 0.95; signals.push('AVVISO_ADDEBITO', 'INPS');
   } else if (upper.includes('INTIMAZIONE') && upper.includes('PAGAMENTO')) {
-    tipo = 'INTIMAZIONE';
-    confidence = 0.85;
-    signals.push('INTIMAZIONE', 'PAGAMENTO');
+    tipo = 'INTIMAZIONE'; confidence = 0.85; signals.push('INTIMAZIONE', 'PAGAMENTO');
   } else if (upper.includes('ACCERTAMENTO') && upper.includes('ESECUTIVO')) {
-    tipo = 'AVVISO_ACCERTAMENTO_ESECUTIVO';
-    confidence = 0.85;
-    signals.push('ACCERTAMENTO', 'ESECUTIVO');
+    tipo = 'AVVISO_ACCERTAMENTO_ESECUTIVO'; confidence = 0.85; signals.push('ACCERTAMENTO', 'ESECUTIVO');
   } else if (upper.includes('RATEIZZAZIONE') || upper.includes('PIANO DI AMMORTAMENTO')) {
-    tipo = 'RATEIZZAZIONE';
-    confidence = 0.75;
-    signals.push('RATEIZZAZIONE');
+    tipo = 'RATEIZZAZIONE'; confidence = 0.75; signals.push('RATEIZZAZIONE');
   }
 
   if (upper.includes('AGENZIA DELLE ENTRATE-RISCOSSIONE') || upper.includes('AGENZIA ENTRATE RISCOSSIONE')) {
@@ -128,9 +112,12 @@ export function recognizeRiscossioneText(text = '') {
 
 export function snapshotSummary(snapshots = []) {
   if (!snapshots.length) return null;
-  const sorted = [...snapshots].sort((a, b) => new Date(b.acquisitoIl) - new Date(a.acquisitoIl));
-  const latest = sorted[0];
+  const latest = [...snapshots].sort((a, b) => {
+    const delta = new Date(b.acquisitoIl) - new Date(a.acquisitoIl);
+    return delta || String(b._id || '').localeCompare(String(a._id || ''));
+  })[0];
   return {
+    snapshotId: latest._id || null,
     acquisitoIl: latest.acquisitoIl,
     importoOriginario: latest.importoOriginario,
     importoPagato: latest.importoPagato,
@@ -161,7 +148,7 @@ function normalizeComponents(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const out = {};
   for (const [key, raw] of Object.entries(value)) {
-    const amount = moneyOrNull(raw);
+    const amount = moneyOrNull(raw, `Componente ${key}`);
     if (amount !== null) out[key] = amount;
   }
   return out;
@@ -169,12 +156,15 @@ function normalizeComponents(value) {
 
 function normalizeRatePlan(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const numeroRate = integerOrNull(value.numeroRate);
+  const ratePagate = integerOrNull(value.ratePagate);
+  if (numeroRate !== null && ratePagate !== null && ratePagate > numeroRate) throw new Error('Rate pagate superiori alle rate previste');
   return {
     identificativo: clean(value.identificativo),
-    numeroRate: integerOrNull(value.numeroRate),
-    ratePagate: integerOrNull(value.ratePagate),
-    prossimaScadenza: dateOrNull(value.prossimaScadenza),
-    importoRata: moneyOrNull(value.importoRata),
+    numeroRate,
+    ratePagate,
+    prossimaScadenza: dateOrNull(value.prossimaScadenza, 'Prossima scadenza'),
+    importoRata: moneyOrNull(value.importoRata, 'Importo rata'),
     stato: clean(value.stato)?.toUpperCase() || null
   };
 }
@@ -182,36 +172,34 @@ function normalizeRatePlan(value) {
 function normalizeList(value) {
   if (value === null || value === undefined || value === '') return [];
   const array = Array.isArray(value) ? value : [value];
-  return array.map(clean).filter(Boolean);
+  return [...new Set(array.map(clean).filter(Boolean))];
 }
 
-function moneyOrNull(value) {
-  if (value === null || value === undefined || value === '') return null;
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) throw new Error('Importo riscossione non valido');
-    return round2(value);
-  }
-  const text = String(value).replace(/\s/g, '').replace(/€/g, '').replace(/\./g, '').replace(',', '.');
-  const parsed = Number(text);
-  if (!Number.isFinite(parsed)) throw new Error(`Importo riscossione non valido: ${value}`);
-  return round2(parsed);
+function moneyOrNull(value, label) {
+  const parsed = parseMoney(value, { label });
+  return parsed === null ? null : roundMoney(parsed);
 }
 
-function dateOrNull(value) {
+function dateOrNull(value, label) {
   if (!value) return null;
-  if (value instanceof Date) return value;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) throw new Error(`${label} non valida`);
+    return value;
+  }
   const raw = String(value).trim();
   const it = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   const date = it
     ? new Date(`${it[3]}-${it[2].padStart(2, '0')}-${it[1].padStart(2, '0')}T12:00:00.000Z`)
     : new Date(raw);
-  return Number.isNaN(date.getTime()) ? null : date;
+  if (Number.isNaN(date.getTime())) throw new Error(`${label} non valida`);
+  return date;
 }
 
 function integerOrNull(value) {
   if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
-  return Number.isInteger(n) ? n : null;
+  if (!Number.isInteger(n) || n < 0) throw new Error('Numero rate non valido');
+  return n;
 }
 
 function clean(value) {
@@ -226,8 +214,4 @@ function firstMatch(text, regexes) {
     if (match?.[1]) return match[1].trim();
   }
   return null;
-}
-
-function round2(value) {
-  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }
