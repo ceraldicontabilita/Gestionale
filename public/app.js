@@ -12,9 +12,23 @@ function badge(status) { return `<span class="badge ${String(status).toLowerCase
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])); }
 function cookieValue(name) { return document.cookie.split(';').map((v) => v.trim()).find((v) => v.startsWith(`${name}=`))?.slice(name.length + 1) || ''; }
 
+function ensureMfaDialog() {
+  if ($('#mfaDialog')) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <dialog id="mfaDialog" class="login-dialog">
+      <form id="mfaForm">
+        <div><p class="eyebrow">CONFERMA OPERAZIONE</p><h3>Codice MFA</h3><p class="muted">Inserisci il codice a sei cifre dell'autenticatore. La verifica resta valida solo per pochi minuti.</p></div>
+        <label>Codice<input name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" required></label>
+        <div class="two-cols"><button class="primary" type="submit">Verifica</button><button id="cancelMfa" type="button">Annulla</button></div>
+        <p id="mfaError" class="error"></p>
+      </form>
+    </dialog>`);
+}
+
 function showLogin(message = '') {
   $('#loginError').textContent = message;
   $('#logoutButton').classList.add('hidden');
+  if ($('#mfaDialog')?.open) $('#mfaDialog').close();
   if (!$('#loginDialog').open) $('#loginDialog').showModal();
 }
 
@@ -23,13 +37,28 @@ function hideLogin() {
   $('#logoutButton').classList.remove('hidden');
 }
 
+function showMfa(message = 'Conferma MFA richiesta.') {
+  ensureMfaDialog();
+  $('#mfaError').textContent = message;
+  if (!$('#mfaDialog').open) $('#mfaDialog').showModal();
+  $('#mfaForm [name=code]').focus();
+}
+
+function hideMfa() {
+  if ($('#mfaDialog')?.open) $('#mfaDialog').close();
+  $('#mfaForm')?.reset();
+  if ($('#mfaError')) $('#mfaError').textContent = '';
+}
+
 async function api(url, options = {}) {
   const method = String(options.method || 'GET').toUpperCase();
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) headers['X-CSRF-Token'] = decodeURIComponent(cookieValue('impresa_csrf'));
   const response = await fetch(url, { credentials: 'same-origin', ...options, method, headers });
   const data = await response.json().catch(() => ({}));
-  if (response.status === 401) showLogin('Sessione scaduta. Inserisci nuovamente il PIN.');
+  if (response.status === 401 && url !== '/api/auth/mfa') showLogin('Sessione scaduta. Inserisci nuovamente il PIN.');
+  if (response.status === 428 && data.code === 'MFA_REQUIRED') showMfa(data.error);
+  if (response.status === 503 && data.code === 'MFA_NOT_CONFIGURED') showMfa(data.error);
   if (!response.ok) throw new Error(data.error || `Errore ${response.status}`);
   return data;
 }
@@ -111,9 +140,19 @@ async function submitLogin(event) {
   } catch (error) { $('#loginError').textContent = error.message; }
 }
 
+async function submitMfa(event) {
+  event.preventDefault();
+  const code = new FormData(event.currentTarget).get('code');
+  $('#mfaError').textContent = '';
+  try {
+    await api('/api/auth/mfa', { method: 'POST', body: JSON.stringify({ code }) });
+    hideMfa();
+  } catch (error) { $('#mfaError').textContent = error.message; }
+}
+
 async function logout() {
   try { await api('/api/auth/logout', { method: 'POST', body: '{}' }); } catch {}
-  appReady = false; showLogin('Sessione terminata.');
+  appReady = false; hideMfa(); showLogin('Sessione terminata.');
 }
 
 async function submitMovement(event) {
@@ -142,7 +181,7 @@ function bindEvents() {
   $('#f24Year').addEventListener('change', () => loadF24().catch((e) => showLogin(e.message)));
   $('#newMovement').addEventListener('click', () => $('#movementDialog').showModal()); $('#closeDialog').addEventListener('click', () => $('#movementDialog').close());
   $('#movementForm').addEventListener('submit', submitMovement); $('#receiptsForm').addEventListener('submit', submitReceipts); $('#tributoForm').addEventListener('submit', submitTributo);
-  $('#loginForm').addEventListener('submit', submitLogin); $('#logoutButton').addEventListener('click', logout);
+  $('#loginForm').addEventListener('submit', submitLogin); $('#mfaForm').addEventListener('submit', submitMfa); $('#cancelMfa').addEventListener('click', hideMfa); $('#logoutButton').addEventListener('click', logout);
 }
 
 async function initializeApplication() {
@@ -151,7 +190,7 @@ async function initializeApplication() {
 }
 
 async function boot() {
-  $('#movementForm [name=data]').valueAsDate = new Date(); $('#receiptsForm [name=data]').valueAsDate = new Date(); bindEvents(); await loadHealth();
+  ensureMfaDialog(); $('#movementForm [name=data]').valueAsDate = new Date(); $('#receiptsForm [name=data]').valueAsDate = new Date(); bindEvents(); await loadHealth();
   try { if (await checkAuth()) await initializeApplication(); } catch (error) { showLogin(error.message); }
 }
 
