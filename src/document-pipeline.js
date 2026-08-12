@@ -52,27 +52,28 @@ export function createDocumentReprocessHandler({ limit = 250, logger = console }
           : { primarySourceKey: inbox.sourceKey };
         const tipo = inbox.tecnicoPec ? 'TECNICO_PEC' : (inbox.propostaTipo || inbox.tipoRiconosciuto || 'DA_CLASSIFICARE');
         const stato = inbox.tecnicoPec ? 'DOCUMENTATO' : 'DA_VERIFICARE';
+        const documentSet = {
+          nomeOriginale: inbox.nomeOriginale || 'documento',
+          tipo,
+          stato,
+          sha256: inbox.sha256 || null,
+          gridFsId: inbox.gridFsId || null,
+          datiEstratti: {
+            ...(inbox.datiEstratti || {}),
+            propostaTipo: inbox.propostaTipo || null,
+            mittenteAttendibile: inbox.mittenteAttendibile ?? null,
+            emailFrom: inbox.emailFrom || null,
+            emailSubject: inbox.emailSubject || null,
+            percorsoDrive: inbox.percorso || null
+          },
+          aggiornatoIl: now
+        };
+        if (!inbox.sha256) documentSet.primarySourceKey = inbox.sourceKey;
 
         await db.collection('documenti').updateOne(
           filter,
           {
-            $set: {
-              nomeOriginale: inbox.nomeOriginale || 'documento',
-              tipo,
-              stato,
-              sha256: inbox.sha256 || null,
-              primarySourceKey: inbox.sha256 ? undefined : inbox.sourceKey,
-              gridFsId: inbox.gridFsId || null,
-              datiEstratti: {
-                ...(inbox.datiEstratti || {}),
-                propostaTipo: inbox.propostaTipo || null,
-                mittenteAttendibile: inbox.mittenteAttendibile ?? null,
-                emailFrom: inbox.emailFrom || null,
-                emailSubject: inbox.emailSubject || null,
-                percorsoDrive: inbox.percorso || null
-              },
-              aggiornatoIl: now
-            },
+            $set: documentSet,
             $addToSet: { fonti: source },
             $setOnInsert: { creatoIl: now }
           },
