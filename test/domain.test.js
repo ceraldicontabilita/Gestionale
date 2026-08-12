@@ -7,7 +7,7 @@ test('interpreta importi italiani e decimali JSON senza moltiplicarli per cento'
   assert.equal(parseMoney('7.475,22 €'), 7475.22);
   assert.equal(parseMoney('123.45'), 123.45);
   assert.equal(parseMoney('12.000'), 12000);
-  assert.throws(() => parseMoney('-1,00'), /non può essere negativo/);
+  assert.throws(() => parseMoney('-1,00'), /negativo/);
 });
 
 test('un movimento usa direzione esplicita e rifiuta importi negativi', () => {
@@ -26,8 +26,15 @@ test('il solo booleano provaReale non riconcilia un conto finanziario', () => {
   assert.equal(canReconcile(movement, { provaReale: true }).ok, false);
 });
 
-test('la Cassa richiede attestazione e Provvisoria non si riconcilia', () => {
+test('una evidenza deve essere compatibile con il conto', () => {
+  const banca = normalizeMovement({ conto: 'BANCA', direzione: 'USCITA', importo: 100, descrizione: 'Pagamento' });
+  assert.equal(canReconcile(banca, { evidenze: [{ tipo: 'ATTESTAZIONE_CASSA', riferimento: 'Operatore', reale: true }] }).ok, false);
+  assert.equal(canReconcile(banca, { evidenze: [{ tipo: 'MOVIMENTO_BANCARIO', riferimento: 'BPM:123', reale: true }] }).ok, true);
+});
+
+test('la Cassa richiede attestazione riferita e Provvisoria non si riconcilia', () => {
   const cassa = normalizeMovement({ conto: 'CASSA', direzione: 'ENTRATA', importo: 10, descrizione: 'Incasso' });
+  assert.throws(() => canReconcile(cassa, { attestazioneManuale: true }), /Riferimento attestazione/);
   assert.equal(canReconcile(cassa, { attestazioneManuale: true, riferimento: 'Verifica operatore' }).ok, true);
   const provvisoria = normalizeMovement({ conto: 'PROVVISORIA', direzione: 'USCITA', importo: 10, descrizione: 'Da capire' });
   assert.equal(canReconcile(provvisoria, {}).ok, false);

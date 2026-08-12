@@ -18,13 +18,21 @@ export const STATI = Object.freeze([
 
 export const DIREZIONI = Object.freeze(['ENTRATA', 'USCITA']);
 
-const REAL_EVIDENCE_TYPES = new Set([
+const EVIDENCE_TYPES = new Set([
   'ESTRATTO_CONTO',
   'MOVIMENTO_BANCARIO',
   'ESTRATTO_CARTA',
   'MOVIMENTO_CARTA',
   'ATTESTAZIONE_CASSA'
 ]);
+
+const ACCOUNT_EVIDENCE = Object.freeze({
+  CASSA: new Set(['ATTESTAZIONE_CASSA']),
+  BANCA: new Set(['ESTRATTO_CONTO', 'MOVIMENTO_BANCARIO']),
+  MASTERCARD: new Set(['ESTRATTO_CARTA', 'MOVIMENTO_CARTA']),
+  SALARI: new Set(['ESTRATTO_CONTO', 'MOVIMENTO_BANCARIO', 'ESTRATTO_CARTA', 'MOVIMENTO_CARTA']),
+  FINANZIAMENTI_SOCI: new Set(['ESTRATTO_CONTO', 'MOVIMENTO_BANCARIO', 'ESTRATTO_CARTA', 'MOVIMENTO_CARTA'])
+});
 
 export function euro(value) {
   const parsed = parseMoney(value, { allowNegative: true });
@@ -60,13 +68,21 @@ export function normalizeEvidence(value) {
     const riferimento = cleanText(item.riferimento, { max: 500, label: 'Riferimento evidenza' });
     const reale = Boolean(item.reale);
     if (reale && !riferimento) throw new Error('Una evidenza reale richiede un riferimento verificabile');
-    if (reale && !REAL_EVIDENCE_TYPES.has(tipo)) throw new Error('Tipo di evidenza reale non ammesso');
+    if (reale && !EVIDENCE_TYPES.has(tipo)) throw new Error('Tipo di evidenza reale non ammesso');
     return { tipo, riferimento, reale };
   });
 }
 
-function hasRealEvidence(evidenze) {
-  return evidenze.some((item) => item.reale && item.riferimento && REAL_EVIDENCE_TYPES.has(item.tipo));
+function evidenceAllowed(conto, evidence) {
+  return Boolean(
+    evidence?.reale &&
+    evidence.riferimento &&
+    ACCOUNT_EVIDENCE[conto]?.has(evidence.tipo)
+  );
+}
+
+function findAllowedEvidence(conto, evidenze) {
+  return evidenze.find((item) => evidenceAllowed(conto, item)) || null;
 }
 
 export function normalizeMovement(body, { now = new Date() } = {}) {
@@ -83,14 +99,16 @@ export function normalizeMovement(body, { now = new Date() } = {}) {
   if (!STATI.includes(stato)) stato = 'DA_VERIFICARE';
 
   const evidenze = normalizeEvidence(body.evidenze);
-  const attestazioneCassa = Boolean(body.attestazioneManuale || body.provaReale);
+  if (conto === 'CASSA' && body.attestazioneManuale) {
+    evidenze.push({
+      tipo: 'ATTESTAZIONE_CASSA',
+      riferimento: cleanText(body.riferimento, { required: true, max: 500, label: 'Riferimento attestazione' }),
+      reale: true
+    });
+  }
+
   if (conto === 'PROVVISORIA' && stato === 'RICONCILIATO') stato = 'DA_VERIFICARE';
-  if (conto === 'CASSA' && stato === 'RICONCILIATO' && !attestazioneCassa && !hasRealEvidence(evidenze)) {
-    stato = 'DA_VERIFICARE';
-  }
-  if (conto !== 'CASSA' && stato === 'RICONCILIATO' && !hasRealEvidence(evidenze)) {
-    stato = 'DA_VERIFICARE';
-  }
+  if (stato === 'RICONCILIATO' && !findAllowedEvidence(conto, evidenze)) stato = 'DA_VERIFICARE';
 
   const createdAt = now instanceof Date ? new Date(now) : new Date(now);
   if (Number.isNaN(createdAt.getTime())) throw new Error('Data creazione non valida');
@@ -160,23 +178,20 @@ export function canReconcile(movimento, body = {}) {
   }
 
   const nuove = normalizeEvidence(body.evidenze);
-  const evidenze = [...(Array.isArray(movimento?.evidenze) ? movimento.evidenze : []), ...nuove];
-  if (movimento?.conto === 'CASSA') {
-    if (body.attestazioneManuale || hasRealEvidence(evidenze)) {
-      return {
-        ok: true,
-        evidenza: body.attestazioneManuale
-          ? { tipo: 'ATTESTAZIONE_CASSA', riferimento: cleanText(body.riferimento, { required: true, max: 500, label: 'Riferimento attestazione' }), reale: true }
-          : evidenze.find((item) => item.reale)
-      };
-    }
-    return { ok: false, motivo: 'Serve una attestazione manuale esplicita per la Cassa' };
+  if (movimento?.conto === 'CASSA' && body.attestazioneManuale) {
+    nuove.push({
+      tipo: 'ATTESTAZIONE_CASSA',
+      riferimento: cleanText(body.riferimento, { required: true, max: 500, label: 'Riferimento attestazione' }),
+      reale: true
+    });
   }
+  const evidenze = [...(Array.isArray(movimento?.evidenze) ? movimento.evidenze : []), ...nuove];
+  const evidenza = findAllowedEvidence(movimento?.conto, evidenze);
+  if (evidenza) return { ok: true, evidenza };
 
-  const evidenza = evidenze.find((item) => item.reale && item.riferimento && REAL_EVIDENCE_TYPES.has(item.tipo));
-  return evidenza
-    ? { ok: true, evidenza }
-    : { ok: false, motivo: 'Serve una evidenza finanziaria reale con riferimento verificabile' };
+  return movimento?.conto === 'CASSA'
+    ? { ok: false, motivo: 'Serve una attestazione manuale esplicita e riferita per la Cassa' }
+    : { ok: false, motivo: 'Serve una evidenza finanziaria reale compatibile con il conto e con riferimento verificabile' };
 }
 
 export function relationKey(aTipo, aId, bTipo, bId, relazione) {
