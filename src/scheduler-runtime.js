@@ -16,10 +16,7 @@ function schedulerEnabled(env = process.env) {
 }
 
 function googleAuthConfigured(env = process.env) {
-  return Boolean(
-    env.GOOGLE_DRIVE_ACCESS_TOKEN ||
-    (env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET && env.GOOGLE_OAUTH_REFRESH_TOKEN)
-  );
+  return Boolean(env.GOOGLE_DRIVE_ACCESS_TOKEN || (env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET && env.GOOGLE_OAUTH_REFRESH_TOKEN));
 }
 
 function pecConfigured(env = process.env) {
@@ -28,10 +25,7 @@ function pecConfigured(env = process.env) {
 
 async function startRuntime(env = process.env) {
   if (!schedulerEnabled(env)) return;
-  if (!env.MONGODB_URI) {
-    console.warn('[scheduler] disabilitato: MONGODB_URI assente');
-    return;
-  }
+  if (!env.MONGODB_URI) { console.warn('[scheduler] disabilitato: MONGODB_URI assente'); return; }
 
   runtimeClient = new MongoClient(env.MONGODB_URI, { maxPoolSize: 10, minPoolSize: 0 });
   await runtimeClient.connect();
@@ -43,15 +37,17 @@ async function startRuntime(env = process.env) {
 
   if (env.DRIVE_FISCALE_ROOT_FOLDER_ID && googleAuthConfigured(env)) {
     const getAccessToken = createGoogleAccessTokenProvider(env);
-    const driveClient = createGoogleDriveClient({ getAccessToken });
+    const driveClient = createGoogleDriveClient({
+      getAccessToken,
+      timeoutMs: Number(env.GOOGLE_HTTP_TIMEOUT_MS || 30_000),
+      maxRetries: Number(env.GOOGLE_HTTP_MAX_RETRIES || 3)
+    });
     handlers.DRIVE_FISCALE_SCAN = createDriveFiscalHandler({
       driveClient,
       rootFolder: env.DRIVE_FISCALE_ROOT_FOLDER_ID,
       maxFileBytes: Number(env.DRIVE_MAX_FILE_BYTES || 25 * 1024 * 1024)
     });
-  } else {
-    console.warn('[scheduler] Drive fiscale non attivato: configurazione incompleta');
-  }
+  } else console.warn('[scheduler] Drive fiscale non attivato: configurazione incompleta');
 
   if (pecConfigured(env)) {
     handlers.EMAIL_PEC_SCAN = createEmailPecHandler({
@@ -65,12 +61,13 @@ async function startRuntime(env = process.env) {
         maxMessages: Number(env.PEC_IMAP_MAX_MESSAGES || 200),
         overlapUids: Number(env.PEC_IMAP_OVERLAP_UIDS || 50),
         maxMessageBytes: Number(env.PEC_IMAP_MAX_MESSAGE_BYTES || 50 * 1024 * 1024),
+        maxAttachmentBytes: Number(env.PEC_IMAP_MAX_ATTACHMENT_BYTES || 25 * 1024 * 1024),
+        socketTimeout: Number(env.PEC_IMAP_SOCKET_TIMEOUT_MS || 120_000),
+        greetingTimeout: Number(env.PEC_IMAP_GREETING_TIMEOUT_MS || 30_000),
         channel: 'pec'
       }
     });
-  } else {
-    console.warn('[scheduler] PEC/email non attivata: configurazione IMAP incompleta');
-  }
+  } else console.warn('[scheduler] PEC/email non attivata: configurazione IMAP incompleta');
 
   scheduler = createScheduler({
     db,
