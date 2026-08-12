@@ -42,6 +42,9 @@ ID, SHA-256, percorsi e collegamenti F24/dichiarazioni, ma non salva in MongoDB 
 originali. Il link a un documento viene risolto seguendo ogni cartella genitore con corrispondenza
 esatta; nomi simili non vengono accettati.
 
+L'accesso può usare OAuth (`GOOGLE_OAUTH_*`) oppure un'identità tecnica in `GOOGLE_DRIVE_SA_JSON`;
+in entrambi i casi il gestionale richiede soltanto l'autorizzazione Drive in lettura.
+
 Modello F24, quietanza e movimento bancario restano evidenze distinte: la presenza nell'indice non
 dimostra da sola il pagamento.
 
