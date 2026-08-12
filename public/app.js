@@ -46,10 +46,12 @@ async function loadDashboard() {
       return `<article class="card"><small>${conto.replaceAll('_', ' ')}</small><strong>${euro.format(info.saldo)}</strong>${info.daRiallineare ? '<span class="mini-warning">Riporto da riallineare</span>' : ''}</article>`;
     }).join('');
     $('#todo').innerHTML = [
-      [data.daVerificare, 'movimenti da verificare'],
-      [data.documentiDaVerificare, 'documenti da verificare'],
+      [data.daVerificare || 0, 'movimenti da verificare'],
+      [data.documentiDaVerificare || 0, 'documenti da verificare'],
       [data.f24DaRiscontrare || 0, 'F24 da riscontrare'],
-      [data.codiciTributoDaVerificare || 0, 'codici/causali da classificare']
+      [data.codiciTributoDaVerificare || 0, 'codici/causali da classificare'],
+      [data.riscossioneDaVerificare || 0, 'atti riscossione da verificare'],
+      [data.riscossioneSenzaSnapshot || 0, 'atti senza snapshot aggiornato']
     ].map(([value, label]) => `<div><strong>${value}</strong><span>${label}</span></div>`).join('');
   } catch (error) {
     $('#dashboardCards').innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
@@ -112,6 +114,25 @@ async function loadTributi() {
   }
 }
 
+async function loadRiscossione() {
+  try {
+    const rows = await api('/api/riscossione/atti');
+    if (!rows.length) {
+      $('#riscossioneRows').innerHTML = '<tr><td colspan="7" class="muted">Nessun atto registrato.</td></tr>';
+      return;
+    }
+    $('#riscossioneRows').innerHTML = rows.map((row) => {
+      const snapshot = row.ultimoSnapshot || null;
+      const residuo = snapshot?.importoResiduo;
+      const numero = row.numeroAtto || 'senza numero';
+      const date = [row.dataAtto ? `Atto ${fmtDate(row.dataAtto)}` : null, row.dataNotifica ? `Notifica ${fmtDate(row.dataNotifica)}` : null, row.scadenza ? `Scade ${fmtDate(row.scadenza)}` : null].filter(Boolean).join('<br>');
+      return `<tr><td><strong>${escapeHtml(numero)}</strong><small>${escapeHtml(String(row.tipo || '').replaceAll('_', ' '))}</small></td><td>${date || '—'}</td><td>${escapeHtml((row.entiCreditori || []).join(', ') || '—')}</td><td>${badge(row.stato)}</td><td class="num">${row.importoOriginario == null ? '—' : euro.format(row.importoOriginario)}</td><td class="num balance">${residuo == null ? '—' : euro.format(residuo)}</td><td>${snapshot ? `${fmtDate(snapshot.acquisitoIl)}<small>${escapeHtml(snapshot.statoAder || '')}</small>` : '<span class="mini-warning">Manca snapshot</span>'}</td></tr>`;
+    }).join('');
+  } catch (error) {
+    $('#riscossioneRows').innerHTML = `<tr><td colspan="7" class="error">${escapeHtml(error.message)}</td></tr>`;
+  }
+}
+
 async function submitTributo(event) {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
@@ -124,6 +145,25 @@ async function submitTributo(event) {
     await Promise.all([loadTributi(), loadF24(), loadDashboard()]);
   } catch (error) {
     $('#tributoResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`;
+  }
+}
+
+async function submitRiscossione(event) {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const body = Object.fromEntries(form.entries());
+  for (const key of ['dataAtto', 'dataNotifica', 'scadenza', 'importoOriginario', 'enteCreditore', 'numeroAtto', 'fonteRiferimento']) {
+    if (body[key] === '') delete body[key];
+  }
+  if (body.importoOriginario !== undefined) body.importoOriginario = Number(body.importoOriginario);
+  $('#riscossioneResult').textContent = '';
+  try {
+    const saved = await api('/api/riscossione/atti', { method: 'POST', body: JSON.stringify(body) });
+    $('#riscossioneResult').innerHTML = `<strong>${escapeHtml(saved.numeroAtto || saved.tipo)}</strong><span>atto registrato; situazione ADER ancora separata</span>`;
+    event.currentTarget.reset();
+    await Promise.all([loadRiscossione(), loadDashboard()]);
+  } catch (error) {
+    $('#riscossioneResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`;
   }
 }
 
@@ -173,7 +213,7 @@ function setView(name) {
   $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`));
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
   if (name === 'prima-nota') loadLedger();
-  if (name === 'amministrazione') Promise.all([loadF24(), loadTributi()]);
+  if (name === 'amministrazione') Promise.all([loadF24(), loadTributi(), loadRiscossione()]);
 }
 
 function bindEvents() {
@@ -187,6 +227,7 @@ function bindEvents() {
   $('#movementForm').addEventListener('submit', submitMovement);
   $('#receiptsForm').addEventListener('submit', submitReceipts);
   $('#tributoForm').addEventListener('submit', submitTributo);
+  $('#riscossioneForm').addEventListener('submit', submitRiscossione);
 }
 
 async function boot() {
