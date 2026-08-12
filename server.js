@@ -9,11 +9,12 @@ import { registerCorrispettiviRoutes } from './src/corrispettivi-router.js';
 import { registerF24Routes } from './src/f24-router.js';
 import { registerRiscossioneRoutes } from './src/riscossione-router.js';
 import { registerDriveIndexRoutes } from './src/drive-index-router.js';
+import { registerDriveDataRoutes } from './src/drive-data-router.js';
 import { registerReconciliationRoutes } from './src/reconciliation-router.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const version = '0.7.0';
+const version = '0.8.0';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.disable('x-powered-by');
@@ -54,10 +55,15 @@ registerCoreRoutes(app, { getDb: () => db });
 registerCorrispettiviRoutes(app, { getDb: () => db, getClient: () => client });
 registerF24Routes(app, { getDb: () => db, getClient: () => client });
 registerRiscossioneRoutes(app, { getDb: () => db, getClient: () => client });
-registerDriveIndexRoutes(app);
+const driveIndexRegistration = registerDriveIndexRoutes(app);
+const driveDataRegistration = registerDriveDataRoutes(app, {
+  getDb: () => db,
+  getIndex: (options) => driveIndexRegistration.getService().load(options)
+});
 registerReconciliationRoutes(app, { getDb: () => db });
 
 const server = app.listen(port, () => console.log(`Impresa Semplice v${version} in ascolto sulla porta ${port}`));
+driveDataRegistration.start();
 
 async function shutdown(signal) {
   console.info(`[server] chiusura ${signal}`);

@@ -252,12 +252,18 @@ async function openDriveDocument(id) {
 
 async function loadDriveIndex(force = false) {
   $('#driveIndexMessage').textContent = 'Lettura indice in corso…';
-  const overview = await api(`/api/drive-index/overview${force ? '?refresh=true' : ''}`);
-  const counts = overview.counts;
+  const [overview, imported] = await Promise.all([
+    api(`/api/drive-index/overview${force ? '?refresh=true' : ''}`),
+    api('/api/drive-data/summary').catch(() => null)
+  ]);
+  const counts = overview.counts; const dbCounts = imported?.counts || {};
   $('#driveIndexCards').innerHTML = [
-    [counts.documents, 'documenti su Drive'], [counts.f24Rows, 'righe F24'], [counts.declarations, 'dichiarazioni'], [counts.duplicates, 'duplicati scartati']
+    [dbCounts.driveFiles ?? counts.documents, 'file Drive catalogati'], [dbCounts.documents ?? 0, 'documenti nel gestionale'], [dbCounts.f24Rows ?? counts.f24Rows, 'righe F24'], [dbCounts.f24 ?? 0, 'modelli F24'], [dbCounts.quietanze ?? 0, 'quietanze F24'], [dbCounts.declarations ?? counts.declarations, 'dichiarazioni'], [dbCounts.invoices ?? 0, 'fatture XML'], [dbCounts.corrispettivi ?? 0, 'corrispettivi RT']
   ].map(([value, label]) => `<article class="card"><small>${label}</small><strong>${value}</strong></article>`).join('');
-  $('#driveIndexMessage').textContent = `Indice letto ${fmtDate(overview.loadedAt)} · originali nel database: no`;
+  const lastRun = imported?.lastRun;
+  $('#driveImportStatus').textContent = lastRun?.stato === 'IN_CORSO' ? 'Importazione in corso…' : lastRun?.stato ? `${lastRun.stato.replaceAll('_', ' ')} · ${fmtDate(lastRun.completatoIl || lastRun.iniziatoIl)}` : 'In attesa del primo import';
+  $('#driveDataRows').innerHTML = imported?.byDomain?.length ? imported.byDomain.map((row) => `<tr><td>${escapeHtml(row._id || '(radice)')}</td><td class="num"><strong>${row.count}</strong></td></tr>`).join('') : '<tr><td colspan="2" class="muted">La sincronizzazione del catalogo è in corso.</td></tr>';
+  $('#driveIndexMessage').textContent = `Indice letto ${fmtDate(overview.loadedAt)} · originali conservati esclusivamente su Drive`;
   const declarations = await api('/api/drive-index/declarations');
   $('#driveDeclarationRows').innerHTML = declarations.map((row) => `<tr><td>${escapeHtml(row.year)}</td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.protocol || '—')}</td><td><button type="button" class="drive-open" data-document-id="${escapeHtml(row.documentId)}">Apri su Drive</button><small>${escapeHtml(row.archivePath)}</small></td></tr>`).join('');
   await loadDriveDocuments();
@@ -269,9 +275,14 @@ async function loadDriveDocuments() {
   const year = $('#driveDocumentYear').value;
   if (query) params.set('q', query);
   if (year) params.set('year', year);
-  const data = await api(`/api/drive-index/documents?${params}`);
+  const full = await api(`/api/drive-data/files?${params}`).catch(() => null);
+  const data = full?.rows?.length || full?.total ? full : await api(`/api/drive-index/documents?${params}`);
   $('#driveIndexMessage').textContent = `${data.total} documenti trovati · visualizzati ${data.rows.length}`;
-  $('#driveDocumentRows').innerHTML = data.rows.length ? data.rows.map((row) => `<tr><td><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.category || row.extension)}</small></td><td>${escapeHtml(row.domain)}</td><td>${escapeHtml(row.year || '—')}</td><td>${badge(row.status)}</td><td><button type="button" class="drive-open" data-document-id="${escapeHtml(row.id)}">Apri su Drive</button><small>${escapeHtml(row.path)}</small></td></tr>`).join('') : '<tr><td colspan="5" class="muted">Nessun documento trovato.</td></tr>';
+  $('#driveDocumentRows').innerHTML = data.rows.length ? data.rows.map((row) => {
+    const fullRow = Boolean(row.driveFileId); const name = row.nome || row.name; const path = row.percorso || row.path; const domain = row.topFolder || row.domain; const type = row.tipoProposto || row.category || row.extension; const yearValue = row.anno || row.year || '—';
+    const button = fullRow ? `<button type="button" class="drive-open-url" data-url="${escapeHtml(row.webViewLink || '')}">Apri su Drive</button>` : `<button type="button" class="drive-open" data-document-id="${escapeHtml(row.id)}">Apri su Drive</button>`;
+    return `<tr><td><strong>${escapeHtml(name)}</strong><small>${escapeHtml(type)}</small></td><td>${escapeHtml(domain)}</td><td>${escapeHtml(yearValue)}</td><td>${badge(fullRow ? 'INDICIZZATO' : row.status)}</td><td>${button}<small>${escapeHtml(path)}</small></td></tr>`;
+  }).join('') : '<tr><td colspan="5" class="muted">Nessun documento trovato.</td></tr>';
 }
 
 async function submitLogin(event) {
@@ -336,6 +347,7 @@ function bindEvents() {
   $('#searchDriveDocuments').addEventListener('click', () => loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
   $('#driveDocumentQuery').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
   document.addEventListener('click', (event) => { const button = event.target.closest('.drive-open'); if (button) openDriveDocument(button.dataset.documentId).catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
+  document.addEventListener('click', (event) => { const button = event.target.closest('.drive-open-url'); if (button?.dataset.url) window.open(button.dataset.url, '_blank', 'noopener,noreferrer'); });
   $('#newMovement').addEventListener('click', () => $('#movementDialog').showModal()); $('#closeDialog').addEventListener('click', () => $('#movementDialog').close());
   $('#movementForm').addEventListener('submit', submitMovement); $('#receiptsForm').addEventListener('submit', submitReceipts); $('#tributoForm').addEventListener('submit', submitTributo); $('#riscossioneForm').addEventListener('submit', submitRiscossione);
   $('#loginForm').addEventListener('submit', submitLogin); $('#mfaForm').addEventListener('submit', submitMfa); $('#cancelMfa').addEventListener('click', hideMfa); $('#logoutButton').addEventListener('click', logout);

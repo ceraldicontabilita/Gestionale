@@ -44,6 +44,11 @@
     <section id="view-documenti" class="view">
       <section class="cards" id="driveIndexCards"></section>
       <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">DATI IMPORTATI</p><h3>Copertura del Gestionale</h3></div><span id="driveImportStatus" class="status">Sincronizzazione automatica</span></div>
+        <p class="muted">Nel database entrano metadati e dati strutturati. PDF, ZIP e altri originali restano su Google Drive.</p>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Cartella di dominio</th><th class="num">File indicizzati</th></tr></thead><tbody id="driveDataRows"></tbody></table></div>
+      </section>
+      <section class="panel">
         <div class="panel-head"><div><p class="eyebrow">ARCHIVIO GOOGLE DRIVE</p><h3>Indice documentale verificato</h3></div><button id="refreshDriveIndex" type="button">Rileggi indice</button></div>
         <p class="muted">Il gestionale legge l'indice Excel. Gli originali restano su Drive e non vengono caricati in MongoDB.</p>
         <div class="filters"><input id="driveDocumentQuery" type="search" placeholder="Cerca nome, categoria o percorso"><select id="driveDocumentYear" aria-label="Anno"><option value="">Tutti gli anni</option></select><button id="searchDriveDocuments" type="button" class="primary">Cerca</button></div>

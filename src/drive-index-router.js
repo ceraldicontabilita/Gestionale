@@ -71,4 +71,6 @@ export function registerDriveIndexRoutes(app, { env = process.env, service = nul
       res.json(index.declarations.map((row) => ({ year: text(row.Anno, 4), type: text(row.Tipo), protocol: text(row.Protocollo) || null, archivePath: text(row['Percorso archivio'], 500), documentId: row.__documentId })));
     } catch (error) { res.status(503).json({ error: error.message }); }
   });
+
+  return { getService };
 }

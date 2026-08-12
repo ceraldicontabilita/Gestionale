@@ -48,6 +48,14 @@ in entrambi i casi il gestionale richiede soltanto l'autorizzazione Drive in let
 Modello F24, quietanza e movimento bancario restano evidenze distinte: la presenza nell'indice non
 dimostra da sola il pagamento.
 
+### Sincronizzazione completa 0.8
+
+La versione 0.8 salva in MongoDB il catalogo e i dati strutturati verificabili, mentre PDF, ZIP e
+altri originali restano su Drive. All'avvio la sincronizzazione idempotente cataloga l'intera radice e
+importa documenti dell'indice, righe tributo, modelli F24, quietanze, dichiarazioni, fatture XML e
+corrispettivi RT. Le sole cartelle producono una classificazione proposta, non un pagamento o una
+registrazione contabile. Lo stato dell'ultimo import e disponibile in `/api/drive-data/status`.
+
 ## Pagine operative
 
 - **Riconciliazione** mostra soltanto movimenti finanziari non già utilizzati e richiede una scelta

@@ -235,6 +235,7 @@ function sensitiveOperation(req) {
     || req.query?.forza === 'true'
     || (req.method === 'PUT' && /^\/api\/riporti\//.test(path))
     || (req.method === 'POST' && path === '/api/tributi')
+    || (req.method === 'POST' && path === '/api/drive-data/import')
     || /\/riconcilia$/.test(path)
     || /\/collega-movimento$/.test(path)
     || /\/snapshot$/.test(path)
