@@ -14,15 +14,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: package.json
+
       - name: Installa dipendenze
         run: npm install --no-audit --no-fund
+
       - name: Controlla sintassi
         run: npm run check
-      - name: Esegui test
+
+      - name: Avvia MongoDB replica set per i test reali
+        run: |
+          docker run -d --name impresa-mongo -p 27017:27017 mongo:7.0 --replSet rs0 --bind_ip_all
+          for i in $(seq 1 60); do
+            if docker exec impresa-mongo mongosh --quiet --eval "db.adminCommand({ ping: 1 }).ok" | grep -q 1; then break; fi
+            sleep 1
+          done
+          docker exec impresa-mongo mongosh --quiet --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'127.0.0.1:27017'}]})"
+          for i in $(seq 1 60); do
+            if docker exec impresa-mongo mongosh --quiet --eval "db.hello().isWritablePrimary" | grep -q true; then break; fi
+            sleep 1
+          done
+          docker exec impresa-mongo mongosh --quiet --eval "if (!db.hello().isWritablePrimary) { quit(2) }"
+
+      - name: Esegui test unitari e integrazione MongoDB
+        env:
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
         run: npm test
