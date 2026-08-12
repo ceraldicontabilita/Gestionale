@@ -15,6 +15,7 @@ import {
   relationKey
 } from './src/domain.js';
 import { registerF24Routes } from './src/f24-router.js';
+import { registerRiscossioneRoutes } from './src/riscossione-router.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -115,12 +116,13 @@ async function upsertProjectedMovement(filter, movement) {
 }
 
 registerF24Routes(app, () => db);
+registerRiscossioneRoutes(app, () => db);
 
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     nome: 'Impresa Semplice',
-    versione: '0.3.0',
+    versione: '0.4.0',
     database: db ? 'connected' : 'not-configured'
   });
 });
@@ -487,7 +489,18 @@ app.get('/api/dashboard', async (req, res) => {
     const documentiDaVerificare = await db.collection('documenti').countDocuments({ stato: 'DA_VERIFICARE' });
     const f24DaRiscontrare = await db.collection('f24_operazioni').countDocuments({ stato: { $in: ['IN_ATTESA_RISCONTRO', 'DA_VERIFICARE'] } });
     const codiciTributoDaVerificare = await db.collection('f24_righe').countDocuments({ 'classificazione.stato': 'DA_VERIFICARE' });
-    res.json({ anno, saldi, daVerificare, documentiDaVerificare, f24DaRiscontrare, codiciTributoDaVerificare });
+    const riscossioneDaVerificare = await db.collection('atti_riscossione').countDocuments({ stato: 'DA_VERIFICARE' });
+    const riscossioneSenzaSnapshot = await db.collection('atti_riscossione').countDocuments({ $or: [{ ultimoSnapshot: { $exists: false } }, { ultimoSnapshot: null }] });
+    res.json({
+      anno,
+      saldi,
+      daVerificare,
+      documentiDaVerificare,
+      f24DaRiscontrare,
+      codiciTributoDaVerificare,
+      riscossioneDaVerificare,
+      riscossioneSenzaSnapshot
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
