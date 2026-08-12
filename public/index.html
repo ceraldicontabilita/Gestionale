@@ -7,19 +7,75 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <header><div><small>AMMINISTRAZIONE</small><h1>Impresa Semplice</h1></div><span id="dbStatus">Connessione…</span></header>
+  <header class="topbar">
+    <div><small>AMMINISTRAZIONE</small><h1>Impresa Semplice</h1></div>
+    <span id="dbStatus" class="status">Connessione…</span>
+  </header>
+
+  <nav class="nav" aria-label="Sezioni principali">
+    <button class="nav-item active" data-view="home">Home</button>
+    <button class="nav-item" data-view="prima-nota">Prima Nota</button>
+    <button class="nav-item" data-view="documenti">Documenti</button>
+    <button class="nav-item" data-view="riconciliazione">Riconciliazione</button>
+    <button class="nav-item" data-view="amministrazione">Amministrazione</button>
+    <button class="nav-item" data-view="controllo">Controllo</button>
+  </nav>
+
   <main>
-    <section class="hero">
-      <div><p class="eyebrow">QUADRO OPERATIVO</p><h2>I numeri importanti.<br>Il resto, quando serve.</h2><p>Prima Nota unica con fonti distinte e riconciliazioni verificabili.</p></div>
-      <button id="newMovement">+ Nuovo movimento</button>
+    <section id="view-home" class="view active">
+      <div class="hero">
+        <div><p class="eyebrow">QUADRO OPERATIVO</p><h2>I numeri importanti.<br>Con la fonte sempre visibile.</h2><p>Documenti, movimenti e riconciliazioni restano distinti ma collegati.</p></div>
+        <select id="homeYear" aria-label="Anno"></select>
+      </div>
+      <section class="cards" id="dashboardCards"></section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">DA FARE</p><h3>Controlli aperti</h3></div></div>
+        <div id="todo" class="todo"></div>
+      </section>
     </section>
-    <section class="cards" id="cards"></section>
-    <section class="panel">
-      <div class="panel-head"><div><p class="eyebrow">PRIMA NOTA</p><h3>Movimenti recenti</h3></div><select id="filter"><option value="">Tutti i conti</option><option>CASSA</option><option>BANCA</option><option>MASTERCARD</option><option>SALARI</option><option>FINANZIAMENTI_SOCI</option><option>PROVVISORIA</option></select></div>
-      <div class="table-wrap"><table><thead><tr><th>Data</th><th>Conto</th><th>Descrizione</th><th>Stato</th><th>Importo</th></tr></thead><tbody id="rows"></tbody></table></div>
+
+    <section id="view-prima-nota" class="view">
+      <section class="panel">
+        <div class="panel-head">
+          <div><p class="eyebrow">PRIMA NOTA</p><h3>Registro e saldo progressivo</h3></div>
+          <div class="filters"><select id="ledgerAccount"></select><select id="ledgerYear"></select><button id="newMovement">+ Movimento</button></div>
+        </div>
+        <div id="openingWarning" class="warning hidden"></div>
+        <div class="table-wrap"><table><thead><tr><th>Data</th><th>Descrizione</th><th>Fonte</th><th>Stato</th><th class="num">Entrata</th><th class="num">Uscita</th><th class="num">Saldo</th></tr></thead><tbody id="ledgerRows"></tbody></table></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">CORRISPETTIVI</p><h3>Chiusura giornaliera e POS reali</h3></div></div>
+        <form id="receiptsForm" class="grid-form">
+          <label>Data<input type="date" name="data" required></label>
+          <label>Totale XML RT<input type="number" step="0.01" min="0" name="totaleXml" required></label>
+          <label>Chiusura operativa<input type="number" step="0.01" min="0" name="chiusuraOperativa"></label>
+          <label>POS Numia<input type="number" step="0.01" min="0" name="numia"></label>
+          <label>POS SumUp<input type="number" step="0.01" min="0" name="sumup"></label>
+          <button class="primary" type="submit">Registra giornata</button>
+        </form>
+        <div id="receiptsResult" class="result"></div>
+      </section>
     </section>
+
+    <section id="view-documenti" class="view"><section class="panel placeholder"><p class="eyebrow">DOCUMENTI</p><h3>Un solo ingresso documentale</h3><p>Acquisizione, SHA-256, deduplica, riconoscimento, estrazione, verifica e collegamenti. Il backend è già predisposto per registrare metadati e più fonti sullo stesso documento.</p></section></section>
+    <section id="view-riconciliazione" class="view"><section class="panel placeholder"><p class="eyebrow">RICONCILIAZIONE</p><h3>Prova finanziaria ↔ causa amministrativa</h3><p>La relazione è bidirezionale, ma il movimento finanziario resta la fonte autorevole del pagamento.</p></section></section>
+    <section id="view-amministrazione" class="view"><section class="panel placeholder"><p class="eyebrow">AMMINISTRAZIONE</p><h3>Fatture · F24 · Cedolini · Riscossione · Scadenze</h3><p>Queste funzioni verranno costruite come schede dello stesso dominio, non come programmi separati.</p></section></section>
+    <section id="view-controllo" class="view"><section class="panel placeholder"><p class="eyebrow">CONTROLLO</p><h3>Anomalie leggibili</h3><p>Movimenti senza causa, documenti senza prova, saldi da riallineare e differenze POS saranno raccolti qui.</p></section></section>
   </main>
-  <dialog id="movementDialog"><form id="movementForm"><div class="dialog-head"><h3>Nuovo movimento</h3><button type="button" id="closeDialog">×</button></div><label>Conto<select name="conto" required><option>CASSA</option><option>BANCA</option><option>MASTERCARD</option><option>SALARI</option><option>FINANZIAMENTI_SOCI</option><option>PROVVISORIA</option></select></label><label>Data<input name="data" type="date" required></label><label>Descrizione<input name="descrizione" required></label><label>Importo<input name="importo" type="number" step="0.01" required></label><label>Stato<select name="stato"><option>DA_VERIFICARE</option><option>DOCUMENTATO</option><option>PARZIALE</option><option>RICONCILIATO</option></select></label><label class="check"><input name="provaReale" type="checkbox"> Prova reale disponibile</label><button class="primary" type="submit">Registra movimento</button><p id="formError"></p></form></dialog>
+
+  <dialog id="movementDialog">
+    <form id="movementForm">
+      <div class="dialog-head"><h3>Nuovo movimento</h3><button type="button" id="closeDialog" class="icon-button">×</button></div>
+      <label>Conto<select name="conto" required></select></label>
+      <label>Data<input name="data" type="date" required></label>
+      <label>Descrizione<input name="descrizione" required></label>
+      <div class="two-cols"><label>Direzione<select name="direzione"><option>ENTRATA</option><option>USCITA</option></select></label><label>Importo<input name="importo" type="number" min="0.01" step="0.01" required></label></div>
+      <label>Stato<select name="stato"><option>DA_VERIFICARE</option><option>DOCUMENTATO</option><option>PARZIALE</option><option>RICONCILIATO</option></select></label>
+      <label class="check"><input name="provaReale" type="checkbox"> Evidenza finanziaria reale disponibile</label>
+      <button class="primary" type="submit">Registra</button><p id="formError" class="error"></p>
+    </form>
+  </dialog>
   <script src="/app.js"></script>
 </body>
 </html>
