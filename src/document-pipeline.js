@@ -29,6 +29,7 @@ export function createDocumentReprocessHandler({ limit = 250, logger = console }
   return async function documentiRiprocessa({ db, now }) {
     await Promise.all([
       db.collection('documenti').createIndex({ sha256: 1 }, { unique: true, sparse: true }),
+      db.collection('documenti').createIndex({ primarySourceKey: 1 }, { unique: true, sparse: true }),
       db.collection('documenti').createIndex({ 'fonti.sourceKey': 1 }, { sparse: true }),
       db.collection('collegamenti').createIndex({ relationKey: 1 }, { unique: true })
     ]);
@@ -48,9 +49,9 @@ export function createDocumentReprocessHandler({ limit = 250, logger = console }
         const source = stableSource(inbox);
         const filter = inbox.sha256
           ? { sha256: inbox.sha256 }
-          : { 'fonti.sourceKey': inbox.sourceKey };
+          : { primarySourceKey: inbox.sourceKey };
         const tipo = inbox.tecnicoPec ? 'TECNICO_PEC' : (inbox.propostaTipo || inbox.tipoRiconosciuto || 'DA_CLASSIFICARE');
-        const stato = inbox.tecnicoPec ? 'DOCUMENTATO' : (tipo === 'DA_CLASSIFICARE' ? 'DA_VERIFICARE' : 'DA_VERIFICARE');
+        const stato = inbox.tecnicoPec ? 'DOCUMENTATO' : 'DA_VERIFICARE';
 
         await db.collection('documenti').updateOne(
           filter,
@@ -60,6 +61,7 @@ export function createDocumentReprocessHandler({ limit = 250, logger = console }
               tipo,
               stato,
               sha256: inbox.sha256 || null,
+              primarySourceKey: inbox.sha256 ? undefined : inbox.sourceKey,
               gridFsId: inbox.gridFsId || null,
               datiEstratti: {
                 ...(inbox.datiEstratti || {}),
