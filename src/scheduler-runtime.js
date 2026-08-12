@@ -3,6 +3,8 @@ import { createGoogleAccessTokenProvider } from './google-auth.js';
 import { createGoogleDriveClient } from './google-drive-client.js';
 import { createDriveFiscalHandler } from './drive-fiscale.js';
 import { createEmailPecHandler } from './email-pec.js';
+import { createDocumentReprocessHandler } from './document-pipeline.js';
+import { createFiscalControlsHandler } from './fiscal-controls.js';
 import { createScheduler } from './scheduler.js';
 
 let runtimeClient = null;
@@ -33,7 +35,10 @@ async function startRuntime(env = process.env) {
   runtimeClient = new MongoClient(env.MONGODB_URI);
   await runtimeClient.connect();
   const db = runtimeClient.db(env.MONGODB_DB || 'impresa_semplice');
-  const handlers = {};
+  const handlers = {
+    DOCUMENTI_RIPROCESSA: createDocumentReprocessHandler(),
+    SCADENZE_FISCALI: createFiscalControlsHandler()
+  };
 
   if (env.DRIVE_FISCALE_ROOT_FOLDER_ID && googleAuthConfigured(env)) {
     const getAccessToken = createGoogleAccessTokenProvider(env);
