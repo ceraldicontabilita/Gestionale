@@ -54,9 +54,11 @@ export function registerRiscossioneRoutes(app, { getDb, getClient }) {
   async function ready(db) {
     if (readyDatabases.has(db)) return;
     const acts = db.collection('atti_riscossione');
+    // createIndex inizializza anche una raccolta ancora vuota. In questo modo
+    // la successiva migrazione può leggere gli indici senza NamespaceNotFound.
+    await acts.createIndex({ tipo: 1, stato: 1, dataAtto: -1 });
     await migrateNumberIndex(acts);
     await Promise.all([
-      acts.createIndex({ tipo: 1, stato: 1, dataAtto: -1 }),
       acts.createIndex(
         { fonte: 1, fonteRiferimento: 1 },
         { unique: true, partialFilterExpression: { fonteRiferimento: { $type: 'string' } }, name: 'riscossione_source_unique' }
