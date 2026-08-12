@@ -58,10 +58,43 @@
       </section>
     </section>
 
-    <section id="view-documenti" class="view"><section class="panel placeholder"><p class="eyebrow">DOCUMENTI</p><h3>Un solo ingresso documentale</h3><p>Acquisizione, SHA-256, deduplica, riconoscimento, estrazione, verifica e collegamenti. Il backend è già predisposto per registrare metadati e più fonti sullo stesso documento.</p></section></section>
-    <section id="view-riconciliazione" class="view"><section class="panel placeholder"><p class="eyebrow">RICONCILIAZIONE</p><h3>Prova finanziaria ↔ causa amministrativa</h3><p>La relazione è bidirezionale, ma il movimento finanziario resta la fonte autorevole del pagamento.</p></section></section>
-    <section id="view-amministrazione" class="view"><section class="panel placeholder"><p class="eyebrow">AMMINISTRAZIONE</p><h3>Fatture · F24 · Cedolini · Riscossione · Scadenze</h3><p>Queste funzioni verranno costruite come schede dello stesso dominio, non come programmi separati.</p></section></section>
-    <section id="view-controllo" class="view"><section class="panel placeholder"><p class="eyebrow">CONTROLLO</p><h3>Anomalie leggibili</h3><p>Movimenti senza causa, documenti senza prova, saldi da riallineare e differenze POS saranno raccolti qui.</p></section></section>
+    <section id="view-documenti" class="view">
+      <section class="panel placeholder"><p class="eyebrow">DOCUMENTI</p><h3>Un solo ingresso documentale</h3><p>Acquisizione, SHA-256, deduplica, riconoscimento, estrazione, verifica e collegamenti. F24 e quietanze importati dall'indice fiscale vengono collegati al documento originale senza trasformarlo in prova di pagamento.</p></section>
+    </section>
+
+    <section id="view-riconciliazione" class="view">
+      <section class="panel placeholder"><p class="eyebrow">RICONCILIAZIONE</p><h3>Prova finanziaria ↔ causa amministrativa</h3><p>Un F24 può diventare riconciliato solo contro un vero addebito Banca/Mastercard già supportato da evidenza finanziaria. La relazione resta navigabile in entrambe le direzioni.</p></section>
+    </section>
+
+    <section id="view-amministrazione" class="view">
+      <section class="panel">
+        <div class="panel-head">
+          <div><p class="eyebrow">FISCO · F24</p><h3>F24, quietanze e riscontro finanziario</h3></div>
+          <select id="f24Year" aria-label="Anno F24"></select>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Data</th><th>Protocollo</th><th>Documento</th><th>Controllo righe</th><th>Stato</th><th class="num">Saldo</th></tr></thead><tbody id="f24Rows"></tbody></table></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">REGISTRO CODICI</p><h3>Codici tributo e causali contributive</h3></div></div>
+        <p class="muted">Il registro è versionato. Una classificazione entra solo con una fonte verificabile; i codici sconosciuti restano da verificare.</p>
+        <form id="tributoForm" class="grid-form registry-form">
+          <label>Tipo<select name="namespace"><option value="CODICE_TRIBUTO_AE">Codice tributo AE</option><option value="CAUSALE_INPS">Causale INPS</option><option value="CAUSALE_INAIL">Causale INAIL</option></select></label>
+          <label>Codice<input name="codice" required maxlength="20"></label>
+          <label class="wide">Descrizione<input name="descrizione" required></label>
+          <label>Natura<input name="natura" placeholder="es. RITENUTA"></label>
+          <label>Conto gestionale<input name="conto" placeholder="es. DEBITI_TRIBUTARI"></label>
+          <label class="wide">Fonte<input name="fonte" required placeholder="Fonte ufficiale / riferimento"></label>
+          <button class="primary" type="submit">Salva versione</button>
+        </form>
+        <div id="tributoResult" class="result"></div>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Tipo</th><th>Codice</th><th>Descrizione</th><th>Natura</th><th>Fonte</th><th>Verificato</th></tr></thead><tbody id="tributiRows"></tbody></table></div>
+      </section>
+
+      <section class="panel placeholder"><p class="eyebrow">RISCOSSIONE</p><h3>Cartelle · rateizzazioni · snapshot ADER</h3><p>Il dominio è previsto ma resta separato dagli F24: atto originale, pagamenti e situazione debitoria aggiornata non verranno sovrascritti l'uno sull'altro.</p></section>
+    </section>
+
+    <section id="view-controllo" class="view"><section class="panel placeholder"><p class="eyebrow">CONTROLLO</p><h3>Anomalie leggibili</h3><p>Movimenti senza causa, documenti senza prova, saldi da riallineare, differenze POS, F24 senza riscontro e codici fiscali non classificati vengono raccolti qui.</p></section></section>
   </main>
 
   <dialog id="movementDialog">
