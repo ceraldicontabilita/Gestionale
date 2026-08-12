@@ -110,6 +110,17 @@ export function registerF24Routes(app, { getDb, getClient }) {
     } catch (error) { res.status(400).json({ error: error.message }); }
   });
 
+  app.get('/api/f24-quietanze', async (req, res) => {
+    try {
+      const db = requireDb(res); if (!db) return;
+      await ready(db);
+      const filter = {};
+      if (req.query.anno) filter.annoElenco = Number(req.query.anno);
+      const rows = await db.collection('quietanze_f24').find(filter).sort({ dataVersamento: -1, protocollo: 1 }).limit(500).toArray();
+      res.json(rows);
+    } catch (error) { res.status(400).json({ error: error.message }); }
+  });
+
   app.get('/api/f24/:id', async (req, res) => {
     try {
       const db = requireDb(res); if (!db) return;

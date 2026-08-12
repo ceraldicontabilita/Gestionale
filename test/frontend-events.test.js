@@ -27,4 +27,6 @@ test('le pagine operative espongono i controlli di riconciliazione e verifica', 
 
   assert.match(source, /\/api\/riconciliazione/);
   assert.match(source, /\/api\/riscossione\/atti/);
+  assert.match(html, /id=["']f24ReceiptRows["']/);
+  assert.match(source, /\/api\/f24-quietanze/);
 });

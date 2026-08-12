@@ -120,13 +120,15 @@ async function loadLedger() {
 }
 
 async function loadF24() {
-  const rows = await api(`/api/f24?anno=${$('#f24Year').value || currentYear()}`);
+  const year = $('#f24Year').value || currentYear();
+  const [rows, receipts] = await Promise.all([api(`/api/f24?anno=${year}`), api(`/api/f24-quietanze?anno=${year}`)]);
   $('#f24Rows').innerHTML = rows.length ? rows.map((row) => {
     const protocollo = row.protocollo || row.protocolloLettoNelPdf || 'senza protocollo';
     const saldo = row.saldoModello ?? row.saldoOperazione ?? 0;
     const check = row.controlloSaldo ? `${row.controlloSaldo.stato}${row.codiciDaVerificare ? ` · ${row.codiciDaVerificare} da verificare` : ''}` : (row.codiciDaVerificare ? `${row.codiciDaVerificare} da verificare` : 'righe non ancora analizzate');
     return `<tr><td>${fmtDate(row.dataVersamento)}</td><td><strong>${escapeHtml(protocollo)}</strong><small>${escapeHtml(row.file || '')}</small></td><td>${escapeHtml(String(row.tipoDocumento || '').replaceAll('_', ' '))}</td><td>${escapeHtml(check)}</td><td>${badge(row.stato)}</td><td class="num balance">${euro.format(saldo)}</td></tr>`;
   }).join('') : '<tr><td colspan="6" class="muted">Nessun F24 importato per questo anno.</td></tr>';
+  $('#f24ReceiptRows').innerHTML = receipts.length ? receipts.map((row) => `<tr><td>${fmtDate(row.dataVersamento)}</td><td><strong>${escapeHtml(row.protocollo || 'senza protocollo')}</strong></td><td><small>${escapeHtml(row.percorsoDrive || '')}</small></td><td>${badge(row.stato)}</td><td class="num balance">${euro.format(row.totaliRighe?.saldo || 0)}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">Nessuna quietanza importata per questo anno.</td></tr>';
 }
 
 async function loadTributi() {
@@ -228,17 +230,17 @@ function issue(level, title, detail) {
 async function loadControls() {
   const year = $('#controlYear').value || currentYear();
   const [dashboard, reconciliation, documents, riscossione, drive] = await Promise.all([
-    api(`/api/dashboard?anno=${year}`), api(`/api/riconciliazione?anno=${year}`), api('/api/documenti?stato=DA_VERIFICARE'), api('/api/riscossione/controlli'), api('/api/drive-index/overview')
+    api(`/api/dashboard?anno=${year}`), api(`/api/riconciliazione?anno=${year}`), api('/api/documenti?stato=DA_VERIFICARE'), api('/api/riscossione/controlli'), api('/api/drive-data/summary')
   ]);
   const summary = reconciliation.riepilogo;
-  $('#controlCards').innerHTML = [[dashboard.daVerificare, 'movimenti da verificare'], [summary.movimentiSenzaProva, 'senza prova finanziaria'], [dashboard.f24DaRiscontrare, 'F24 da riscontrare'], [documents.length, 'documenti interni da verificare'], [riscossione.senzaSnapshot, 'atti senza snapshot'], [drive.counts.documents, 'documenti indicizzati Drive']].map(([value, label]) => `<article class="card"><small>${label}</small><strong>${value}</strong></article>`).join('');
+  $('#controlCards').innerHTML = [[dashboard.daVerificare, 'movimenti da verificare'], [summary.movimentiSenzaProva, 'senza prova finanziaria'], [dashboard.f24DaRiscontrare, 'F24 da riscontrare'], [dashboard.documentiDaVerificare, 'documenti interni da verificare'], [riscossione.senzaSnapshot, 'atti senza snapshot'], [drive.counts.driveFiles, 'file indicizzati Drive']].map(([value, label]) => `<article class="card"><small>${label}</small><strong>${value}</strong></article>`).join('');
   const issues = [];
   for (const [account, value] of Object.entries(dashboard.saldi || {})) if (value.daRiallineare) issues.push(issue('ALTA', `Riporto ${account} da riallineare`, `Saldo salvato ${euro.format(value.riporto)}; nessuna correzione automatica eseguita.`));
   for (const row of reconciliation.movimenti.filter((item) => !item.provaFinanziaria).slice(0, 20)) issues.push(issue('ALTA', `Movimento senza prova: ${row.descrizione}`, `${fmtDate(row.data)} · ${row.conto} · ${euro.format(row.importo)}`));
   if (dashboard.f24DaRiscontrare) issues.push(issue('MEDIA', 'F24 in attesa di riscontro finanziario', `${dashboard.f24DaRiscontrare} operazioni richiedono verifica; modello e quietanza non provano da soli l'addebito.`));
   if (riscossione.scadutiAperti) issues.push(issue('ALTA', 'Atti scaduti ancora aperti', `${riscossione.scadutiAperti} atti richiedono controllo amministrativo.`));
   if (riscossione.senzaSnapshot) issues.push(issue('MEDIA', 'Situazione ADER non aggiornata', `${riscossione.senzaSnapshot} atti non hanno uno snapshot ufficiale.`));
-  if (documents.length) issues.push(issue('MEDIA', 'Documenti interni da verificare', `${documents.length} documenti non possono ancora guidare registrazioni contabili.`));
+  if (dashboard.documentiDaVerificare) issues.push(issue('MEDIA', 'Documenti interni da verificare', `${dashboard.documentiDaVerificare} documenti non possono ancora guidare registrazioni contabili.`));
   if (!issues.length) issues.push(issue('OK', 'Nessuna anomalia aperta per i controlli disponibili', "L'indice Drive resta consultabile; continuare con i controlli periodici."));
   $('#controlIssues').innerHTML = issues.join('');
   $('#controlMovementRows').innerHTML = reconciliation.movimenti.length ? reconciliation.movimenti.slice(0, 100).map((row) => `<tr><td>${fmtDate(row.data)}</td><td>${escapeHtml(row.conto)}</td><td><strong>${escapeHtml(row.descrizione)}</strong><small>${escapeHtml(row.fonte || '')}</small></td><td>${badge(row.stato)}</td><td>${row.provaFinanziaria ? badge('DOCUMENTATO') : '<span class="badge da_verificare">Manca prova</span>'}</td><td class="num balance">${euro.format(row.importo)}</td></tr>`).join('') : '<tr><td colspan="6" class="muted">Nessun movimento aperto.</td></tr>';
