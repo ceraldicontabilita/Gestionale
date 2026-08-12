@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Impresa Semplice</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header><div><small>AMMINISTRAZIONE</small><h1>Impresa Semplice</h1></div><span id="dbStatus">Connessione…</span></header>
+  <main>
+    <section class="hero">
+      <div><p class="eyebrow">QUADRO OPERATIVO</p><h2>I numeri importanti.<br>Il resto, quando serve.</h2><p>Prima Nota unica con fonti distinte e riconciliazioni verificabili.</p></div>
+      <button id="newMovement">+ Nuovo movimento</button>
+    </section>
+    <section class="cards" id="cards"></section>
+    <section class="panel">
+      <div class="panel-head"><div><p class="eyebrow">PRIMA NOTA</p><h3>Movimenti recenti</h3></div><select id="filter"><option value="">Tutti i conti</option><option>CASSA</option><option>BANCA</option><option>MASTERCARD</option><option>SALARI</option><option>FINANZIAMENTI_SOCI</option><option>PROVVISORIA</option></select></div>
+      <div class="table-wrap"><table><thead><tr><th>Data</th><th>Conto</th><th>Descrizione</th><th>Stato</th><th>Importo</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+  </main>
+  <dialog id="movementDialog"><form id="movementForm"><div class="dialog-head"><h3>Nuovo movimento</h3><button type="button" id="closeDialog">×</button></div><label>Conto<select name="conto" required><option>CASSA</option><option>BANCA</option><option>MASTERCARD</option><option>SALARI</option><option>FINANZIAMENTI_SOCI</option><option>PROVVISORIA</option></select></label><label>Data<input name="data" type="date" required></label><label>Descrizione<input name="descrizione" required></label><label>Importo<input name="importo" type="number" step="0.01" required></label><label>Stato<select name="stato"><option>DA_VERIFICARE</option><option>DOCUMENTATO</option><option>PARZIALE</option><option>RICONCILIATO</option></select></label><label class="check"><input name="provaReale" type="checkbox"> Prova reale disponibile</label><button class="primary" type="submit">Registra movimento</button><p id="formError"></p></form></dialog>
+  <script src="/app.js"></script>
+</body>
+</html>
