@@ -2,6 +2,7 @@ import { MongoClient } from 'mongodb';
 import { createGoogleAccessTokenProvider } from './google-auth.js';
 import { createGoogleDriveClient } from './google-drive-client.js';
 import { createDriveFiscalHandler } from './drive-fiscale.js';
+import { createEmailPecHandler } from './email-pec.js';
 import { createScheduler } from './scheduler.js';
 
 let runtimeClient = null;
@@ -16,6 +17,10 @@ function googleAuthConfigured(env = process.env) {
     env.GOOGLE_DRIVE_ACCESS_TOKEN ||
     (env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET && env.GOOGLE_OAUTH_REFRESH_TOKEN)
   );
+}
+
+function pecConfigured(env = process.env) {
+  return Boolean(env.PEC_IMAP_HOST && env.PEC_IMAP_USER && env.PEC_IMAP_PASSWORD);
 }
 
 async function startRuntime(env = process.env) {
@@ -39,6 +44,24 @@ async function startRuntime(env = process.env) {
     });
   } else {
     console.warn('[scheduler] Drive fiscale non attivato: configurazione incompleta');
+  }
+
+  if (pecConfigured(env)) {
+    handlers.EMAIL_PEC_SCAN = createEmailPecHandler({
+      config: {
+        host: env.PEC_IMAP_HOST,
+        port: Number(env.PEC_IMAP_PORT || 993),
+        secure: String(env.PEC_IMAP_SECURE || 'true').toLowerCase() !== 'false',
+        user: env.PEC_IMAP_USER,
+        password: env.PEC_IMAP_PASSWORD,
+        mailbox: env.PEC_IMAP_MAILBOX || 'INBOX',
+        maxMessages: Number(env.PEC_IMAP_MAX_MESSAGES || 200),
+        overlapUids: Number(env.PEC_IMAP_OVERLAP_UIDS || 50),
+        channel: 'pec'
+      }
+    });
+  } else {
+    console.warn('[scheduler] PEC/email non attivata: configurazione IMAP incompleta');
   }
 
   scheduler = createScheduler({
