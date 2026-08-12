@@ -3,7 +3,7 @@ name: Impresa Semplice CI
 on:
   push:
     branches:
-      - feat/bootstrap-impresa-semplice
+      - feat/impresa-semplice-clean
   pull_request:
     branches:
       - main
