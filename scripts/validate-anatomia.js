@@ -11,6 +11,7 @@ export const repositoryRoot = path.resolve(__dirname, '..');
 export const catalogPath = path.join(repositoryRoot, 'docs/anatomia-gestionale/catalogo.json');
 export const inventoriesDirectory = path.join(repositoryRoot, 'docs/anatomia-gestionale/inventari');
 export const topologyPath = path.join(repositoryRoot, 'docs/anatomia-gestionale/topologia-flussi.json');
+export const expectationTreePath = path.join(repositoryRoot, 'docs/anatomia-gestionale/albero-flussi-attese.json');
 
 const TOP_LEVEL_SECTIONS = [
   'home',
@@ -334,6 +335,45 @@ export function loadCatalog(filePath = catalogPath) {
 
 export function loadTopology(filePath = topologyPath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+export function loadExpectationTree(filePath = expectationTreePath) {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+export function validateExpectationTree(tree) {
+  const errors = [];
+  const expectedPrinciple = "Il ramo nasce quando nasce l'obbligo; l'evidenza futura lo soddisfa, non lo crea.";
+  const positive = ['SODDISFATTO', 'NON_APPLICABILE', 'SUPERATO'];
+  const blocking = ['ATTESO', 'IN_ELABORAZIONE', 'DA_VERIFICARE', 'ERRORE'];
+  const statuses = new Set([...positive, ...blocking]);
+  if (!tree || typeof tree !== 'object' || Array.isArray(tree)) return ['Albero attese: documento JSON non strutturato.'];
+  if (tree.principio !== expectedPrinciple) errors.push('Albero attese: principio obbligo-evidenza mancante o alterato.');
+  if (!hasExactValues(tree.chiusura?.terminali_positivi, positive)) errors.push('Albero attese: stati terminali positivi non validi.');
+  if (!hasExactValues(tree.chiusura?.bloccanti, blocking)) errors.push('Albero attese: stati bloccanti non validi.');
+  if (!hasExactValues(Object.keys(tree.pagine || {}), ['Home', 'Prima Nota', 'Documenti', 'Riconciliazione', 'Amministrazione', 'Controllo'])) {
+    errors.push('Albero attese: le sei sezioni canoniche non sono coperte esattamente.');
+  }
+  for (const [flowName, steps] of Object.entries(tree.flussi || {})) {
+    if (!Array.isArray(steps) || steps.length === 0) {
+      errors.push(`Albero attese/${flowName}: flusso vuoto.`);
+      continue;
+    }
+    for (const [index, step] of steps.entries()) {
+      if (!Array.isArray(step) || step.length !== 3 || !isNonEmptyString(step[0]) || !statuses.has(step[1]) || !isNonEmptyString(step[2])) {
+        errors.push(`Albero attese/${flowName}/${index + 1}: nodo non valido.`);
+      }
+    }
+  }
+  const supplierFlow = tree.flussi?.['Fattura fornitore'] || [];
+  const supplierStatus = new Map(supplierFlow.map((step) => [step[0], step[1]]));
+  if (supplierStatus.get('Documento originale') !== 'SODDISFATTO' || supplierStatus.get('Pagamento') !== 'ATTESO' || supplierStatus.get('Chiusura debito') !== 'ATTESO') {
+    errors.push('Albero attese/Fattura fornitore: obbligo documentale e attese finanziarie non sono separati.');
+  }
+  if (!nonEmptyStringArray(tree.definition_of_done) || !tree.definition_of_done.includes('deploy Render') || !tree.definition_of_done.includes('smoke test applicazione pubblicata')) {
+    errors.push('Albero attese: definition of done priva di deploy e smoke test.');
+  }
+  return errors;
 }
 
 export function validateCatalog(catalog) {
@@ -1183,6 +1223,13 @@ if (invokedDirectly) {
     errors.push(`Topologia obbligatoria non leggibile: ${error.message}.`);
   }
   if (topology) errors.push(...validateTopology(catalog, topology));
+  let expectationTree;
+  try {
+    expectationTree = loadExpectationTree();
+  } catch (error) {
+    errors.push(`Albero attese obbligatorio non leggibile: ${error.message}.`);
+  }
+  if (expectationTree) errors.push(...validateExpectationTree(expectationTree));
   if (errors.length) {
     for (const error of errors) console.error(`- ${error}`);
     process.exitCode = 1;

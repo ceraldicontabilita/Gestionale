@@ -237,6 +237,7 @@ function sensitiveOperation(req) {
     || (req.method === 'POST' && path === '/api/tributi')
     || (req.method === 'POST' && path === '/api/drive-data/import')
     || (req.method === 'POST' && path.startsWith('/api/event-engine/'))
+    || (req.method === 'POST' && path.startsWith('/api/supplier-invoices/'))
     || /\/riconcilia$/.test(path)
     || /\/collega-movimento$/.test(path)
     || /\/snapshot$/.test(path)

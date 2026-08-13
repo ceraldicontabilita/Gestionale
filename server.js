@@ -14,10 +14,12 @@ import { registerDrivePlanRoutes } from './src/drive-plan-router.js';
 import { registerReconciliationRoutes } from './src/reconciliation-router.js';
 import { createEventEngineRuntime } from './src/event-engine.js';
 import { registerEventEngineRoutes } from './src/event-engine-router.js';
+import { registerSupplierInvoiceRoutes } from './src/supplier-invoice-router.js';
+import { createProjectionEngineRuntime } from './src/projection-engine.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const version = '0.8.0';
+const version = '0.9.0';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.disable('x-powered-by');
@@ -66,9 +68,12 @@ const driveDataRegistration = registerDriveDataRoutes(app, {
 registerDrivePlanRoutes(app, { getDb: () => db });
 registerReconciliationRoutes(app, { getDb: () => db });
 registerEventEngineRoutes(app, { getDb: () => db, getClient: () => client });
+registerSupplierInvoiceRoutes(app, { getDb: () => db, getClient: () => client });
 
 const eventEngineRuntime = createEventEngineRuntime({ getDb: () => db, getClient: () => client });
+const projectionEngineRuntime = createProjectionEngineRuntime({ getDb: () => db, getClient: () => client });
 eventEngineRuntime.start();
+projectionEngineRuntime.start();
 
 const server = app.listen(port, () => console.log(`Impresa Semplice v${version} in ascolto sulla porta ${port}`));
 driveDataRegistration.start();
@@ -76,6 +81,7 @@ driveDataRegistration.start();
 async function shutdown(signal) {
   console.info(`[server] chiusura ${signal}`);
   await eventEngineRuntime.stop();
+  await projectionEngineRuntime.stop();
   server.close(async () => {
     if (client) await client.close().catch(() => {});
     process.exit(0);

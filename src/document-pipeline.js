@@ -1,4 +1,6 @@
 import { relationKey } from './domain.js';
+import { readOriginalBuffer } from './blob-store.js';
+import { stageSupplierInvoiceXml } from './supplier-invoice-xml.js';
 
 const PRESERVED_STATES = new Set(['DOCUMENTATO', 'VERIFICATO', 'RICONCILIATO']);
 
@@ -106,12 +108,37 @@ export function createDocumentReprocessHandler({ limit = 250, logger = console }
         }
         await db.collection('documenti').updateOne(filter, operation, { upsert: true });
         const document = await db.collection('documenti').findOne(filter);
+        let stagedInvoice = null;
+        if (proposed === 'FATTURA_XML' && inbox.gridFsId && !inbox.tecnicoPec) {
+          const original = await readOriginalBuffer(db, inbox.gridFsId, { maxBytes: 10 * 1024 * 1024 });
+          stagedInvoice = await stageSupplierInvoiceXml(db, {
+            buffer: original,
+            source: {
+              sourceType: inbox.sourceType === 'IMAP' ? 'PEC_EMAIL' : String(inbox.sourceType || 'INBOX').toUpperCase(),
+              externalId: inbox.sourceId || inbox.sourceKey,
+              version: inbox.sha256 || '1',
+              sourceKeyBase: inbox.sourceKey,
+              filename: inbox.nomeOriginale,
+              gridFsId: inbox.gridFsId,
+              emailMessageKey: inbox.emailMessageKey,
+              sha256: inbox.sha256 || null
+            },
+            now
+          });
+          if (document?._id) {
+            await db.collection('documenti').updateOne(
+              { _id: document._id },
+              { $addToSet: { 'datiEstratti.invoiceSourceKeys': { $each: stagedInvoice.invoices.map((row) => row.sourceKey) } } }
+            );
+          }
+        }
         await db.collection('documenti_inbox').updateOne(
           { _id: inbox._id },
           {
             $set: {
               documentoId: document?._id || null,
               stato: inbox.tecnicoPec ? 'ARCHIVIATO_TECNICO' : 'ELABORATO',
+              stagingFattura: stagedInvoice ? 'IMPORTATA_DA_VERIFICARE' : null,
               elaboratoIl: now,
               aggiornatoIl: now
             },
@@ -129,16 +156,19 @@ export function createDocumentReprocessHandler({ limit = 250, logger = console }
       } catch (error) {
         errors += 1;
         const attempts = Number(inbox.tentativiElaborazione || 0) + 1;
+        const requiresReview = ['SUPPLIER_INVOICE_REVIEW_REQUIRED', 'SUPPLIER_INVOICE_STAGING_CONFLICT'].includes(error.code)
+          || ['SUPPLIER_INVOICE_REVIEW_REQUIRED', 'SUPPLIER_INVOICE_STAGING_CONFLICT'].includes(error.message);
         await db.collection('documenti_inbox').updateOne(
           { _id: inbox._id },
           {
             $set: {
-              stato: 'ERRORE_TECNICO',
+              stato: requiresReview ? 'DA_VERIFICARE' : 'ERRORE_TECNICO',
               ultimoErrore: { code: error.code || 'DOCUMENT_PIPELINE_ERROR', message: error.message, at: now },
               tentativiElaborazione: attempts,
-              nextRetryAt: retryAt(now, attempts),
+              ...(requiresReview ? { elaboratoIl: now } : { nextRetryAt: retryAt(now, attempts) }),
               aggiornatoIl: now
-            }
+            },
+            ...(requiresReview ? { $unset: { nextRetryAt: '' } } : {})
           }
         );
       }

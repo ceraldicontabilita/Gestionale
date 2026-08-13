@@ -55,6 +55,13 @@ td small { display: block; color: #8a909c; margin-top: .15rem; font-size: .68rem
 .todo strong { font-size: 1.4rem; display: block; }
 .todo span, .muted { color: #737987; }
 .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .7rem; align-items: end; }
+.grid-form .wide { grid-column: span 2; }
+.invoice-validation-form { margin: 1rem 0; padding: .9rem; border: 1px solid #e4e6eb; border-radius: .8rem; background: #f8f9fb; }
+.expectation-tree { margin-top: 1rem; padding: .9rem; border: 1px dashed #cfd4dd; border-radius: .8rem; }
+.expectation-tree-head { display: flex; justify-content: space-between; gap: .7rem; align-items: center; margin-bottom: .7rem; }
+.expectation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: .55rem; }
+.expectation-grid article { display: grid; gap: .35rem; align-content: start; padding: .65rem; border: 1px solid #eceef1; border-radius: .65rem; background: white; }
+.expectation-grid article > span:first-child { font-size: .72rem; font-weight: 800; color: #555b66; }
 label { display: flex; flex-direction: column; gap: .35rem; font-size: .82rem; font-weight: 700; }
 .result { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; margin-top: .85rem; }
 .placeholder { min-height: 180px; }
@@ -89,4 +96,4 @@ dialog form { display: grid; gap: .8rem; padding: 1rem; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
 .error { color: #a43131; }
 @media (max-width: 900px) { .reconciliation-grid { grid-template-columns: 1fr; } }
-@media (max-width: 700px) { .topbar { padding: .9rem 1rem; } .topbar small { display: none; } .status { display: none; } main { padding: .75rem; } .hero { align-items: start; flex-direction: column; } .panel-head { align-items: start; flex-direction: column; } .filters { width: 100%; } .filters > * { flex: 1; } .grid-form { grid-template-columns: 1fr 1fr; } .cause-heading { flex-direction: column; } .issue { grid-template-columns: 58px 1fr; } }
+@media (max-width: 700px) { .topbar { padding: .9rem 1rem; } .topbar small { display: none; } .status { display: none; } main { padding: .75rem; } .hero { align-items: start; flex-direction: column; } .panel-head { align-items: start; flex-direction: column; } .filters { width: 100%; } .filters > * { flex: 1; } .grid-form { grid-template-columns: 1fr 1fr; } .grid-form .wide { grid-column: 1 / -1; } .cause-heading { flex-direction: column; } .issue { grid-template-columns: 58px 1fr; } }

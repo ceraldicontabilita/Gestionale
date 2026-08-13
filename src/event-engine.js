@@ -1,6 +1,14 @@
-import crypto from 'node:crypto';
 import { parseMoney, roundMoney } from './money.js';
 import { withMongoTransaction } from './mongo-transaction.js';
+import { stableFingerprint } from './fingerprint.js';
+import {
+  completeSupplierInvoiceAccountingExpectation,
+  completeSupplierInvoiceSettlementLedgerExpectation,
+  projectSupplierInvoiceValidated
+} from './supplier-invoice-projection.js';
+import { projectFinancialLedgerEvent } from './ledger-event-projection.js';
+
+export { stableFingerprint } from './fingerprint.js';
 
 export const ACCOUNTING_EVENT_TYPES = Object.freeze([
   'invoice.supplier_validated',
@@ -64,18 +72,6 @@ function date(value, label) {
   const year = result.getUTCFullYear();
   if (year < 2000 || year > 2100) throw new Error(`${label} fuori intervallo`);
   return result;
-}
-
-function stable(value) {
-  if (Array.isArray(value)) return value.map(stable);
-  if (value && typeof value === 'object' && !(value instanceof Date)) {
-    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])]));
-  }
-  return value instanceof Date ? value.toISOString() : value;
-}
-
-export function stableFingerprint(value) {
-  return crypto.createHash('sha256').update(JSON.stringify(stable(value))).digest('hex');
 }
 
 function normalizeLine(line, index) {
@@ -399,6 +395,12 @@ export async function publishDomainEvent({ client, db }, input, { now = new Date
   return withMongoTransaction(client, (session) => publishInSession(db, event, session, now));
 }
 
+export async function publishDomainEventInSession(db, input, { session, now = new Date() } = {}) {
+  if (!session) throw new Error('Pubblicazione evento in sessione richiede una sessione MongoDB');
+  const event = normalizeDomainEvent(input, { now });
+  return publishInSession(db, event, session, now);
+}
+
 export async function projectAccountingEvent(db, event, { session = null, now = new Date() } = {}) {
   const entry = event.accounting;
   const options = session ? { session } : {};
@@ -458,6 +460,9 @@ export async function projectAccountingEvent(db, event, { session = null, now = 
     eventType: 'accounting.entry_projected',
     pageId,
     status: 'PENDING',
+    attempts: 0,
+    nextAttemptAt: now,
+    lockedUntil: null,
     createdAt: now,
     updatedAt: now
   })), options);
@@ -537,13 +542,17 @@ export async function dispatchNextEvent({ client, db }, {
       if (!owned) throw new Error('OUTBOX_LEASE_LOST');
       const event = await db.collection('domain_events').findOne({ eventKey: claimed.eventKey }, { session });
       if (!event) throw new Error('DOMAIN_EVENT_NOT_FOUND');
+      const domainProjection = await projectSupplierInvoiceValidated(db, event, { session, now });
+      const ledgerProjection = await projectFinancialLedgerEvent(db, event, { session, now });
       const projected = await projectAccountingEvent(db, event, { session, now });
+      const competenceExpectation = await completeSupplierInvoiceAccountingExpectation(db, event, { session, now });
+      const settlementExpectation = await completeSupplierInvoiceSettlementLedgerExpectation(db, event, { session, now });
       await db.collection('event_outbox').updateOne(
         { _id: claimed._id, workerId, status: 'PROCESSING' },
         { $set: { status: 'COMPLETED', completedAt: now, updatedAt: now, lockedUntil: null }, $unset: { lastError: '' } },
         { session }
       );
-      return projected;
+      return { ...projected, domainProjection, ledgerProjection, competenceExpectation, settlementExpectation };
     });
     return { eventKey: claimed.eventKey, status: 'COMPLETED', ...output };
   } catch (error) {

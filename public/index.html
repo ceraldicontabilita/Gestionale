@@ -44,6 +44,36 @@
     <section id="view-documenti" class="view">
       <section class="cards" id="driveIndexCards"></section>
       <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">FATTURE FORNITORI</p><h3>Intake, competenza e albero delle attese</h3></div><button id="reloadSupplierInvoices" type="button">Aggiorna</button></div>
+        <p class="muted">Il ramo nasce dalla fattura validata. Pagamento, prova finanziaria e riconciliazione restano attese future separate.</p>
+        <form id="supplierInvoiceIntakeForm" class="grid-form invoice-intake-form">
+          <label class="wide">FatturaPA XML<input name="invoiceXml" type="file" accept=".xml,application/xml,text/xml" required></label>
+          <button class="primary" type="submit">Importa XML</button>
+        </form>
+        <div id="supplierInvoiceResult" class="result muted"></div>
+        <h4>Da verificare</h4>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Fattura</th><th>Fornitore</th><th>Data</th><th class="num">Totale</th><th>Estrazione</th><th>Azione</th></tr></thead><tbody id="supplierInvoiceStagingRows"></tbody></table></div>
+        <form id="supplierInvoiceValidationForm" class="grid-form invoice-validation-form hidden">
+          <input name="sourceKey" type="hidden">
+          <label>IVA detraibile<input name="ivaDetraibile" type="number" min="0" step="0.01" required></label>
+          <label>Ricezione<input name="receiptDate" type="date" required></label>
+          <label>Competenza<input name="competenceDate" type="date" required></label>
+          <label>Registrazione<input name="registrationDate" type="date" required></label>
+          <label>Data IVA<input name="vatDate" type="date" required></label>
+          <label>Scadenza<input name="dueDate" type="date"></label>
+          <label>Conto costo<input name="costAccountCode" value="COSTI_MERCI" required></label>
+          <label>Conto IVA<input name="vatAccountCode" value="IVA_CREDITO"></label>
+          <label>Debiti fornitore<input name="payableAccountCode" value="DEBITI_FORNITORI" required></label>
+          <label>Regola<input name="postingRuleId" value="FATTURA_PASSIVA" required></label>
+          <label>Versione regola<input name="postingRuleVersion" value="1" required></label>
+          <label class="wide">Motivo<input name="reason" value="Validazione fattura fornitore" required></label>
+          <button class="primary" type="submit">Valida e genera competenza</button>
+        </form>
+        <h4>Fatture canoniche</h4>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Fattura</th><th>Fornitore</th><th>Competenza</th><th class="num">Residuo</th><th>Processo</th><th>Albero</th></tr></thead><tbody id="supplierInvoiceCanonicalRows"></tbody></table></div>
+        <div id="supplierInvoiceTree" class="expectation-tree muted">Seleziona “Albero” per vedere obblighi soddisfatti e attese future.</div>
+      </section>
+      <section class="panel">
         <div class="panel-head"><div><p class="eyebrow">DATI IMPORTATI</p><h3>Copertura del Gestionale</h3></div><span id="driveImportStatus" class="status">Sincronizzazione automatica</span></div>
         <p class="muted">Nel database entrano metadati e dati strutturati. PDF, ZIP e altri originali restano su Google Drive.</p>
         <div class="table-wrap compact-table"><table><thead><tr><th>Cartella di dominio</th><th class="num">File indicizzati</th></tr></thead><tbody id="driveDataRows"></tbody></table></div>
