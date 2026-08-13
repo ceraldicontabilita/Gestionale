@@ -95,11 +95,11 @@
           "label": "Scadenze e priorità",
           "route": "/home/scadenze",
           "owner": "CONTROLLO",
-          "status": "ASSENTE",
+          "status": "PARZIALE",
           "entities": ["obligation", "open_item", "anomaly"],
           "dependsOn": ["riconciliazione.partite_aperte"],
-          "currentEvidence": [],
-          "notes": "Va ricostruita su obblighi canonici, non su scadenze duplicate per modulo.",
+          "currentEvidence": ["src/core-router.js", "public/app.js", "test/home-dashboard.test.js"],
+          "notes": "La Home interroga gli obblighi canonici e mostra i conteggi delle partite fornitore aperte e scadute. Mancano ancora priorita multi-dominio, anomalie contestuali e azioni dedicate.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
@@ -434,11 +434,11 @@
           "label": "Partite aperte",
           "route": "/riconciliazione/partite-aperte",
           "owner": "RICONCILIAZIONE",
-          "status": "ASSENTE",
+          "status": "PARZIALE",
           "entities": ["open_item", "obligation", "allocation"],
           "dependsOn": ["riconciliazione.coda_generale"],
-          "currentEvidence": [],
-          "notes": "Un solo registro per residui, acconti, rate e compensazioni.",
+          "currentEvidence": ["src/reconciliation-router.js", "src/supplier-invoice-settlement.js", "public/index.html", "public/app.js", "test/reconciliation-open-items.test.js", "test/event-engine-mongo.test.js"],
+          "notes": "Registro interrogabile di obblighi e partite fornitore con importo originario, allocato, residuo e scadenza. La conferma manuale richiede identita fattura, riferimento del movimento, prova reale e centesimi; proposta automatica multi-candidato e supersessione restano mancanti.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
@@ -473,8 +473,8 @@
           "status": "PARZIALE",
           "entities": ["invoice_supplier", "obligation", "open_item", "financial_movement", "financial_evidence", "reconciliation", "allocation", "expectation", "expectation_process"],
           "dependsOn": ["documenti.fatture_fornitori", "riconciliazione.partite_aperte"],
-          "currentEvidence": ["src/supplier-invoice-settlement.js", "src/obligation-engine.js", "src/ledger-event-projection.js", "src/event-engine.js", "src/supplier-invoice-router.js", "test/event-engine-mongo.test.js"],
-          "notes": "Il verticale fatture supporta allocazioni parziali o integrali, identità fattura e riferimento movimento espliciti, prova bancaria/carta/cassa riferita, retry idempotente, scrittura finanziaria separata e chiusura della partita. Restano proposta automatica multi-candidato, UI dedicata di conferma e supersessione della riconciliazione.",
+          "currentEvidence": ["src/supplier-invoice-settlement.js", "src/obligation-engine.js", "src/ledger-event-projection.js", "src/event-engine.js", "src/supplier-invoice-router.js", "src/reconciliation-router.js", "public/index.html", "public/app.js", "test/reconciliation-open-items.test.js", "test/event-engine-mongo.test.js"],
+          "notes": "Il verticale fatture supporta UI di conferma, allocazioni parziali o integrali, identita fattura e riferimento movimento espliciti, prova bancaria/carta/cassa riferita, retry idempotente, scrittura finanziaria separata e chiusura della partita. Restano proposta automatica multi-candidato e supersessione della riconciliazione.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": ["RICONCILIA_FATTURA_CON_MOVIMENTO"] }
         },
         {

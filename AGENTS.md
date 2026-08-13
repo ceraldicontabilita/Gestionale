@@ -185,45 +185,41 @@ persistenza e lettura delle proiezioni.
 
 ## 11. Stato verificato del ramo fatture — 2026-08-13
 
-Baseline verificata di `main`: merge commit
-`b250774ff50124aba23460493f9bd4ac4eac4234`, pubblicato con la PR #5 e
-distribuito su Render come versione `0.10.0`. Verificare sempre che
-`origin/main` non sia cambiato prima di proseguire.
+La baseline di partenza è `main` al merge commit
+`863c9d9270068202bb6b6641649e7537f2a79131`, distribuito su Render come
+versione `0.11.0`. Verificare sempre che `origin/main` non sia cambiato prima di
+proseguire.
 
-`main` contiene:
+Il verticale fatture comprende:
 
-- intake FatturaPA unico da Drive, PEC e upload;
-- staging con SHA-256, provenienza e deduplicazione;
-- validazione canonica `invoice.supplier_validated`;
-- Expectation Engine con processo e dodici attese per la fattura fornitore;
-- competenza, IVA detraibile esplicita, obbligazione e partita aperta;
-- riconciliazione parziale o integrale con prova finanziaria riferita;
-- `ledger.entry_projected` separato per `FINANCIAL_SETTLEMENT`;
-- consumer di `projection_outbox` per giornale, mastro, bilancio e Coerenza;
-- UI Documenti per intake e visualizzazione dell'albero;
-- test MongoDB replica set end-to-end per competenza, retry, pagamento e
-  chiusura delle attese.
+- intake FatturaPA unico da Drive, PEC e upload, con XML multipli, ZIP multipli
+  e ZIP annidati;
+- staging con SHA-256, provenienza, deduplicazione e avanzamento persistente;
+- canonizzazione automatica degli XML esatti e pubblicazione
+  `invoice.supplier_validated`;
+- Expectation Engine, competenza, IVA su conto tecnico da classificare, debito,
+  obbligazione e partita aperta senza attendere il pagamento;
+- proiezione Fornitori per identificativo fiscale esatto e residuo letto dalla
+  partita canonica;
+- pagina Partite aperte con originario, allocato, residuo, scadenza e stato;
+- conferma manuale fattura-movimento protetta da PIN, con prova reale riferita,
+  chiavi stabili e centesimi espliciti;
+- compilazione automatica dei campi contabili tecnici del regolamento;
+- `ledger.entry_projected` separato per `FINANCIAL_SETTLEMENT` e consumer per
+  giornale, mastro, bilancio e Coerenza;
+- retry idempotente e test MongoDB replica set end-to-end per competenza,
+  pagamento, allocazione e chiusura delle attese.
 
-La pubblicazione della baseline è stata verificata il 2026-08-13 con UI
-versione `0.10.0`, MongoDB collegato e API anonime bloccate. Nessuna fattura
-reale è stata importata durante lo smoke test.
-
-Il branch locale `codex/dichiarazioni-dimissioni-categorie`, derivato da tale
-baseline, aggiunge la canonizzazione automatica degli XML FatturaPA esatti,
-conti tecnici per costo e IVA ancora da classificare, proiezione Fornitori,
-dichiarazioni raggruppate con anno d'imposta e protocollo, identità delle
-dimissioni letta dal PDF, Archivio per domini e verbali, fallback documentale
-F24/quietanze, registro codici osservati e indici originali dei pacchetti
-fiscali/PEC. I casi non esatti restano in revisione; regolamento, eliminazioni e
-modifiche amministrative sensibili richiedono il PIN secondo la policy. Questo
-lavoro locale non equivale a pubblicazione: prima di commit, push, PR, merge,
-deploy e importazione reale si applicano le autorizzazioni separate della
-sezione 3.
+Lo stato resta `PARZIALE`: non promuovere a `PRESENTE` finché non esistono
+proposta multi-candidato verificata, supersessione/storno operativo, gestione
+completa delle note di credito e smoke test della release corrente. I dati reali
+servono soltanto a verifiche in sola lettura o a operazioni esplicitamente
+autorizzate; non inserire mai nei commit nomi, identificativi o importi reali.
 
 ## 12. Priorità successiva dopo la pubblicazione del verticale
 
-1. note di credito e supersessione della fattura;
-2. UI dedicata alla riconciliazione fatture e gestione multi-candidato;
+1. proposta di riconciliazione multi-candidato senza usare il solo importo;
+2. note di credito e supersessione/storno della riconciliazione;
 3. importazione reale controllata e verifica delle righe `DA_VERIFICARE`;
 4. consumer e controlli mancanti senza duplicare fatti tra domini;
 5. un solo produttore reale nuovo alla volta, con test e aggiornamento simultaneo

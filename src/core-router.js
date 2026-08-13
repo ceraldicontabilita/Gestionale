@@ -301,13 +301,15 @@ export function registerCoreRoutes(app, { getDb }) {
         const saldo = await calculateClosingBalance(db, conto, anno);
         saldi[conto] = { saldo, riporto: riporto.saldo, daRiallineare: riporto.daRiallineare };
       }
-      const [daVerificare, documentiDaVerificare, f24DaRiscontrare, codiciTributoDaVerificare, riscossioneDaVerificare, riscossioneSenzaSnapshot] = await Promise.all([
+      const [daVerificare, documentiDaVerificare, f24DaRiscontrare, codiciTributoDaVerificare, riscossioneDaVerificare, riscossioneSenzaSnapshot, partiteAperte, partiteScadute] = await Promise.all([
         db.collection('movimenti').countDocuments({ stato: 'DA_VERIFICARE' }),
         db.collection('documenti').countDocuments({ stato: 'DA_VERIFICARE', recordKind: { $ne: 'DRIVE_SOURCE' }, sourceActive: { $ne: false } }),
         db.collection('f24_operazioni').countDocuments({ stato: { $in: ['IN_ATTESA_RISCONTRO', 'DA_VERIFICARE'] } }),
         db.collection('f24_righe').countDocuments({ 'classificazione.stato': 'DA_VERIFICARE' }),
         db.collection('atti_riscossione').countDocuments({ stato: 'DA_VERIFICARE' }),
-        db.collection('atti_riscossione').countDocuments({ $or: [{ ultimoSnapshot: { $exists: false } }, { ultimoSnapshot: null }] })
+        db.collection('atti_riscossione').countDocuments({ $or: [{ ultimoSnapshot: { $exists: false } }, { ultimoSnapshot: null }] }),
+        db.collection('obligations').countDocuments({ sourceEntityType: 'INVOICE_SUPPLIER', status: { $in: ['OPEN', 'PARTIAL'] } }),
+        db.collection('obligations').countDocuments({ sourceEntityType: 'INVOICE_SUPPLIER', status: { $in: ['OPEN', 'PARTIAL'] }, dueDate: { $lt: new Date() } })
       ]);
       res.json({
         anno,
@@ -317,7 +319,9 @@ export function registerCoreRoutes(app, { getDb }) {
         f24DaRiscontrare,
         codiciTributoDaVerificare,
         riscossioneDaVerificare,
-        riscossioneSenzaSnapshot
+        riscossioneSenzaSnapshot,
+        partiteAperte,
+        partiteScadute
       });
     } catch (error) {
       res.status(400).json({ error: error.message });

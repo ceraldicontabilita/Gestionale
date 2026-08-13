@@ -260,7 +260,7 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb, env = pro
   app.get('/api/supplier-invoices/suppliers/directory', async (_req, res) => {
     try {
       const db = database(getDb, res); if (!db) return;
-      const [staging, canonical, openItems] = await Promise.all([
+      const [staging, canonical] = await Promise.all([
         db.collection('fatture').find({}, { projection: {
           sourceKey: 1, stato: 1, fornitore: 1, numero: 1, tipoDocumento: 1,
           data: 1, totaleDocumento: 1
@@ -268,9 +268,12 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb, env = pro
         db.collection('invoice_suppliers').find({ current: true }, { projection: {
           invoiceId: 1, sourceKey: 1, sources: 1, supplier: 1, number: 1,
           documentType: 1, dates: 1, amounts: 1
-        } }).toArray(),
-        db.collection('open_items').find({ sourceEntityType: 'INVOICE_SUPPLIER' }).toArray()
+        } }).toArray()
       ]);
+      const obligationKeys = canonical.map((row) => `SUPPLIER_INVOICE:${row.invoiceId}:PAYABLE`);
+      const openItems = obligationKeys.length
+        ? await db.collection('open_items').find({ obligationKey: { $in: obligationKeys } }).toArray()
+        : [];
       res.set('Cache-Control', 'no-store');
       res.json(buildSupplierDirectory(staging, canonical, openItems));
     } catch (error) {

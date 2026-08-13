@@ -84,6 +84,14 @@ la partita, pubblica `ledger.entry_projected` con
 finanziaria. Retry, allocazione, riconciliazione e proiezioni sono idempotenti;
 un PDF di disposizione non costituisce prova bancaria.
 
+La pagina Riconciliazione legge le partite fornitore da `GET
+/api/riconciliazione/partite-aperte`: mostra importo originario, allocato,
+residuo, scadenza e stato senza creare una copia autorevole. La conferma
+manuale valorizza automaticamente conto debiti, conto finanziario, regola e
+data di registrazione partendo dalla fattura e dal movimento scelti. L'importo
+allocato è mostrato prima della conferma; una eventuale eccedenza del movimento
+resta disponibile. Non esiste abbinamento automatico basato sul solo importo.
+
 I consumer della `projection_outbox` materializzano giornale/mastro, conti
 osservati, saldi di verifica e controlli di coerenza con lease, retry e dead
 letter. Questo non rende automaticamente complete le 61 pagine: mancano ancora

@@ -14,7 +14,8 @@ function createDashboardDb() {
     ['documenti', 3],
     ['f24_operazioni', 4],
     ['f24_righe', 5],
-    ['atti_riscossione', 6]
+    ['atti_riscossione', 6],
+    ['obligations', 9]
   ]);
 
   function riportoCollection() {
@@ -47,6 +48,7 @@ function createDashboardDb() {
         countDocuments: async (filter) => {
           countCalls.push({ name, filter });
           if (name === 'atti_riscossione' && filter?.$or) return 7;
+          if (name === 'obligations' && !filter?.dueDate) return 8;
           return counts.get(name) || 0;
         }
       };
@@ -87,16 +89,20 @@ test('il quadro operativo espone saldi separati e contatori aperti verificati', 
     f24DaRiscontrare: payload.f24DaRiscontrare,
     codiciTributoDaVerificare: payload.codiciTributoDaVerificare,
     riscossioneDaVerificare: payload.riscossioneDaVerificare,
-    riscossioneSenzaSnapshot: payload.riscossioneSenzaSnapshot
+    riscossioneSenzaSnapshot: payload.riscossioneSenzaSnapshot,
+    partiteAperte: payload.partiteAperte,
+    partiteScadute: payload.partiteScadute
   }, {
     daVerificare: 2,
     documentiDaVerificare: 3,
     f24DaRiscontrare: 4,
     codiciTributoDaVerificare: 5,
     riscossioneDaVerificare: 6,
-    riscossioneSenzaSnapshot: 7
+    riscossioneSenzaSnapshot: 7,
+    partiteAperte: 8,
+    partiteScadute: 9
   });
-  assert.deepEqual(countCalls, [
+  assert.deepEqual(countCalls.slice(0, 7), [
     { name: 'movimenti', filter: { stato: 'DA_VERIFICARE' } },
     {
       name: 'documenti',
@@ -115,8 +121,13 @@ test('il quadro operativo espone saldi separati e contatori aperti verificati', 
     {
       name: 'atti_riscossione',
       filter: { $or: [{ ultimoSnapshot: { $exists: false } }, { ultimoSnapshot: null }] }
-    }
+    },
+    { name: 'obligations', filter: { sourceEntityType: 'INVOICE_SUPPLIER', status: { $in: ['OPEN', 'PARTIAL'] } } }
   ]);
+  assert.equal(countCalls[7].name, 'obligations');
+  assert.equal(countCalls[7].filter.sourceEntityType, 'INVOICE_SUPPLIER');
+  assert.deepEqual(countCalls[7].filter.status, { $in: ['OPEN', 'PARTIAL'] });
+  assert.ok(countCalls[7].filter.dueDate.$lt instanceof Date);
 });
 
 test('la Home rende quadro operativo e attività aperte dalla risposta dashboard', () => {
@@ -130,4 +141,6 @@ test('la Home rende quadro operativo e attività aperte dalla risposta dashboard
   assert.match(source, /data\.documentiDaVerificare/);
   assert.match(source, /data\.f24DaRiscontrare/);
   assert.match(source, /data\.riscossioneDaVerificare/);
+  assert.match(source, /data\.partiteAperte/);
+  assert.match(source, /data\.partiteScadute/);
 });

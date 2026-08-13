@@ -130,7 +130,8 @@ async function loadDashboard() {
   $('#todo').innerHTML = [
     [data.daVerificare, 'movimenti da verificare'], [data.documentiDaVerificare, 'documenti da verificare'],
     [data.f24DaRiscontrare || 0, 'F24 da riscontrare'], [data.codiciTributoDaVerificare || 0, 'codici/causali da classificare'],
-    [data.riscossioneDaVerificare || 0, 'atti riscossione da verificare'], [data.riscossioneSenzaSnapshot || 0, 'atti senza snapshot ADER']
+    [data.riscossioneDaVerificare || 0, 'atti riscossione da verificare'], [data.riscossioneSenzaSnapshot || 0, 'atti senza snapshot ADER'],
+    [data.partiteAperte || 0, 'partite aperte fornitori'], [data.partiteScadute || 0, 'partite fornitori scadute']
   ].map(([value, label]) => `<div><strong>${value}</strong><span>${label}</span></div>`).join('');
 }
 
@@ -185,38 +186,47 @@ function selectedMovement() {
 }
 
 function availableCauses() {
+  if (reconciliationSelection.causeType === 'FATTURA_FORNITORE') return reconciliationData?.openItems?.candidates || [];
   return reconciliationSelection.causeType === 'F24' ? (reconciliationData?.f24 || []) : (reconciliationData?.atti || []);
 }
 
 function selectedCause() {
-  return availableCauses().find((row) => String(row._id) === reconciliationSelection.causeId) || null;
+  return availableCauses().find((row) => String(row._id || row.invoiceId) === reconciliationSelection.causeId) || null;
 }
 
 function causeIdentity(row) {
+  if (reconciliationSelection.causeType === 'FATTURA_FORNITORE') return `${row.invoiceNumber || 'senza numero'} · ${row.supplier?.name || 'fornitore da identificare'}`;
   if (reconciliationSelection.causeType === 'F24') return row.protocollo || row.file || 'F24 senza protocollo';
   return row.numeroAtto || `${String(row.tipo || '').replaceAll('_', ' ')} senza numero`;
 }
 
 function causeAmount(row) {
+  if (reconciliationSelection.causeType === 'FATTURA_FORNITORE') return Number(row.residualCents || 0) / 100;
   if (reconciliationSelection.causeType === 'F24') return Number(row.importoAtteso || 0);
   return Number(row.importoResiduo ?? row.importoOriginario ?? 0);
 }
 
 function renderReconciliationSelection() {
   const movement = selectedMovement(); const cause = selectedCause();
-  $('#confirmReconciliation').disabled = !(movement && cause && movement.provaFinanziaria);
+  const supplierAllocation = reconciliationSelection.causeType === 'FATTURA_FORNITORE'
+    ? Math.min(Number(movement?.availableAmount || 0), Number(cause?.residualCents || 0) / 100)
+    : null;
+  const supplierReady = reconciliationSelection.causeType !== 'FATTURA_FORNITORE'
+    || Boolean(movement?.movementReference && cause?.invoiceNaturalKey && supplierAllocation > 0);
+  $('#confirmReconciliation').disabled = !(movement && cause && movement.provaFinanziaria && supplierReady);
   if (!movement && !cause) { $('#reconciliationSelection').textContent = 'Seleziona un movimento e una causa.'; return; }
   const movementText = movement ? `${fmtDate(movement.data)} · ${movement.conto} · ${euro.format(movement.importo)} · ${movement.descrizione}` : 'movimento non selezionato';
   const causeText = cause ? `${causeIdentity(cause)} · ${euro.format(causeAmount(cause))}` : 'causa non selezionata';
-  $('#reconciliationSelection').innerHTML = `<strong>${escapeHtml(movementText)}</strong><span>↔</span><strong>${escapeHtml(causeText)}</strong>`;
+  const allocationText = supplierAllocation > 0 ? `<small>Importo esatto da allocare: ${escapeHtml(euro.format(supplierAllocation))}. L'eventuale eccedenza del movimento resta disponibile.</small>` : '';
+  $('#reconciliationSelection').innerHTML = `<strong>${escapeHtml(movementText)}</strong><span>↔</span><strong>${escapeHtml(causeText)}</strong>${allocationText}`;
 }
 
 function renderReconciliationCauses() {
   const causes = availableCauses();
   $('#reconciliationCauseRows').innerHTML = causes.length ? causes.map((row) => {
-    const id = String(row._id); const date = reconciliationSelection.causeType === 'F24' ? row.dataVersamento : (row.dataNotifica || row.dataAtto);
-    const detail = reconciliationSelection.causeType === 'F24' ? `${fmtDate(date)} · ${row.tipoDocumento || 'modello'}` : `${fmtDate(date)} · ${(row.entiCreditori || []).join(', ') || row.tipo}`;
-    return `<tr class="selectable-row ${reconciliationSelection.causeId === id ? 'selected' : ''}"><td><input class="reconciliation-cause" type="radio" name="reconciliationCause" value="${escapeHtml(id)}" ${reconciliationSelection.causeId === id ? 'checked' : ''}></td><td><strong>${escapeHtml(causeIdentity(row))}</strong><small>${escapeHtml(detail)}</small></td><td>${badge(row.stato)}</td><td class="num balance">${euro.format(causeAmount(row))}</td></tr>`;
+    const id = String(row._id || row.invoiceId); const date = reconciliationSelection.causeType === 'FATTURA_FORNITORE' ? row.dueDate : (reconciliationSelection.causeType === 'F24' ? row.dataVersamento : (row.dataNotifica || row.dataAtto));
+    const detail = reconciliationSelection.causeType === 'FATTURA_FORNITORE' ? `${fmtDate(row.documentDate)} · scadenza ${fmtDate(row.dueDate)} · ${row.documentType || 'fattura'}` : (reconciliationSelection.causeType === 'F24' ? `${fmtDate(date)} · ${row.tipoDocumento || 'modello'}` : `${fmtDate(date)} · ${(row.entiCreditori || []).join(', ') || row.tipo}`);
+    return `<tr class="selectable-row ${reconciliationSelection.causeId === id ? 'selected' : ''}"><td><input class="reconciliation-cause" type="radio" name="reconciliationCause" value="${escapeHtml(id)}" ${reconciliationSelection.causeId === id ? 'checked' : ''}></td><td><strong>${escapeHtml(causeIdentity(row))}</strong><small>${escapeHtml(detail)}</small></td><td>${badge(row.status || row.stato)}</td><td class="num balance">${euro.format(causeAmount(row))}</td></tr>`;
   }).join('') : '<tr><td colspan="4" class="muted">Nessuna causa aperta per questa selezione.</td></tr>';
   renderReconciliationSelection();
 }
@@ -224,10 +234,16 @@ function renderReconciliationCauses() {
 async function loadReconciliation() {
   const year = $('#reconciliationYear').value || currentYear();
   $('#reconciliationResult').textContent = 'Caricamento…';
-  reconciliationData = await api(`/api/riconciliazione?anno=${year}`);
-  reconciliationSelection = { movementId: null, causeId: null, causeType: $('#reconciliationCauseType').value || 'F24' };
+  const [reconciliation, openItems] = await Promise.all([
+    api(`/api/riconciliazione?anno=${year}`),
+    api(`/api/riconciliazione/partite-aperte?status=${encodeURIComponent($('#openItemStatus').value || 'OPEN')}`)
+  ]);
+  reconciliationData = { ...reconciliation, openItems };
+  reconciliationSelection = { movementId: null, causeId: null, causeType: $('#reconciliationCauseType').value || 'FATTURA_FORNITORE' };
   const summary = reconciliationData.riepilogo;
-  $('#reconciliationCards').innerHTML = [[summary.movimentiAperti, 'movimenti disponibili'], [summary.movimentiSenzaProva, 'movimenti senza prova'], [summary.f24Aperti, 'F24 aperti'], [summary.attiAperti, 'atti riscossione aperti'], [summary.collegamentiConfermati, 'collegamenti confermati']].map(([value, label]) => `<article class="card"><small>${label}</small><strong>${value}</strong></article>`).join('');
+  $('#reconciliationCards').innerHTML = [[summary.movimentiAperti, 'movimenti disponibili'], [summary.movimentiSenzaProva, 'movimenti senza prova'], [openItems.counts.open + openItems.counts.partial, 'partite fornitori aperte'], [summary.f24Aperti, 'F24 aperti'], [summary.attiAperti, 'atti riscossione aperti'], [summary.collegamentiConfermati, 'collegamenti confermati']].map(([value, label]) => `<article class="card"><small>${label}</small><strong>${value}</strong></article>`).join('');
+  $('#openItemMessage').textContent = `${openItems.counts.open + openItems.counts.partial} partite aperte · ${openItems.counts.overdue} scadute · residuo ${euro.format(openItems.counts.residualCents / 100)}`;
+  $('#openItemRows').innerHTML = openItems.rows.length ? openItems.rows.map((row) => `<tr><td><strong>${escapeHtml(row.supplier?.name || 'Fornitore da identificare')}</strong><small>${escapeHtml(row.supplier?.vatId || row.supplier?.taxId || '')}</small></td><td><strong>${escapeHtml(row.invoiceNumber || 'senza numero')}</strong><small>${escapeHtml(row.documentType || '')} · ${fmtDate(row.documentDate)}</small></td><td>${row.dueDate ? fmtDate(row.dueDate) : '<span class="mini-warning">Non indicata</span>'}${row.overdue ? '<small class="mini-warning">Scaduta</small>' : ''}</td><td>${badge(row.status)}</td><td class="num">${euro.format(row.originalCents / 100)}</td><td class="num">${euro.format(row.allocatedCents / 100)}</td><td class="num balance">${euro.format(row.residualCents / 100)}</td><td><button type="button" class="supplier-invoice-tree" data-invoice-id="${escapeHtml(row.invoiceId || '')}">Albero</button></td></tr>`).join('') : '<tr><td colspan="8" class="muted">Nessuna partita corrisponde al filtro.</td></tr>';
   $('#reconciliationMovementRows').innerHTML = reconciliationData.movimenti.length ? reconciliationData.movimenti.map((row) => {
     const id = String(row._id); const disabled = !row.provaFinanziaria;
     return `<tr class="selectable-row ${disabled ? 'disabled-row' : ''}"><td><input class="reconciliation-movement" type="radio" name="reconciliationMovement" value="${escapeHtml(id)}" ${disabled ? 'disabled' : ''}></td><td><strong>${fmtDate(row.data)} · ${escapeHtml(row.descrizione)}</strong><small>${escapeHtml(row.fonte || 'fonte non indicata')}</small></td><td>${escapeHtml(row.conto)}</td><td class="num balance">${euro.format(row.importo)}</td><td>${row.provaFinanziaria ? badge('DOCUMENTATO') : '<span class="badge da_verificare">Manca prova</span>'}</td></tr>`;
@@ -241,10 +257,18 @@ async function confirmReconciliation() {
   if (!movement || !cause || !movement.provaFinanziaria) return;
   $('#reconciliationResult').textContent = 'Verifica del collegamento…';
   try {
-    const endpoint = reconciliationSelection.causeType === 'F24'
-      ? `/api/f24/${encodeURIComponent(cause._id)}/riconcilia`
-      : `/api/riscossione/atti/${encodeURIComponent(cause._id)}/collega-movimento`;
-    await api(endpoint, { method: 'POST', body: JSON.stringify({ movimentoId: movement._id }) });
+    const endpoint = reconciliationSelection.causeType === 'FATTURA_FORNITORE'
+      ? `/api/supplier-invoices/${encodeURIComponent(cause.invoiceId)}/reconcile`
+      : reconciliationSelection.causeType === 'F24'
+        ? `/api/f24/${encodeURIComponent(cause._id)}/riconcilia`
+        : `/api/riscossione/atti/${encodeURIComponent(cause._id)}/collega-movimento`;
+    const body = reconciliationSelection.causeType === 'FATTURA_FORNITORE' ? {
+      movementId: movement._id,
+      movementReference: movement.movementReference,
+      invoiceNaturalKey: cause.invoiceNaturalKey,
+      allocationAmount: Math.min(Number(movement.availableAmount || 0), Number(cause.residualCents || 0) / 100)
+    } : { movimentoId: movement._id };
+    await api(endpoint, { method: 'POST', body: JSON.stringify(body) });
     $('#reconciliationResult').textContent = 'Collegamento verificato e registrato.';
     await Promise.all([loadReconciliation(), loadDashboard()]);
   } catch (error) {
@@ -675,6 +699,8 @@ function bindEvents() {
   $('#f24Year').addEventListener('change', () => loadF24().catch((e) => showLogin(e.message)));
   $('#reconciliationYear').addEventListener('change', () => loadReconciliation().catch((e) => { $('#reconciliationResult').textContent = e.message; }));
   $('#reloadReconciliation').addEventListener('click', () => loadReconciliation().catch((e) => { $('#reconciliationResult').textContent = e.message; }));
+  $('#reloadOpenItems').addEventListener('click', () => loadReconciliation().catch((e) => { $('#reconciliationResult').textContent = e.message; }));
+  $('#openItemStatus').addEventListener('change', () => loadReconciliation().catch((e) => { $('#reconciliationResult').textContent = e.message; }));
   $('#reconciliationCauseType').addEventListener('change', (event) => { reconciliationSelection.causeType = event.target.value; reconciliationSelection.causeId = null; renderReconciliationCauses(); });
   $('#reconciliationMovementRows').addEventListener('change', (event) => { if (event.target.matches('.reconciliation-movement')) { reconciliationSelection.movementId = event.target.value; renderReconciliationSelection(); } });
   $('#reconciliationCauseRows').addEventListener('change', (event) => { if (event.target.matches('.reconciliation-cause')) { reconciliationSelection.causeId = event.target.value; renderReconciliationCauses(); } });
