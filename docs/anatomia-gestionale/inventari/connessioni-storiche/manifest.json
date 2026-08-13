@@ -1,0 +1,278 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "historical_connections_manifest",
+  "generatedBy": "scripts/historical-connections-shards.js",
+  "partition": {
+    "algorithm": "SHA256_UINT32_BE_MODULO",
+    "idEncoding": "UTF-8",
+    "recordOrder": "BYTEWISE_ASCENDING_ID",
+    "format": "JSONL_COMPACT_JSON_ONE_RECORD_PER_LINE_PRESERVE_FIELD_ORDER"
+  },
+  "originalArtifact": {
+    "fileName": "connessioni-storiche.json",
+    "bytes": 7185072,
+    "sha256": "9518e1bc6210ca284907c527339fd2f39f3337a1a7c50caacb5fb8dda2f1e801"
+  },
+  "logicalSha256": "4d7dc31ee1c9282eb64f68008a4d52475f5cd461bc8efda58d53f135fed6029e",
+  "document": {
+    "schemaVersion": "1.0.0",
+    "kind": "historical_connections",
+    "sourceSnapshot": {
+      "label": "snapshot-storico-sola-lettura",
+      "commit": "7f126c80522db6bd79f0eecaccfd643bae981793",
+      "capturedAt": "2026-08-13",
+      "runtimeDependency": false
+    },
+    "scope": {
+      "purpose": "Grafo di sola lettura delle connessioni verificate nello snapshot storico; non è una specifica runtime da copiare.",
+      "inventoryFiles": [
+        "endpoint-runtime.json",
+        "collezioni.json",
+        "modelli-enum.json",
+        "job-schedulati.json",
+        "pagine-storiche.json",
+        "schede-pagine.json",
+        "popup.json",
+        "situazione-fiscale.json"
+      ],
+      "confidencePolicy": {
+        "VERIFIED": "Connessione risolta staticamente da route, decoratore, import/chiamata, accesso store o simbolo.",
+        "INFERRED": "Solo il mapping contestuale del nodo di dipendenza eredita la destinazione dal chiamante; non attribuisce ownership storica."
+      },
+      "gapPolicy": "Un gap conserva ogni collegamento richiesto ma non determinabile senza inventarlo."
+    },
+    "summary": {
+      "inventoryRecordCount": 1741,
+      "inventoryRecordsMappedToCanonical": 1741,
+      "nodeCount": 3638,
+      "inventoryNodeCount": 1741,
+      "codeNodeCount": 1852,
+      "canonicalDestinationNodeCount": 45,
+      "edgeCount": 8730,
+      "gapCount": 877,
+      "nodesByType": {
+        "AGENT_SERVICE": 10,
+        "CANONICAL_DESTINATION": 45,
+        "COLLECTION": 269,
+        "ENDPOINT": 1108,
+        "ENUM": 39,
+        "JOB": 34,
+        "MODEL": 135,
+        "OUTSIDE_CATALOG_PAGE_OR_TAB": 8,
+        "PAGE": 62,
+        "PAGE_SPEC": 50,
+        "PARSER": 7,
+        "POPUP": 36,
+        "REPOSITORY": 1,
+        "ROUTER_DEPENDENCY": 349,
+        "ROUTER_HANDLER": 1090,
+        "SERVICE": 395
+      },
+      "edgesByType": {
+        "CALLS_AGENT_SERVICE": 7,
+        "CALLS_PARSER": 10,
+        "CALLS_REPOSITORY": 1,
+        "CALLS_ROUTER_HELPER": 585,
+        "CALLS_SERVICE": 574,
+        "CONSUMES_ENDPOINT": 1168,
+        "HANDLED_BY_ROUTER": 1108,
+        "INVOKES_AGENT_SERVICE": 7,
+        "INVOKES_ENDPOINT_HANDLER": 6,
+        "INVOKES_ROUTER_HELPER": 2,
+        "INVOKES_SERVICE": 41,
+        "MAPS_TO_CANONICAL": 3593,
+        "READS_COLLECTION": 1046,
+        "USES_ENUM": 5,
+        "USES_MODEL": 52,
+        "WRITES_COLLECTION": 525
+      },
+      "edgesByConfidence": {
+        "INFERRED": 1852,
+        "VERIFIED": 6878
+      },
+      "gapsByReason": {
+        "AMBIGUOUS_ENDPOINT_REFERENCE": 24,
+        "DYNAMIC_COLLECTION_REFERENCE": 665,
+        "ENDPOINT_REFERENCE_NOT_IN_RUNTIME": 182,
+        "NO_VERIFIED_ENDPOINT_CONSUMER": 6
+      }
+    },
+    "nodeSchema": {
+      "required": [
+        "id",
+        "nodeType",
+        "inventory",
+        "recordId",
+        "sourcePath",
+        "symbol",
+        "route",
+        "owner",
+        "domain",
+        "canonicalDestination",
+        "decision",
+        "notes"
+      ],
+      "inventoryReference": "inventory + recordId; null only for contextual code and canonical-destination nodes"
+    },
+    "edgeSchema": {
+      "required": [
+        "id",
+        "from",
+        "to",
+        "type",
+        "direction",
+        "evidence",
+        "confidence",
+        "notes"
+      ],
+      "directionValues": [
+        "OUTBOUND"
+      ],
+      "confidenceValues": [
+        "VERIFIED",
+        "INFERRED"
+      ],
+      "evidenceRequired": [
+        "sourcePath"
+      ]
+    },
+    "gapSchema": {
+      "required": [
+        "id",
+        "nodeId",
+        "reason",
+        "expectedEdgeType",
+        "evidence",
+        "notes"
+      ]
+    }
+  },
+  "shards": [
+    {
+      "dataset": "nodes",
+      "path": "nodes-00.jsonl",
+      "bucket": 0,
+      "modulus": 4,
+      "recordCount": 902,
+      "bytes": 442392,
+      "sha256": "d8219f551cf1063197583ca4bdb0dffd1eab57b1579e1b027c54a240e07529f4"
+    },
+    {
+      "dataset": "nodes",
+      "path": "nodes-01.jsonl",
+      "bucket": 1,
+      "modulus": 4,
+      "recordCount": 917,
+      "bytes": 454059,
+      "sha256": "d892a935a2b85b24a16dd9a8f9fea78323ee7590530456b0573963bff6813316"
+    },
+    {
+      "dataset": "nodes",
+      "path": "nodes-02.jsonl",
+      "bucket": 2,
+      "modulus": 4,
+      "recordCount": 923,
+      "bytes": 459805,
+      "sha256": "b247aa1f112f6fa10c5f2677fc82d29944ad356b0a0f74af5db32e73c8d553cf"
+    },
+    {
+      "dataset": "nodes",
+      "path": "nodes-03.jsonl",
+      "bucket": 3,
+      "modulus": 4,
+      "recordCount": 896,
+      "bytes": 444932,
+      "sha256": "dba2ecd1acca71ebf2cb63e7cb6f1a36815fbab8b5c487297d2e2cbfa712624f"
+    },
+    {
+      "dataset": "edges",
+      "path": "edges-00.jsonl",
+      "bucket": 0,
+      "modulus": 8,
+      "recordCount": 1108,
+      "bytes": 422880,
+      "sha256": "96f7c9e4eaf24d02301818942c25db8682256d32a96bca3a969edc682ce90180"
+    },
+    {
+      "dataset": "edges",
+      "path": "edges-01.jsonl",
+      "bucket": 1,
+      "modulus": 8,
+      "recordCount": 1035,
+      "bytes": 397976,
+      "sha256": "7db5b9714bee8956411d5db7b11087c4ba58c9ec83c0815a3a6d2f88509b2936"
+    },
+    {
+      "dataset": "edges",
+      "path": "edges-02.jsonl",
+      "bucket": 2,
+      "modulus": 8,
+      "recordCount": 1113,
+      "bytes": 434841,
+      "sha256": "fdb570f82c310ac7c54b026eaeb7f0b124ae771a1125c1193eb4864c4bb27d66"
+    },
+    {
+      "dataset": "edges",
+      "path": "edges-03.jsonl",
+      "bucket": 3,
+      "modulus": 8,
+      "recordCount": 1115,
+      "bytes": 424738,
+      "sha256": "e378a9ece69c388501663106be541cb5f3166d827a384911d43112cab9544d32"
+    },
+    {
+      "dataset": "edges",
+      "path": "edges-04.jsonl",
+      "bucket": 4,
+      "modulus": 8,
+      "recordCount": 1071,
+      "bytes": 410106,
+      "sha256": "eebb7bfc8ac85912c5bda6a985fcae4c5761c6e94c1addd1849ed2954fc20c6f"
+    },
+    {
+      "dataset": "edges",
+      "path": "edges-05.jsonl",
+      "bucket": 5,
+      "modulus": 8,
+      "recordCount": 1115,
+      "bytes": 425096,
+      "sha256": "e40d24cf50a4812c6bc56845bd45cc3bc5042f42aaf07411b906ad2ca3d9d604"
+    },
+    {
+      "dataset": "edges",
+      "path": "edges-06.jsonl",
+      "bucket": 6,
+      "modulus": 8,
+      "recordCount": 1090,
+      "bytes": 415221,
+      "sha256": "e8ed1dfc4d33f527c26fdb1741588d6a1211ef75068ba7c037ee8167e96d41bf"
+    },
+    {
+      "dataset": "edges",
+      "path": "edges-07.jsonl",
+      "bucket": 7,
+      "modulus": 8,
+      "recordCount": 1083,
+      "bytes": 415568,
+      "sha256": "1cd96efd050aceb14ae045988253396fe4be12fb292e6c05a7fb7f1fe19530e7"
+    },
+    {
+      "dataset": "gaps",
+      "path": "gaps-00.jsonl",
+      "bucket": 0,
+      "modulus": 2,
+      "recordCount": 470,
+      "bytes": 166167,
+      "sha256": "8a20761e88c815eac8e1ba4855971192b45802c4b233f2a4b091cbb351e5e8c0"
+    },
+    {
+      "dataset": "gaps",
+      "path": "gaps-01.jsonl",
+      "bucket": 1,
+      "modulus": 2,
+      "recordCount": 407,
+      "bytes": 144737,
+      "sha256": "2a2522758bc49c7d24250993d112b50c698d67f212ebe9c28c79dc0f1d977175"
+    }
+  ]
+}

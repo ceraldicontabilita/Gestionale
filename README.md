@@ -13,6 +13,7 @@ Il progetto è una base di sviluppo protetta e testata, non ancora un ambiente d
 Leggere prima:
 
 - `docs/SPECIFICA_FUNZIONALE.md`
+- `docs/anatomia-gestionale/README.md`
 - `docs/AUDIT_2026-08-12.md`
 - `docs/REGOLE_DOMINIO.md`
 

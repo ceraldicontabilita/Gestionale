@@ -1,0 +1,835 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "scheduled_jobs",
+  "sourceSnapshot": {
+    "label": "snapshot-storico-sola-lettura",
+    "commit": "7f126c80522db6bd79f0eecaccfd643bae981793",
+    "capturedAt": "2026-08-13",
+    "runtimeDependency": false
+  },
+  "summary": {
+    "recordCount": 34,
+    "intervalJobs": 20,
+    "cronJobs": 14,
+    "startupJobs": 13,
+    "shadowAgentJobs": 7
+  },
+  "records": [
+    {
+      "id": "job:scan_gmail_verbali",
+      "jobId": "scan_gmail_verbali",
+      "name": "Scan Gmail Verbali CdS (ogni 30 min)",
+      "trigger": {
+        "type": "interval",
+        "minutes": 30
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 867,
+      "symbol": "_scan_gmail_verbali_job",
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:ai_tesoreria_shadow",
+      "jobId": "ai_tesoreria_shadow",
+      "name": "Agente Tesoreria in shadow mode (ogni ora + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 1
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 873,
+      "symbol": "_tesoreria_shadow_job",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RINVIARE_AGENTE_SHADOW",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:ai_cash_flow_13w_shadow",
+      "jobId": "ai_cash_flow_13w_shadow",
+      "name": "Cash flow 13 settimane in shadow mode (ogni 6 ore + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 6
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 881,
+      "symbol": "_cash_flow_shadow_job",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RINVIARE_AGENTE_SHADOW",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:ai_contabile_shadow",
+      "jobId": "ai_contabile_shadow",
+      "name": "Agente Contabile in shadow mode (ogni 6 ore + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 6
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 889,
+      "symbol": "_contabile_shadow_job",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RINVIARE_AGENTE_SHADOW",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:ai_fiscale_shadow",
+      "jobId": "ai_fiscale_shadow",
+      "name": "Agente Fiscale in shadow mode (ogni 6 ore + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 6
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 897,
+      "symbol": "_fiscale_shadow_job",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RINVIARE_AGENTE_SHADOW",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:ai_acquisti_shadow",
+      "jobId": "ai_acquisti_shadow",
+      "name": "Agente Acquisti in shadow mode (giornaliero + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 24
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 905,
+      "symbol": "_acquisti_shadow_job",
+      "owner": "CONTROLLO",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "controllo.comparazione_prezzi_acquisto",
+      "decision": "RINVIARE_AGENTE_SHADOW",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:ai_crediti_shadow",
+      "jobId": "ai_crediti_shadow",
+      "name": "Agente Crediti in shadow mode (giornaliero + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 24
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 913,
+      "symbol": "_crediti_shadow_job",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RINVIARE_AGENTE_SHADOW",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:ai_compliance_shadow",
+      "jobId": "ai_compliance_shadow",
+      "name": "Agente Compliance in shadow mode (giornaliero + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 24
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 921,
+      "symbol": "_compliance_shadow_job",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RINVIARE_AGENTE_SHADOW",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:link_verbali_fatture",
+      "jobId": "link_verbali_fatture",
+      "name": "Link Verbali ↔ Fatture (ogni 60 min)",
+      "trigger": {
+        "type": "interval",
+        "minutes": 60
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 929,
+      "symbol": "_link_verbali_fatture_job",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_fatture_ingest",
+      "jobId": "drive_fatture_ingest",
+      "name": "Import Fatture da Google Drive (ogni ora + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 1
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 938,
+      "symbol": "_drive_ingest_job",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_cedolini_ingest",
+      "jobId": "drive_cedolini_ingest",
+      "name": "Import Cedolini da Google Drive (ogni ora + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 1
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 948,
+      "symbol": "_drive_cedolini_job",
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_corrispettivi_ingest",
+      "jobId": "drive_corrispettivi_ingest",
+      "name": "Import Corrispettivi da Google Drive (ogni ora + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 1
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 958,
+      "symbol": "_drive_corrispettivi_job",
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_quietanze_ingest",
+      "jobId": "drive_quietanze_ingest",
+      "name": "Import Quietanze F24 da Google Drive (ogni ora + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "hours": 1
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 968,
+      "symbol": "_drive_quietanze_job",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_estratti_conto_ingest",
+      "jobId": "drive_estratti_conto_ingest",
+      "name": "Import Estratti Conto da Google Drive (ogni 5 min + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "minutes": 5
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 978,
+      "symbol": "_drive_estratti_conto_job",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:bonifici_pdf_inbox",
+      "jobId": "bonifici_pdf_inbox",
+      "name": "Elabora PDF bonifico da Import documenti (ogni 10 min + al riavvio)",
+      "trigger": {
+        "type": "interval",
+        "minutes": 10
+      },
+      "runAtStartup": true,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 989,
+      "symbol": "_bonifici_pdf_inbox_job",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:mittenti_email_sync",
+      "jobId": "mittenti_email_sync",
+      "name": "Documenti da mittenti email attendibili: fatture estere XML + altri tipi (ogni ora)",
+      "trigger": {
+        "type": "interval",
+        "hours": 1
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1027,
+      "symbol": "_mittenti_email_job",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_documenti_ingest",
+      "jobId": "drive_documenti_ingest",
+      "name": "Import incrementale documenti fiscali da Drive (ogni 15 minuti)",
+      "trigger": {
+        "type": "interval",
+        "minutes": 15
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1047,
+      "symbol": "_drive_documenti_job",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:tax_code_registry_sync",
+      "jobId": "tax_code_registry_sync",
+      "name": "Aggiornamento registro ufficiale codici tributo (settimanale)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(day_of_week='sun', hour=4, minute=10)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1064,
+      "symbol": "_tax_code_registry_job",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_fatture_quadratura",
+      "jobId": "drive_fatture_quadratura",
+      "name": "Quadratura fatture Drive Elaborate (domenica ore 5:00)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(day_of_week='sun', hour=5, minute=0)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1084,
+      "symbol": "_drive_quadratura_job",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:collaudo_invarianti",
+      "jobId": "collaudo_invarianti",
+      "name": "Collaudo automatico invarianti (ogni notte 4:30)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(hour=4, minute=30)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1105,
+      "symbol": "_collaudo_notturno_job",
+      "owner": "CONTROLLO",
+      "domain": "controllo",
+      "canonicalDestination": "controllo.anomalie",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_cedolini_quadratura",
+      "jobId": "drive_cedolini_quadratura",
+      "name": "Quadratura cedolini Drive Elaborate (domenica ore 5:15)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(day_of_week='sun', hour=5, minute=15)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1151,
+      "symbol": "_drive_quadratura_cedolini_job",
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_corrispettivi_quadratura",
+      "jobId": "drive_corrispettivi_quadratura",
+      "name": "Quadratura corrispettivi Drive Elaborate (domenica ore 5:30)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(day_of_week='sun', hour=5, minute=30)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1158,
+      "symbol": "_drive_quadratura_corrispettivi_job",
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:drive_quietanze_quadratura",
+      "jobId": "drive_quietanze_quadratura",
+      "name": "Quadratura quietanze Drive Elaborate (domenica ore 5:45)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(day_of_week='sun', hour=5, minute=45)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1175,
+      "symbol": "_drive_quadratura_quietanze_job",
+      "owner": "INTAKE_DOCUMENTALE",
+      "domain": "documenti",
+      "canonicalDestination": "documenti.acquisizione_inbox",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:automazioni_prima_nota",
+      "jobId": "automazioni_prima_nota",
+      "name": "Automazioni Prima Nota: corrispettivi + provvisori + riconciliazione (ogni 30 min)",
+      "trigger": {
+        "type": "interval",
+        "minutes": 30
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1182,
+      "symbol": "_automazioni_prima_nota_job",
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:verbali_email_scan",
+      "jobId": "verbali_email_scan",
+      "name": "Scan Email Verbali (ogni ora)",
+      "trigger": {
+        "type": "interval",
+        "hours": 1
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1191,
+      "symbol": "scan_verbali_email_task",
+      "owner": "INTAKE_DOCUMENTALE",
+      "domain": "documenti",
+      "canonicalDestination": "documenti.acquisizione_inbox",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:scadenze_partite_check",
+      "jobId": "scadenze_partite_check",
+      "name": "Controllo Scadenze Partite Aperte (ogni giorno ore 7:00)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(hour=7, minute=0)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1201,
+      "symbol": "check_scadenze_partite_task",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:controllo_pos_calendario",
+      "jobId": "controllo_pos_calendario",
+      "name": "Controllo POS con calendario accrediti (ogni giorno ore 7:30)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(hour=7, minute=30)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1227,
+      "symbol": "controllo_pos_calendario_task",
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:controllo_canoni_noleggio",
+      "jobId": "controllo_canoni_noleggio",
+      "name": "Regolarità canoni noleggio (ogni giorno ore 7:45)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(hour=7, minute=45)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1251,
+      "symbol": "controllo_canoni_noleggio_task",
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:f24_scadenze_check",
+      "jobId": "f24_scadenze_check",
+      "name": "Controllo Scadenze F24 (ogni giorno ore 8:00)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(hour=8, minute=0)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1260,
+      "symbol": "check_scadenze_f24_task",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:verifica_trattenute_retro",
+      "jobId": "verifica_trattenute_retro",
+      "name": "Verifica retroattiva trattenute verbali nei cedolini (ogni giorno ore 8:30)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(hour=8, minute=30)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1283,
+      "symbol": "verifica_trattenute_retro_task",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:f24_scadenze_check_pm",
+      "jobId": "f24_scadenze_check_pm",
+      "name": "Reminder Scadenze F24 (ogni giorno ore 14:00)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(hour=14, minute=0)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1293,
+      "symbol": "check_scadenze_f24_task",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:fornitori_duplicati_check",
+      "jobId": "fornitori_duplicati_check",
+      "name": "Controllo Fornitori Duplicati (ogni giorno ore 6:00)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(hour=6, minute=0)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1302,
+      "symbol": "check_fornitori_duplicati_task",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:gmail_full_scan",
+      "jobId": "gmail_full_scan",
+      "name": "Gmail Full Scan Multi-Cartella (ogni ora)",
+      "trigger": {
+        "type": "interval",
+        "hours": 1
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1311,
+      "symbol": "gmail_full_scan_task",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    },
+    {
+      "id": "job:paypal_recupera_fatture_email",
+      "jobId": "paypal_recupera_fatture_email",
+      "name": "Recupero Fatture PayPal mancanti dalla posta (ogni giorno ore 5:30)",
+      "trigger": {
+        "type": "cron",
+        "expression": "CronTrigger(hour=5, minute=30)"
+      },
+      "runAtStartup": false,
+      "distributedLease": true,
+      "sourcePath": "app/scheduler.py",
+      "sourceLine": 1321,
+      "symbol": "paypal_recupera_fatture_email_task",
+      "owner": "RICONCILIAZIONE",
+      "domain": "paypal_pagopa",
+      "canonicalDestination": "riconciliazione.paypal_pagopa",
+      "decision": "CONSOLIDARE_IN_JOB_RUNNER_CANONICO",
+      "notes": "Il runtime storico applicava una lease Mongo tramite DistributedLockedScheduler.",
+      "acceptanceTests": [
+        "Una sola istanza esegue il job per finestra grazie a lease e heartbeat.",
+        "Retry, checkpoint, idempotenza, timeout e run audit sono verificati.",
+        "Il job ambiguo propone e segnala; non conferma fatti economici senza prova."
+      ]
+    }
+  ]
+}
