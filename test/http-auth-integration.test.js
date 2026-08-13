@@ -145,6 +145,18 @@ test('HTTP reale: anonimato, PIN, CSRF e riconferma PIN sulle operazioni sensibi
   const completedJob = await completedImport.json();
   assert.equal(completedJob.status, 'COMPLETED');
   assert.equal(completedJob.totals.insertedInvoices, 1);
+  assert.equal(completedJob.totals.canonicalInvoices, 1);
+  assert.equal(completedJob.totals.reviewInvoices, 0);
+
+  const [canonicalInvoices, stagingInvoices, supplierDirectory] = await Promise.all([
+    jsonRequest(`${baseUrl}/api/supplier-invoices`, { cookie }).then((response) => response.json()),
+    jsonRequest(`${baseUrl}/api/supplier-invoices/staging`, { cookie }).then((response) => response.json()),
+    jsonRequest(`${baseUrl}/api/supplier-invoices/suppliers/directory`, { cookie }).then((response) => response.json())
+  ]);
+  assert.equal(canonicalInvoices.length, 1);
+  assert.equal(stagingInvoices.length, 0);
+  assert.equal(supplierDirectory.counts.suppliers, 1);
+  assert.equal(supplierDirectory.counts.canonicalInvoices, 1);
 
   const nestedZip = zipSync({ 'seconda.xml': strToU8(supplierInvoiceXml) });
   const duplicateArchive = Buffer.from(zipSync({ 'prima.xml': strToU8(supplierInvoiceXml), 'annidato.zip': nestedZip }));
@@ -169,6 +181,7 @@ test('HTTP reale: anonimato, PIN, CSRF e riconferma PIN sulle operazioni sensibi
   assert.equal(completedZipJob.status, 'COMPLETED');
   assert.equal(completedZipJob.totals.insertedInvoices, 0);
   assert.equal(completedZipJob.totals.duplicateInvoices, 2);
+  assert.equal(completedZipJob.totals.canonicalInvoices, 0);
 
   const testClient = new MongoClient(mongoUri);
   await testClient.connect();

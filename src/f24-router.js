@@ -216,7 +216,48 @@ export function registerF24Routes(app, { getDb, getClient }) {
       const filter = {};
       if (req.query.namespace) filter.namespace = String(req.query.namespace).toUpperCase();
       if (req.query.codice) filter.codice = String(req.query.codice).toUpperCase();
-      const rows = await db.collection('tributi_registro').find(filter).sort({ namespace: 1, codice: 1, validoDal: -1 }).limit(1000).toArray();
+      const observedMatch = { attivo: true, codice: { $nin: [null, ''] } };
+      if (filter.namespace) observedMatch.namespace = filter.namespace;
+      if (filter.codice) observedMatch.codice = filter.codice;
+      const [registered, observed] = await Promise.all([
+        db.collection('tributi_registro').find(filter).sort({ namespace: 1, codice: 1, validoDal: -1 }).limit(1000).toArray(),
+        db.collection('f24_righe_indice').aggregate([
+          { $match: observedMatch },
+          { $group: {
+            _id: { namespace: '$namespace', codice: '$codice' },
+            occurrences: { $sum: 1 },
+            descriptions: { $addToSet: '$descrizioneIndice' },
+            sections: { $addToSet: '$sezione' },
+            lastObservedAt: { $max: '$aggiornatoIl' }
+          } },
+          { $sort: { '_id.namespace': 1, '_id.codice': 1 } },
+          { $limit: 2000 }
+        ]).toArray()
+      ]);
+      const observedByKey = new Map(observed.map((row) => [`${row._id.namespace}:${row._id.codice}`, row]));
+      const registeredKeys = new Set(registered.map((row) => `${row.namespace}:${row.codice}`));
+      const rows = registered.map((row) => {
+        const source = observedByKey.get(`${row.namespace}:${row.codice}`);
+        return { ...row, registryStatus: 'CLASSIFICATO_DA_FONTE_VERIFICATA', occurrences: source?.occurrences || 0, observedSections: source?.sections?.filter(Boolean) || [] };
+      });
+      for (const source of observed) {
+        const key = `${source._id.namespace}:${source._id.codice}`;
+        if (registeredKeys.has(key)) continue;
+        rows.push({
+          namespace: source._id.namespace,
+          codice: source._id.codice,
+          descrizione: source.descriptions.find((value) => String(value || '').trim()) || 'Descrizione non presente nell indice',
+          natura: null,
+          conto: null,
+          fonte: 'INDICE_DOCUMENTALE_DRIVE',
+          verificatoIl: null,
+          lastObservedAt: source.lastObservedAt || null,
+          registryStatus: 'OSSERVATO_DA_CLASSIFICARE',
+          occurrences: source.occurrences,
+          observedSections: source.sections.filter(Boolean)
+        });
+      }
+      rows.sort((left, right) => `${left.namespace}:${left.codice}`.localeCompare(`${right.namespace}:${right.codice}`));
       res.json(rows);
     } catch (error) { res.status(400).json({ error: error.message }); }
   });

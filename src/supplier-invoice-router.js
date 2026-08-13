@@ -5,7 +5,8 @@ import { getExpectationTree } from './expectation-engine.js';
 import { collectSupplierInvoiceXmlEntries } from './supplier-invoice-archive.js';
 import { reconcileSupplierInvoicePayment } from './supplier-invoice-settlement.js';
 import { stageSupplierInvoiceXml } from './supplier-invoice-xml.js';
-import { validateSupplierInvoice } from './supplier-invoice.js';
+import { autoValidateSupplierInvoice, validateSupplierInvoice } from './supplier-invoice.js';
+import { buildSupplierDirectory } from './supplier-directory-projection.js';
 
 const importJobDatabases = new WeakSet();
 const TERMINAL_FILE_STATES = new Set(['COMPLETED', 'COMPLETED_WITH_ERRORS', 'FAILED']);
@@ -83,6 +84,8 @@ function jobFileSummary(file) {
     insertedInvoices: Number(file.insertedInvoices || 0),
     duplicateInvoices: Number(file.duplicateInvoices || 0),
     rejectedXml: Number(file.rejectedXml || 0),
+    canonicalInvoices: Number(file.canonicalInvoices || 0),
+    reviewInvoices: Number(file.reviewInvoices || 0),
     skippedEntries: Number(file.skippedEntries || 0),
     currentEntry: file.currentEntry || null,
     error: file.error || null
@@ -97,10 +100,12 @@ function serializeImportJob(job) {
     out.insertedInvoices += file.insertedInvoices;
     out.duplicateInvoices += file.duplicateInvoices;
     out.rejectedXml += file.rejectedXml;
+    out.canonicalInvoices += file.canonicalInvoices;
+    out.reviewInvoices += file.reviewInvoices;
     out.skippedEntries += file.skippedEntries;
     if (TERMINAL_FILE_STATES.has(file.status)) out.completedFiles += 1;
     return out;
-  }, { totalFiles: files.length, completedFiles: 0, discoveredXml: 0, processedXml: 0, insertedInvoices: 0, duplicateInvoices: 0, rejectedXml: 0, skippedEntries: 0 });
+  }, { totalFiles: files.length, completedFiles: 0, discoveredXml: 0, processedXml: 0, insertedInvoices: 0, duplicateInvoices: 0, rejectedXml: 0, canonicalInvoices: 0, reviewInvoices: 0, skippedEntries: 0 });
   const units = files.reduce((sum, file) => {
     if (TERMINAL_FILE_STATES.has(file.status)) return sum + 1;
     if (file.discoveredXml > 0) return sum + Math.min(0.99, 0.2 + (0.8 * file.processedXml / file.discoveredXml));
@@ -124,7 +129,7 @@ async function refreshJobStatus(db, jobId) {
   if (!job) return null;
   const files = job.files || [];
   const complete = files.length > 0 && files.every((file) => TERMINAL_FILE_STATES.has(file.status));
-  const hasErrors = files.some((file) => file.status === 'FAILED' || Number(file.rejectedXml || 0) > 0);
+  const hasErrors = files.some((file) => file.status === 'FAILED' || Number(file.rejectedXml || 0) > 0 || Number(file.reviewInvoices || 0) > 0);
   const hasActivity = files.some((file) => file.status !== 'PENDING');
   const status = complete ? (hasErrors ? 'COMPLETED_WITH_ERRORS' : 'COMPLETED') : (hasActivity ? 'PROCESSING' : 'PENDING');
   if (job.status !== status) {
@@ -141,9 +146,10 @@ async function updateJobFile(db, jobId, index, fields) {
   );
 }
 
-async function importSupplierInvoiceAsset(db, buffer, { filename, actor, containerSha256 = null, onProgress = async () => {} }) {
+async function importSupplierInvoiceAsset(context, buffer, { filename, actor, containerSha256 = null, onProgress = async () => {} }) {
+  const { db } = context;
   const extracted = collectSupplierInvoiceXmlEntries(buffer, filename);
-  const counts = { discoveredXml: extracted.entries.length, processedXml: 0, insertedInvoices: 0, duplicateInvoices: 0, rejectedXml: 0, skippedEntries: extracted.summary.skipped };
+  const counts = { discoveredXml: extracted.entries.length, processedXml: 0, insertedInvoices: 0, duplicateInvoices: 0, rejectedXml: 0, canonicalInvoices: 0, reviewInvoices: 0, skippedEntries: extracted.summary.skipped };
   const errors = [];
   await onProgress({ ...counts, currentEntry: null });
   for (const entry of extracted.entries) {
@@ -177,7 +183,7 @@ async function importSupplierInvoiceAsset(db, buffer, { filename, actor, contain
             gridFsId: stored.gridFsId,
             propostaTipo: 'FATTURA_XML',
             stato: 'ELABORATO',
-            stagingFattura: 'IMPORTATA_DA_VERIFICARE',
+            stagingFattura: 'IMPORTATA_IN_ELABORAZIONE',
             invoiceSourceKeys: staged.invoices.map((row) => row.sourceKey),
             elaboratoIl: new Date(),
             aggiornatoIl: new Date()
@@ -189,6 +195,16 @@ async function importSupplierInvoiceAsset(db, buffer, { filename, actor, contain
       );
       counts.insertedInvoices += staged.counts.inserted;
       counts.duplicateInvoices += staged.counts.duplicates;
+      for (const invoice of staged.invoices) {
+        try {
+          const canonical = await autoValidateSupplierInvoice(context, invoice.sourceKey);
+          if (canonical.reviewRequired) counts.reviewInvoices += 1;
+          else if (!canonical.duplicate) counts.canonicalInvoices += 1;
+        } catch (error) {
+          counts.reviewInvoices += 1;
+          errors.push({ path: entry.path, stage: 'AUTO_VALIDATION', error: String(error?.message || error).slice(0, 500) });
+        }
+      }
     } catch (error) {
       counts.rejectedXml += 1;
       errors.push({ path: entry.path, error: String(error?.message || error).slice(0, 500) });
@@ -204,7 +220,11 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
   app.get('/api/supplier-invoices/staging', async (req, res) => {
     try {
       const db = database(getDb, res); if (!db) return;
-      const rows = await db.collection('fatture').find({}, { projection: { rawXml: 0 } })
+      const canonicalSourceKeys = await db.collection('invoice_suppliers').distinct('sources.sourceKey', { current: true });
+      const filter = canonicalSourceKeys.length
+        ? { sourceKey: { $nin: canonicalSourceKeys }, stato: { $nin: ['VALIDATA', 'SCARTATA'] } }
+        : { stato: { $nin: ['VALIDATA', 'SCARTATA'] } };
+      const rows = await db.collection('fatture').find(filter, { projection: { rawXml: 0 } })
         .sort({ aggiornatoIl: -1, sourceKey: 1 }).limit(limit(req.query.limit)).toArray();
       res.set('Cache-Control', 'no-store');
       res.json(rows);
@@ -237,6 +257,27 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
     }
   });
 
+  app.get('/api/supplier-invoices/suppliers/directory', async (_req, res) => {
+    try {
+      const db = database(getDb, res); if (!db) return;
+      const [staging, canonical, openItems] = await Promise.all([
+        db.collection('fatture').find({}, { projection: {
+          sourceKey: 1, stato: 1, fornitore: 1, numero: 1, tipoDocumento: 1,
+          data: 1, totaleDocumento: 1
+        } }).toArray(),
+        db.collection('invoice_suppliers').find({ current: true }, { projection: {
+          invoiceId: 1, sourceKey: 1, sources: 1, supplier: 1, number: 1,
+          documentType: 1, dates: 1, amounts: 1
+        } }).toArray(),
+        db.collection('open_items').find({ sourceEntityType: 'INVOICE_SUPPLIER' }).toArray()
+      ]);
+      res.set('Cache-Control', 'no-store');
+      res.json(buildSupplierDirectory(staging, canonical, openItems));
+    } catch (error) {
+      res.status(errorStatus(error)).json({ error: error.message });
+    }
+  });
+
   app.get('/api/supplier-invoices/:invoiceId/tree', async (req, res) => {
     try {
       const db = database(getDb, res); if (!db) return;
@@ -252,7 +293,8 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
 
   app.post('/api/supplier-invoices/intake', async (req, res) => {
     try {
-      const db = database(getDb, res); if (!db) return;
+      const current = context(getClient, getDb, res); if (!current) return;
+      const { db } = current;
       const buffer = uploadedXml(req);
       const filename = String(req.body?.filename || req.get('x-file-name') || 'fattura.xml').slice(0, 500);
       const stored = await storeOriginalOnce(db, buffer, {
@@ -283,7 +325,7 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
             gridFsId: stored.gridFsId,
             propostaTipo: 'FATTURA_XML',
             stato: 'ELABORATO',
-            stagingFattura: 'IMPORTATA_DA_VERIFICARE',
+            stagingFattura: 'IMPORTATA_IN_ELABORAZIONE',
             invoiceSourceKeys: staged.invoices.map((row) => row.sourceKey),
             elaboratoIl: new Date(),
             aggiornatoIl: new Date()
@@ -292,12 +334,20 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
         },
         { upsert: true }
       );
+      const automatic = [];
+      for (const invoice of staged.invoices) {
+        automatic.push(await autoValidateSupplierInvoice(current, invoice.sourceKey));
+      }
       res.status(staged.counts.inserted ? 201 : 200).json({
         ok: true,
         duplicate: staged.counts.inserted === 0,
         sha256: staged.sha256,
         invoiceSourceKeys: staged.invoices.map((row) => row.sourceKey),
-        counts: staged.counts
+        counts: {
+          ...staged.counts,
+          canonical: automatic.filter((row) => !row.reviewRequired && !row.duplicate).length,
+          review: automatic.filter((row) => row.reviewRequired).length
+        }
       });
     } catch (error) {
       res.status(errorStatus(error)).json({ error: error.message });
@@ -316,7 +366,7 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
         if (!Number.isSafeInteger(size) || size <= 0) throw new Error(`Dimensione non valida per ${name}`);
         if (size > uploadLimitMb * 1024 * 1024) throw new Error(`${name} supera il limite di ${uploadLimitMb} MB`);
         if (!/\.(xml|zip)$/i.test(name)) throw new Error(`Formato non supportato: ${name}`);
-        return { index, name, size, status: 'PENDING', discoveredXml: 0, processedXml: 0, insertedInvoices: 0, duplicateInvoices: 0, rejectedXml: 0, skippedEntries: 0 };
+        return { index, name, size, status: 'PENDING', discoveredXml: 0, processedXml: 0, insertedInvoices: 0, duplicateInvoices: 0, rejectedXml: 0, canonicalInvoices: 0, reviewInvoices: 0, skippedEntries: 0 };
       });
       const now = new Date();
       const job = {
@@ -378,13 +428,13 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
           contentType: assetContentType(filename),
           metadata: { sourceType: 'UPLOAD', actor: String(req.auth?.sessionId || 'SYSTEM'), importJobId: jobId }
         });
-        const result = await importSupplierInvoiceAsset(db, req.body, {
+        const result = await importSupplierInvoiceAsset({ client: getClient?.(), db }, req.body, {
           filename,
           actor: String(req.auth?.sessionId || 'SYSTEM'),
           containerSha256: container.sha256,
           onProgress: (progress) => updateJobFile(db, jobId, index, progress)
         });
-        const status = result.counts.rejectedXml ? 'COMPLETED_WITH_ERRORS' : 'COMPLETED';
+        const status = result.counts.rejectedXml || result.counts.reviewInvoices ? 'COMPLETED_WITH_ERRORS' : 'COMPLETED';
         await updateJobFile(db, jobId, index, {
           ...result.counts,
           status,
@@ -441,4 +491,34 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
       res.status(errorStatus(error)).json({ error: error.message });
     }
   });
+
+  function start() {
+    let running = false;
+    async function processBacklog() {
+      if (running) return;
+      running = true;
+      try {
+      const client = getClient?.(); const db = getDb?.();
+      if (!client || !db) return;
+      const existingSources = new Set(await db.collection('invoice_suppliers').distinct('sources.sourceKey', { current: true }));
+      const pending = await db.collection('fatture').find({
+        sourceKey: { $nin: [...existingSources] },
+        'quadraturaEstrazione.status': 'EXACT',
+        stato: { $nin: ['VALIDATA', 'SCARTATA'] }
+      }, { projection: { sourceKey: 1 } }).sort({ creatoIl: 1 }).limit(5_000).toArray();
+      for (const row of pending) {
+        await autoValidateSupplierInvoice({ client, db }, row.sourceKey).catch((error) => console.error('[supplier-invoice] validazione automatica differita:', error.message));
+      }
+      } finally {
+        running = false;
+      }
+    }
+    const first = setTimeout(() => processBacklog().catch((error) => console.error('[supplier-invoice] avvio validazione automatica:', error.message)), 2_000);
+    const interval = setInterval(() => processBacklog().catch((error) => console.error('[supplier-invoice] scansione validazione automatica:', error.message)), 30_000);
+    first.unref?.();
+    interval.unref?.();
+    return { first, interval, run: processBacklog };
+  }
+
+  return { start };
 }

@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { MongoClient } from 'mongodb';
+import { strToU8, zipSync } from 'fflate';
 import { normalizeMovement } from '../src/domain.js';
 import { getOrCreateRiporto } from '../src/ledger.js';
 import { withMongoTransaction } from '../src/mongo-transaction.js';
 import { acquireJobLease, releaseJobLease } from '../src/jobs.js';
 import { storeOriginalOnce } from '../src/blob-store.js';
 import { importF24IndexRows } from '../src/f24-import-service.js';
+import { importSourcePackageIndexes } from '../src/source-package-index.js';
 
 const uri = process.env.TEST_MONGODB_URI;
 
@@ -83,4 +85,31 @@ test('integrazione MongoDB: transazioni, riporti, lock, originali e F24 idempote
   assert.equal(f24.stato, 'RICONCILIATO');
   assert.equal(f24.statoDocumentale, 'IN_ATTESA_RISCONTRO');
   assert.equal(await db.collection('f24_operazioni').countDocuments(), 1);
+
+  const sourceIndex = [
+    'tipo;anno_dichiarazione;anno_imposta;protocollo_o_id;file;sha256',
+    `770;2026;2025;T260000000001;770/2026/modello.pdf;${'b'.repeat(64)}`
+  ].join('\n');
+  const packageBuffer = Buffer.from(zipSync({
+    'ROOT/01_DICHIARAZIONI_FISCALI/INDICE.csv': strToU8(sourceIndex)
+  }));
+  const packageFile = {
+    id: 'drive-package-synthetic',
+    name: 'CERALDI_GROUP_FISCALE_CODEX_COMPLETO_2020_2026_V2.zip',
+    extension: '.zip',
+    version: '1',
+    size: packageBuffer.length,
+    path: 'ARCHIVIO/PACCHETTO.zip',
+    webViewLink: 'https://drive.google.com/file/d/synthetic/view'
+  };
+  const driveClient = { downloadBuffer: async () => packageBuffer };
+  const firstPackageImport = await importSourcePackageIndexes(db, driveClient, [packageFile]);
+  const secondPackageImport = await importSourcePackageIndexes(db, driveClient, [packageFile]);
+  assert.equal(firstPackageImport.counts.sourcePackageRecords, 1);
+  assert.equal(secondPackageImport.results[0].skipped, true);
+  assert.equal(await db.collection('source_package_records').countDocuments({ attivo: true }), 1);
+  const sourceRecord = await db.collection('source_package_records').findOne({});
+  assert.equal(sourceRecord.fields.anno_imposta, '2025');
+  assert.equal(sourceRecord.drivePackageFileId, 'drive-package-synthetic');
+  assert.equal(sourceRecord.packageSources.length, 1);
 });

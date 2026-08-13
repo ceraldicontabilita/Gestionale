@@ -26,6 +26,19 @@ domini: riceve soltanto eventi già validati dal proprietario funzionale.
 - un evento completato o in dead letter può essere riaccodato con motivo e
   audit, senza duplicare la scrittura.
 
+L'intake automatico delle fatture usa una sola eccezione tecnica circoscritta:
+la regola code-defined `FATTURA_PASSIVA_AUTO_DA_CLASSIFICARE` può essere
+provisionata idempotentemente dal sistema soltanto per XML FatturaPA esatti e
+soltanto sui conti tecnici `COSTI_DA_CLASSIFICARE`, `IVA_DA_CLASSIFICARE` e
+`DEBITI_FORNITORI`. Actor, motivo e audit sono obbligatori. La regola non
+classifica definitivamente costo o detraibilità IVA e non può essere modificata
+dalla pagina. Creazione o modifica delle normali regole contabili, chiusura e
+riapertura dei periodi restano operazioni amministrative protette da PIN. Il
+sistema può creare idempotentemente come `OPEN` soltanto un periodo ancora
+inesistente necessario alla data di acquisizione, con actor e motivo tecnici;
+se il periodo esiste ma non è aperto, l'intake fallisce senza aggirarne lo
+stato.
+
 ## API amministrative
 
 Le operazioni `POST /api/event-engine/*` sono sensibili e richiedono la
@@ -47,15 +60,20 @@ riconferma temporanea del PIN amministratore.
 Il primo produttore reale collegato è quello delle fatture fornitori. Drive,
 PEC, upload XML e job di upload multiplo XML/ZIP convergono nello stesso staging
 FatturaPA, preservando fonte, versione, originale e SHA-256. I job accettano più
-file e ZIP annidati, espongono avanzamento persistito e applicano limiti contro
-ZIP bomb e percorsi malevoli. L'intake richiede una sessione amministrativa
-autenticata tramite PIN, mentre la successiva
-`POST /api/supplier-invoices/validate` richiede una decisione esplicita
-sull'IVA detraibile e registra fattura canonica ed evento
-`invoice.supplier_validated` nella stessa transazione. Il consumer crea
-competenza, componente IVA, debito, partita aperta e l'albero delle attese
-senza attendere il pagamento. Vale la regola: il ramo nasce quando nasce
-l'obbligo; l'evidenza futura lo soddisfa, non lo crea.
+file e ZIP annidati, espongono avanzamento persistito anche durante la
+navigazione e applicano limiti contro ZIP bomb e percorsi malevoli. L'intake
+richiede una sessione amministrativa autenticata tramite PIN. Quando identità,
+chiave naturale, schema e quadratura sono esatti, il processor canonizza
+automaticamente la fattura e registra `invoice.supplier_validated` nella stessa
+transazione. I casi non esatti restano in revisione senza produrre fatti
+contabili.
+
+Il consumer crea competenza, IVA esposta su conto tecnico da classificare,
+debito, partita aperta e albero delle attese senza attendere il pagamento. Non
+dichiara automaticamente l'IVA detraibile e non inventa il conto costo
+definitivo. La pagina Fornitori è una proiezione per identificativo fiscale
+esatto e non crea un'anagrafica parallela. Vale la regola: il ramo nasce quando
+nasce l'obbligo; l'evidenza futura lo soddisfa, non lo crea.
 
 Il regolamento è un fatto successivo. `POST
 /api/supplier-invoices/:invoiceId/reconcile` richiede identità naturale della

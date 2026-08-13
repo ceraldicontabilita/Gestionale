@@ -28,6 +28,23 @@ Movimenti separati dai normali ricavi/costi. Ogni versamento o restituzione mant
 
 Destinazione obbligatoria per movimenti ambigui, incompleti, senza prova sufficiente o con più associazioni plausibili. Nessun automatismo deve trasformarli in riconciliati.
 
+## Fatture fornitori
+
+Un XML FatturaPA può diventare automaticamente fattura canonica soltanto quando
+schema, identità del fornitore, chiave naturale e quadratura in centesimi sono
+esatti. La canonizzazione crea subito competenza, debito, partita aperta e ramo
+delle attese; non attende e non presume il pagamento.
+
+L'IVA esposta non equivale a IVA detraibile. Finché manca una classificazione
+fiscale esplicita, costo e IVA sono registrati su conti tecnici da classificare,
+distinti dal debito fornitore. I casi non esatti restano in revisione e non
+generano scritture. Metodo di pagamento, scadenza o importo presenti nell'XML non
+provano banca, carta o cassa.
+
+Il fornitore è raggruppato soltanto per identificativo fiscale esatto. Nome
+simile o importo uguale non autorizzano fusione di anagrafiche, deduplicazione o
+riconciliazione.
+
 ## SumUp
 
 Incasso POS, payout SumUp e accredito bancario sono eventi distinti. La chiusura POS non prova l'accredito sul conto corrente. Commissioni e differenze devono restare esplicite.

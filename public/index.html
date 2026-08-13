@@ -16,6 +16,8 @@
     <button class="nav-item active" data-view="home">Home</button>
     <button class="nav-item" data-view="prima-nota">Prima Nota</button>
     <button class="nav-item" data-view="documenti">Documenti</button>
+    <button class="nav-item" data-view="archivi">Archivi</button>
+    <button class="nav-item" data-view="fornitori">Fornitori <span id="supplierNavBadge" class="nav-count hidden">0</span></button>
     <button class="nav-item" data-view="riconciliazione">Riconciliazione</button>
     <button class="nav-item" data-view="amministrazione">Amministrazione</button>
     <button class="nav-item" data-view="controllo">Controllo</button>
@@ -26,6 +28,7 @@
     <progress id="supplierImportProgress" max="100" value="0">0%</progress>
     <span id="supplierImportSummary">Preparazione caricamento…</span>
     <small id="supplierImportCurrent">Puoi continuare a usare tutte le pagine del gestionale.</small>
+    <button id="supplierImportOpenInvoices" class="monitor-action hidden" type="button">Apri fatture importate</button>
   </section>
 
   <main>
@@ -50,33 +53,18 @@
 
     <section id="view-documenti" class="view">
       <section class="cards" id="driveIndexCards"></section>
-      <section class="panel">
+      <section id="supplierInvoicePanel" class="panel">
         <div class="panel-head"><div><p class="eyebrow">FATTURE FORNITORI</p><h3>Intake, competenza e albero delle attese</h3></div><button id="reloadSupplierInvoices" type="button">Aggiorna</button></div>
-        <p class="muted">Il ramo nasce dalla fattura validata. Pagamento, prova finanziaria e riconciliazione restano attese future separate.</p>
+        <p class="muted">Gli XML con identità e quadratura esatte entrano automaticamente. Costo e IVA non classificati restano su conti tecnici; pagamento, banca, carta e cassa non vengono mai inventati.</p>
         <form id="supplierInvoiceIntakeForm" class="grid-form invoice-intake-form">
           <label class="wide">Fatture XML e archivi ZIP<input name="invoiceFiles" type="file" accept=".xml,.zip,application/xml,text/xml,application/zip,application/x-zip-compressed" multiple required></label>
           <button class="primary" type="submit">Importa file e ZIP</button>
         </form>
         <p class="muted import-help">Puoi selezionare più XML, più ZIP e ZIP contenenti altri ZIP. I duplicati esatti sono riconosciuti tramite SHA-256. L'importazione continua mentre cambi pagina nel gestionale.</p>
         <div id="supplierInvoiceResult" class="result muted"></div>
-        <h4>Da verificare</h4>
-        <div class="table-wrap compact-table"><table><thead><tr><th>Fattura</th><th>Fornitore</th><th>Data</th><th class="num">Totale</th><th>Estrazione</th><th>Azione</th></tr></thead><tbody id="supplierInvoiceStagingRows"></tbody></table></div>
-        <form id="supplierInvoiceValidationForm" class="grid-form invoice-validation-form hidden">
-          <input name="sourceKey" type="hidden">
-          <label>IVA detraibile<input name="ivaDetraibile" type="number" min="0" step="0.01" required></label>
-          <label>Ricezione<input name="receiptDate" type="date" required></label>
-          <label>Competenza<input name="competenceDate" type="date" required></label>
-          <label>Registrazione<input name="registrationDate" type="date" required></label>
-          <label>Data IVA<input name="vatDate" type="date" required></label>
-          <label>Scadenza<input name="dueDate" type="date"></label>
-          <label>Conto costo<input name="costAccountCode" value="COSTI_MERCI" required></label>
-          <label>Conto IVA<input name="vatAccountCode" value="IVA_CREDITO"></label>
-          <label>Debiti fornitore<input name="payableAccountCode" value="DEBITI_FORNITORI" required></label>
-          <label>Regola<input name="postingRuleId" value="FATTURA_PASSIVA" required></label>
-          <label>Versione regola<input name="postingRuleVersion" value="1" required></label>
-          <label class="wide">Motivo<input name="reason" value="Validazione fattura fornitore" required></label>
-          <button class="primary" type="submit">Valida e genera competenza</button>
-        </form>
+        <div id="supplierInvoiceCounts" class="source-summary muted">Lettura fatture…</div>
+        <h4>In elaborazione o da controllare</h4>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Fattura</th><th>Fornitore</th><th>Data</th><th class="num">Totale</th><th>Estrazione</th><th>Stato</th></tr></thead><tbody id="supplierInvoiceStagingRows"></tbody></table></div>
         <h4>Fatture canoniche</h4>
         <div class="table-wrap compact-table"><table><thead><tr><th>Fattura</th><th>Fornitore</th><th>Competenza</th><th class="num">Residuo</th><th>Processo</th><th>Albero</th></tr></thead><tbody id="supplierInvoiceCanonicalRows"></tbody></table></div>
         <div id="supplierInvoiceTree" class="expectation-tree muted">Seleziona “Albero” per vedere obblighi soddisfatti e attese future.</div>
@@ -88,16 +76,54 @@
       </section>
       <section class="panel">
         <div class="panel-head"><div><p class="eyebrow">ARCHIVIO GOOGLE DRIVE</p><h3>Indice documentale verificato</h3></div><button id="refreshDriveIndex" type="button">Rileggi indice</button></div>
-        <p class="muted">Il gestionale legge l'indice Excel. Gli originali restano su Drive e non vengono caricati in MongoDB.</p>
-        <div class="filters"><input id="driveDocumentQuery" type="search" placeholder="Cerca nome, categoria o percorso"><select id="driveDocumentYear" aria-label="Anno"><option value="">Tutti gli anni</option></select><button id="searchDriveDocuments" type="button" class="primary">Cerca</button></div>
+        <p class="muted">Il gestionale legge l'indice Excel senza modificarlo. Gli originali restano su Drive e non vengono caricati in MongoDB.</p>
+        <div class="filters"><input id="driveDocumentQuery" type="search" placeholder="Cerca nome, categoria o percorso"><select id="driveDocumentYear" aria-label="Anno"><option value="">Tutti gli anni</option></select><label class="inline-check"><input id="includeTechnicalDocuments" type="checkbox"> Mostra prove tecniche PEC</label><button id="searchDriveDocuments" type="button" class="primary">Cerca</button></div>
         <p id="driveIndexMessage" class="muted"></p>
         <div class="table-wrap"><table><thead><tr><th>Documento</th><th>Dominio</th><th>Anno</th><th>Stato</th><th>Fonte</th></tr></thead><tbody id="driveDocumentRows"></tbody></table></div>
       </section>
       <section class="panel">
         <div class="panel-head"><div><p class="eyebrow">COLLEGAMENTI FISCALI</p><h3>Dichiarazioni indicizzate</h3></div></div>
-        <div class="table-wrap compact-table"><table><thead><tr><th>Anno</th><th>Tipo</th><th>Protocollo</th><th>Documento</th></tr></thead><tbody id="driveDeclarationRows"></tbody></table></div>
+        <p class="muted">Tipo, anno dichiarazione, periodo d'imposta e protocollo restano distinti come nell'indice sorgente.</p>
+        <div class="filters"><select id="driveDeclarationCategory" aria-label="Categoria dichiarazione"><option value="">Tutte le categorie</option></select><select id="driveDeclarationYear" aria-label="Anno dichiarazione"><option value="">Tutti gli anni</option></select></div>
+        <div id="driveDeclarationGroups" class="document-groups"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">RAPPORTI DI LAVORO</p><h3>Dimissioni telematiche</h3></div></div>
+        <p class="muted">Il documento principale è il PDF ministeriale: nome, cognome, decorrenza e tipo comunicazione vengono letti dal PDF. TXT/EML/XML restano prove tecniche della PEC.</p>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Dipendente</th><th>Decorrenza</th><th>Comunicazione</th><th>Documento</th><th>Prova PEC</th></tr></thead><tbody id="driveResignationRows"></tbody></table></div>
       </section>
       <section class="warning">Modello F24, quietanza e movimento bancario sono prove distinte. L'indice documentale non attribuisce automaticamente un pagamento.</section>
+    </section>
+
+    <section id="view-archivi" class="view">
+      <div class="hero compact-hero"><div><p class="eyebrow">ARCHIVI DI DOMINIO</p><h2>Tutte le cartelle leggibili.<br>Senza perdere la provenienza.</h2><p>Ogni documento resta su Drive. Qui viene organizzato per categoria, anno e cartella autorevole.</p></div><button id="reloadArchives" type="button">Aggiorna</button></div>
+      <section id="archiveDomainCards" class="cards"></section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">RICERCA PER CATEGORIA</p><h3>Documenti indicizzati su Drive</h3></div><div class="filters"><select id="archiveDomain"><option value="">Tutte le categorie</option></select><select id="archiveYear"><option value="">Tutti gli anni</option></select><input id="archiveQuery" type="search" placeholder="Cerca nome o percorso"><button id="searchArchives" class="primary" type="button">Cerca</button></div></div>
+        <p id="archiveMessage" class="muted"></p>
+        <div class="table-wrap"><table><thead><tr><th>Documento</th><th>Cartella</th><th>Categoria</th><th>Anno</th><th>Fonte</th></tr></thead><tbody id="archiveRows"></tbody></table></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">VERBALI AUTO</p><h3>Verbali e notifiche della Polizia Locale</h3></div></div>
+        <p class="muted">Sono mostrati i PDF principali; ricevute PEC, daticert e firme restano prove tecniche consultabili dall'archivio generale.</p>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Documento</th><th>Anno</th><th>Provenienza</th><th>Fonte</th></tr></thead><tbody id="archiveVerbaliRows"></tbody></table></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">INDICI ZIP ORIGINALI</p><h3>Dati fiscali, PEC e PartenoPay senza perdita di campi</h3></div><div class="filters"><select id="sourcePackageKind"><option value="">Tutti i pacchetti</option><option value="FISCALE_CODEX">Fiscale Codex</option><option value="ESTRAZIONE_5_MITTENTI">5 mittenti</option><option value="PARTENOPAY">PartenoPay</option></select><select id="sourcePackageRecordType"><option value="">Tutti i tipi</option><option value="DICHIARAZIONE_FISCALE">Dichiarazioni</option><option value="F24_DOCUMENTO">F24 e quietanze</option><option value="ALLEGATO_EMAIL">Allegati email</option><option value="EMAIL">Email</option></select></div></div>
+        <p id="sourcePackageMessage" class="muted">Gli indici vengono letti dagli ZIP presenti su Drive; ogni riga conserva anche tutti i campi originali.</p>
+        <div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Categoria</th><th>Anno/data</th><th>Documento</th><th>Provenienza</th><th>Campi originali</th></tr></thead><tbody id="sourcePackageRows"></tbody></table></div>
+      </section>
+    </section>
+
+    <section id="view-fornitori" class="view">
+      <div class="hero compact-hero"><div><p class="eyebrow">FORNITORI</p><h2>Fatture subito visibili.<br>Pagamento solo con una prova.</h2><p>Questa pagina raggruppa per identificativo fiscale esatto. Il metodo abituale non decide mai se un pagamento è cassa, banca o carta.</p></div><button id="reloadSupplierDirectory" type="button">Aggiorna</button></div>
+      <section id="supplierDirectoryCards" class="cards"></section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">ANAGRAFICA OSSERVATA</p><h3>Fornitori e relative fatture</h3></div><div class="filters"><input id="supplierDirectoryQuery" type="search" placeholder="Cerca fornitore o fattura"><select id="supplierDirectoryStatus"><option value="">Tutti gli stati</option><option value="FATTURE_DA_VERIFICARE">Da elaborare</option><option value="FATTURE_CANONICHE">Canoniche</option></select></div></div>
+        <div id="supplierDirectoryMessage" class="source-summary muted"></div>
+        <div id="supplierDirectoryRows" class="supplier-directory"></div>
+      </section>
+      <section class="warning">La fattura crea il debito e la scadenza. La scrittura finanziaria nasce soltanto dopo un movimento bancario, carta o un'attestazione cassa riferita.</section>
     </section>
     <section id="view-riconciliazione" class="view">
       <div class="hero compact-hero"><div><p class="eyebrow">RICONCILIAZIONE</p><h2>Una prova finanziaria.<br>Una causa verificata.</h2><p>Nessun collegamento viene proposto o confermato usando soltanto l'importo.</p></div><select id="reconciliationYear" aria-label="Anno riconciliazione"></select></div>
@@ -124,6 +150,9 @@
         <form id="riscossioneForm" class="grid-form registry-form"><label>Tipo<select name="tipo"><option value="CARTELLA_PAGAMENTO">Cartella di pagamento</option><option value="INTIMAZIONE">Intimazione</option><option value="AVVISO_ACCERTAMENTO_ESECUTIVO">Accertamento esecutivo</option><option value="AVVISO_ADDEBITO_INPS">Avviso addebito INPS</option><option value="RATEIZZAZIONE">Rateizzazione</option><option value="COMUNICAZIONE_SOMME_DOVUTE">Comunicazione somme dovute</option><option value="ALTRO_ATTO_RISCOSSIONE">Altro atto</option></select></label><label>Numero atto<input name="numeroAtto"></label><label>Data atto<input type="date" name="dataAtto"></label><label>Data notifica<input type="date" name="dataNotifica"></label><label>Scadenza<input type="date" name="scadenza"></label><label>Importo originario<input type="number" step="0.01" min="0" name="importoOriginario"></label><label>Ente creditore<input name="enteCreditore"></label><label>Fonte<select name="fonte"><option>MANUALE</option><option>PEC</option><option>DRIVE</option><option>ADER</option></select></label><label class="wide">Riferimento fonte<input name="fonteRiferimento" placeholder="ID documento, messaggio PEC o percorso Drive"></label><button class="primary" type="submit">Registra atto</button></form>
         <div id="riscossioneResult" class="result"></div>
         <div class="table-wrap compact-table"><table><thead><tr><th>Atto</th><th>Date</th><th>Ente</th><th>Stato</th><th class="num">Originario</th><th class="num">Residuo snapshot</th><th>Aggiornamento</th></tr></thead><tbody id="riscossioneRows"></tbody></table></div>
+        <h4>Documenti ADER e cartelle osservati su Drive</h4>
+        <p id="riscossioneSourceMessage" class="muted"></p>
+        <div class="table-wrap compact-table"><table><thead><tr><th>Documento</th><th>Anno</th><th>Stato</th><th>Provenienza</th><th>Fonte</th></tr></thead><tbody id="riscossioneSourceRows"></tbody></table></div>
       </section>
     </section>
     <section id="view-controllo" class="view">

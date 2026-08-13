@@ -22,8 +22,9 @@ export async function projectSupplierInvoiceValidated(db, event, { session = nul
     competenceDate: event.accounting.dates.vatDate || event.accounting.dates.receiptDate,
     taxableCents: amount.taxableCents, exposedVatCents: amount.exposedVatCents,
     deductibleVatCents: amount.deductibleVatCents,
-    nonDeductibleVatCents: amount.exposedVatCents - amount.deductibleVatCents,
-    status: 'PROJECTED', createdAt: now, updatedAt: now
+    nonDeductibleVatCents: amount.nonDeductibleVatCents,
+    pendingVatCents: amount.pendingVatCents || 0,
+    status: amount.pendingVatCents > 0 ? 'PENDING_CLASSIFICATION' : 'PROJECTED', createdAt: now, updatedAt: now
   };
   vatEntry.fingerprint = stableFingerprint({
     vatEntryKey: vatEntry.vatEntryKey, sourceEntityType: vatEntry.sourceEntityType,
@@ -31,6 +32,7 @@ export async function projectSupplierInvoiceValidated(db, event, { session = nul
     sourceEventKey: vatEntry.sourceEventKey, currency: vatEntry.currency, competenceDate: vatEntry.competenceDate,
     taxableCents: vatEntry.taxableCents, exposedVatCents: vatEntry.exposedVatCents,
     deductibleVatCents: vatEntry.deductibleVatCents, nonDeductibleVatCents: vatEntry.nonDeductibleVatCents,
+    pendingVatCents: vatEntry.pendingVatCents,
     status: vatEntry.status
   });
   const existingVat = await db.collection('vat_entries').findOne({ vatEntryKey: vatEntry.vatEntryKey }, options);

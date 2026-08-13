@@ -50,6 +50,13 @@ L'osservazione e l'hashing possono essere automatici. Classificazioni, identità
 
 La tabella descrive l'handoff funzionale; nel contratto eventi il raw asset resta di `INTAKE_DOCUMENTALE`. Il processor del dominio indicato valida e soltanto allora scrive le proprie entità.
 
+Gli indici CSV contenuti nei pacchetti fiscali e PEC sono proiezioni di
+`source_asset`: ogni riga conserva pacchetto, voce ZIP, numero di riga e tutti i
+campi originali. Rendere tali righe consultabili non le promuove a modelli F24,
+dichiarazioni, atti o pagamenti canonici. I file tecnici PEC (`daticert.xml`,
+`smime.p7s`, `postacert.eml`) restano prove di trasmissione e sono distinti dal
+documento operativo allegato.
+
 ## Processor e comandi
 
 I processor descrivono gli aggiornamenti automatici fra domini senza attribuirli alle pagine. Ciascuno consuma eventi registrati, legge le entità necessarie e scrive soltanto entità che appartengono al suo `owner`. Gate, quadrature, idempotenza, approvazione, retry e invalidazione sono parte del contratto. `autonomy` è esplicita: `A` per osservazione, proposta, calcolo o Coerenza; `B` per aggiornamento deterministico con chiavi esatte, audit e compensazione; `C` quando la conferma umana è sempre obbligatoria.
@@ -81,7 +88,7 @@ Relazioni: `document_has_sources`, `source_preserves_asset`, `document_has_extra
 
 ### 2. Fattura, fornitore e righe
 
-`FATTURE_FORNITORI` convalida identità legale, chiave documento e quadratura dei totali. Crea o aggiorna un solo `invoice_supplier`, le sue `invoice_supplier_line` e il ruolo `supplier` collegato a `party`.
+`FATTURE_FORNITORI` convalida identità legale, chiave documento e quadratura dei totali. Quando questi gate sono esatti, il processor canonizza automaticamente l'XML; altrimenti lascia il documento in revisione. Crea o aggiorna un solo `invoice_supplier`, le sue `invoice_supplier_line` e il ruolo `supplier` collegato a `party`. La pagina Fornitori raggruppa esclusivamente per identificativo fiscale esatto e rimane una proiezione.
 
 Relazioni: `supplier_invoice_document`, `supplier_invoice_party`, `supplier_is_party`, `supplier_invoice_has_lines`.
 
@@ -89,7 +96,7 @@ Una nota di credito non cancella la fattura. `supplier_invoice_adjusts_invoice` 
 
 ### 3. IVA
 
-`CONTABILITA` deriva `vat_entry` dalla fattura con `supplier_invoice_generates_vat_entries`. La creazione è automatica solo quando imponibile, aliquote, componenti e centesimi quadrano; altrimenti resta una revisione IVA. L'IVA è una proiezione fiscale del documento, non una seconda fattura.
+`CONTABILITA` deriva `vat_entry` dalla fattura con `supplier_invoice_generates_vat_entries`. La creazione è automatica solo quando imponibile, aliquote, componenti e centesimi quadrano; altrimenti resta una revisione IVA. L'IVA esposta non è dichiarata detraibile: fino alla classificazione fiscale esplicita viene registrata sul conto tecnico `IVA_DA_CLASSIFICARE`, mentre il costo usa `COSTI_DA_CLASSIFICARE`. L'IVA è una proiezione fiscale del documento, non una seconda fattura.
 
 ### 4. Dizionario prodotti acquistati
 
