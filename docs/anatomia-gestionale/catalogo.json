@@ -155,8 +155,8 @@
           "status": "PARZIALE",
           "entities": ["ledger_entry", "financial_movement", "financial_evidence"],
           "dependsOn": ["documenti.estratti_banca_carte"],
-          "currentEvidence": ["src/domain.js", "src/reconciliation-router.js"],
-          "notes": "Il conto esiste; manca l'importatore canonico degli estratti e la vista completa.",
+          "currentEvidence": ["src/domain.js", "src/bank-movement-import.js", "src/bank-movement-router.js", "src/financial-movement-projection.js", "src/reconciliation-router.js", "public/index.html", "public/app.js", "test/bank-movement-import.test.js", "test/bank-movement-mongo.test.js", "test/http-auth-integration.test.js"],
+          "notes": "Import canonico disponibile per CSV Bank BPM Elenco Entrate/Uscite, con originale, SHA-256, chiave bancaria stabile, provenienza multipla, evento e Coerenza. La vista legge i fatti finanziari senza creare Prima Nota contabile o riconciliazioni. Restano PDF/XLSX, carte, quadratura saldo e gestione delle rettifiche.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
@@ -389,11 +389,11 @@
           "label": "Estratti banca e carte",
           "route": "/documenti/estratti",
           "owner": "TESORERIA",
-          "status": "ASSENTE",
+          "status": "PARZIALE",
           "entities": ["source_asset", "financial_movement", "financial_evidence"],
           "dependsOn": ["documenti.acquisizione_inbox"],
-          "currentEvidence": [],
-          "notes": "Serve un solo importatore per fonte, chiave stabile e deduplicazione cross-formato.",
+          "currentEvidence": ["src/bank-movement-import.js", "src/bank-movement-router.js", "src/blob-store.js", "src/event-engine.js", "src/financial-movement-projection.js", "public/index.html", "public/app.js", "test/bank-movement-import.test.js", "test/bank-movement-mongo.test.js", "test/http-auth-integration.test.js"],
+          "notes": "Supportato un solo formato reale: CSV Bank BPM Elenco Entrate/Uscite. Originale GridFS e SHA-256 precedono la normalizzazione; sovrapposizioni esatte convergono su accountId + sourceTransactionId e conservano tutte le provenienze. Schemi POS/generici sono rifiutati. Restano PDF/XLSX, estratti carta, routing Drive e correzioni/supersessione.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {

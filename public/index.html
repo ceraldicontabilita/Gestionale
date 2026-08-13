@@ -30,6 +30,13 @@
     <small id="supplierImportCurrent">Puoi continuare a usare tutte le pagine del gestionale.</small>
     <button id="supplierImportOpenInvoices" class="monitor-action hidden" type="button">Apri fatture importate</button>
   </section>
+  <section id="bankImportMonitor" class="upload-monitor bank-upload-monitor hidden" aria-live="polite" aria-label="Avanzamento importazione movimenti bancari">
+    <div class="upload-monitor-head"><strong>Importazione estratti banca</strong><span id="bankImportPercent">0%</span></div>
+    <progress id="bankImportProgress" max="100" value="0">0%</progress>
+    <span id="bankImportSummary">Preparazione caricamento…</span>
+    <small id="bankImportCurrent">Puoi continuare a usare tutte le pagine del gestionale.</small>
+    <button id="bankImportOpenLedger" class="monitor-action hidden" type="button">Apri movimenti banca</button>
+  </section>
 
   <main>
     <section id="view-home" class="view active">
@@ -39,6 +46,16 @@
     </section>
 
     <section id="view-prima-nota" class="view">
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">ESTRATTI BANCA</p><h3>Import canonico dei movimenti</h3></div></div>
+        <p class="muted">Accetta gli export CSV “Elenco Entrate/Uscite” di Bank BPM. Ogni riga conserva fonte, SHA-256 e riferimento stabile; un importo uguale non crea mai da solo una riconciliazione.</p>
+        <form id="bankMovementIntakeForm" class="grid-form invoice-intake-form">
+          <label class="wide">File CSV banca<input name="bankFiles" type="file" accept=".csv,text/csv" multiple required></label>
+          <button class="primary" type="submit">Importa CSV</button>
+        </form>
+        <p class="muted import-help">Puoi selezionare più CSV anche sovrapposti: i movimenti già osservati vengono riconosciuti con identità bancaria e fingerprint completo. L’importazione continua mentre cambi pagina.</p>
+        <div id="bankMovementImportResult" class="result muted"></div>
+      </section>
       <section class="panel">
         <div class="panel-head"><div><p class="eyebrow">PRIMA NOTA</p><h3>Registro e saldo progressivo</h3></div><div class="filters"><select id="ledgerAccount"></select><select id="ledgerYear"></select><button id="newMovement">+ Movimento</button></div></div>
         <div id="openingWarning" class="warning hidden"></div>

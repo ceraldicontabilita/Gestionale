@@ -12,6 +12,20 @@ La Cassa è l'unico conto che può essere attestato manualmente dall'operatore. 
 
 Un pagamento bancario è riconciliato soltanto contro un movimento bancario reale. Un bonifico predisposto o un PDF costituisce documentazione, non prova dell'addebito.
 
+L'import di un estratto crea il fatto `financial_movement` e la relativa prova
+reale, non una scrittura contabile né un pagamento già allocato. Per gli export
+CSV Bank BPM “Elenco Entrate/Uscite” la chiave canonica è
+`accountId + sourceTransactionId`; quando manca un riferimento provider stabile,
+il sistema usa il fingerprint deterministico di tutti i campi della riga e la
+sua occorrenza. Data e importo da soli non sono mai una chiave. Estratti
+sovrapposti aggiungono provenienza (SHA-256, originale e numero riga) allo stesso
+fatto; un conflitto di fingerprint resta da controllare.
+
+Schemi POS, CSV generici e formati non riconosciuti sono rifiutati: non vengono
+interpretati per somiglianza. Un movimento osservato può soddisfare un'attesa
+finanziaria soltanto attraverso una riconciliazione autonoma, idempotente e
+auditabile con causa identificata e centesimi esatti.
+
 ## Mastercard
 
 È un conto distinto dalla banca. Le operazioni carta devono essere confrontate con la relativa fonte/estratto e non confuse automaticamente con il successivo addebito del saldo carta sul conto corrente.

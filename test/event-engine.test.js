@@ -143,3 +143,20 @@ test('genera un evento deterministico con aggregato e fonte coincidenti', () => 
 test('il fingerprint è stabile rispetto all ordine delle chiavi', () => {
   assert.equal(stableFingerprint({ b: 2, a: 1 }), stableFingerprint({ a: 1, b: 2 }));
 });
+
+test('un movimento osservato entra nel registro eventi senza creare una scrittura contabile', () => {
+  const event = normalizeDomainEvent({
+    type: 'financial.movement_observed',
+    aggregate: { type: 'FINANCIAL_MOVEMENT', id: 'movement-synthetic-1', version: '1' },
+    payload: { movementKey: 'movement-synthetic-1', amountCents: 1220, currency: 'EUR' },
+    provenance: { source: 'BANK_STATEMENT_CSV', reference: 'sha256:synthetic:row:2' }
+  });
+  assert.equal(event.accounting, null);
+  assert.equal(event.eventKey, 'financial.movement_observed:FINANCIAL_MOVEMENT:movement-synthetic-1:1');
+  assert.throws(() => normalizeDomainEvent({
+    type: 'financial.movement_observed',
+    aggregate: { type: 'FINANCIAL_MOVEMENT', id: 'movement-synthetic-1', version: '1' },
+    accounting: competence(),
+    provenance: { source: 'BANK_STATEMENT_CSV', reference: 'sha256:synthetic:row:2' }
+  }), /non contiene una scrittura contabile/);
+});

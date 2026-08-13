@@ -61,3 +61,15 @@ test('la pagina fatture espone intake automatico, fornitori e albero delle attes
   assert.match(source, /\/api\/auth\/pin-confirm/);
   assert.doesNotMatch(`${html}\n${source}`, /MFA|TOTP|authenticator/i);
 });
+
+test('Prima Nota espone import bancario multiplo persistente e anti duplicazione', () => {
+  const html = fs.readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+  const source = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
+  for (const id of ['bankMovementIntakeForm', 'bankImportMonitor', 'bankImportProgress', 'bankMovementImportResult']) {
+    assert.match(html, new RegExp(`id=["']${id}["']`));
+  }
+  assert.match(html, /name=["']bankFiles["'][^>]*multiple/);
+  assert.match(source, /\/api\/bank-movements\/import-jobs/);
+  assert.match(source, /localStorage\.setItem\(BANK_IMPORT_JOB_KEY/);
+  assert.match(source, /uploadBankImportFile/);
+});
