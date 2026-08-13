@@ -91,7 +91,7 @@ Impresa Semplice
 │   ├── Cespiti, finanziamenti e veicoli
 │   ├── Commercialista e consulente
 │   ├── Integrazioni e scheduler
-│   ├── Utenti, ruoli e MFA
+│   ├── Utenti, ruoli e riconferma PIN
 │   └── Configurazione agenti
 └── Controllo
     ├── Coerenza e anomalie operative
@@ -124,7 +124,7 @@ Ogni fatto ha un solo proprietario. Gli altri moduli lo consultano o vi collegan
 | `CONTABILITA` | Piano dei conti, giornale, mastro, IVA, bilancio e chiusura. |
 | `CONTROLLO` | Anomalia, quadratura, approvazione e audit. |
 | `AMMINISTRAZIONE` | Anagrafiche condivise e materializzazione degli obblighi dalle fonti di dominio, senza inventarne importi. |
-| `SICUREZZA` | Identità, sessione, ruolo, MFA e autorizzazioni. |
+| `SICUREZZA` | Identità, sessione, ruolo, riconferma PIN e autorizzazioni. |
 | `ASSISTENTE` | Memoria derivata, proposta e spiegazione; mai fatto economico autorevole. |
 
 ## Catena dei dati
@@ -172,14 +172,14 @@ I controlli minimi sono:
 
 Un controllo fallito crea o aggiorna un'anomalia idempotente. La pagina può chiedere revisione e mostrare il percorso fino alla fonte, ma la correzione avviene sempre nel dominio proprietario; il nuovo evento viene poi rivalutato. Nessun comando di correzione massiva può scrivere direttamente sui fatti autorevoli.
 
-## Accesso, ruoli e MFA
+## Accesso, ruoli e riconferma PIN
 
-Il catalogo funzionale non contiene pagine pubbliche. Il login è un punto di ingresso tecnico separato: dopo l'autenticazione ogni pagina dichiara `access.level`, ruoli di lettura, ruoli di scrittura e azioni che richiedono MFA.
+Il catalogo funzionale non contiene pagine pubbliche. Il login è un punto di ingresso tecnico separato: dopo l'autenticazione ogni pagina dichiara `access.level`, ruoli di lettura, ruoli di scrittura e azioni che richiedono riconferma PIN.
 
-| Confine | Lettura | Scrittura | MFA |
+| Confine | Lettura | Scrittura | riconferma PIN |
 |---|---|---|---|
 | Pagine operative ordinarie | `ADMIN`, `OPERATORE`, `SOLA_LETTURA` | `ADMIN`, `OPERATORE` | Solo quando elencato dalla pagina. |
-| Utenti e sicurezza | Solo `ADMIN` | Solo `ADMIN` | Utenti, ruoli, reset MFA e revoca sessioni. |
+| Utenti e sicurezza | Solo `ADMIN` | Solo `ADMIN` | Utenti, ruoli, reset PIN e revoca sessioni. |
 | Integrazioni e scheduler | Solo `ADMIN` | Solo `ADMIN` | Segreti, modifica scheduler e avvio manuale dei job. |
 | Configurazione agenti | Solo `ADMIN` | Solo `ADMIN` | Configurazione e abilitazione delle automazioni. |
 | Affidabilità fiscale | Solo `ADMIN` | Solo `ADMIN` | Modifica regole e approvazione degli esiti fiscali. |

@@ -46,7 +46,7 @@ Gli eventi di ingresso sono grezzi e appartengono a Intake: non autorizzano IVA,
 | Corrispettivi/POS | `receipt.xml_received` | `INTAKE_DOCUMENTALE`, poi `CORRISPETTIVI_POS` | raw asset, documento, provenienza ed estrazione; giorno/chiusure soltanto dopo validazione | Fonte/versione e SHA-256; impresa/data dopo validazione. |
 | ADER/PagoPA/verbali | `collection.document_received` | `INTAKE_DOCUMENTALE`, poi handoff | raw asset, documento, provenienza ed estrazione; atto, PagoPA e verbale hanno validatori proprietari separati | Fonte/versione e SHA-256; chiavi di dominio dopo validazione. |
 
-L'osservazione e l'hashing possono essere automatici. Classificazioni, identità o collegamenti ambigui restano in revisione. Ogni mutazione Drive richiede anteprima, `ADMIN`, MFA, audit e recuperabilità.
+L'osservazione e l'hashing possono essere automatici. Classificazioni, identità o collegamenti ambigui restano in revisione. Ogni mutazione Drive richiede anteprima, `ADMIN`, riconferma PIN, audit e recuperabilità.
 
 La tabella descrive l'handoff funzionale; nel contratto eventi il raw asset resta di `INTAKE_DOCUMENTALE`. Il processor del dominio indicato valida e soltanto allora scrive le proprie entità.
 
@@ -172,4 +172,4 @@ Il motore non corregge fatture, movimenti, obblighi, riconciliazioni o scritture
 
 `projection.ownsCanonicalData` è sempre `false`: persino una pagina collocata nel dominio proprietario invia comandi all'owner, non conserva una copia privata. `implementationStatus: ASSENTE` descrive la topologia obiettivo, non una funzione già operativa.
 
-Le pagine di sola lettura non emettono comandi mutativi. Le altre possono proporre o confermare soltanto nei limiti di ruolo, MFA, chiavi esatte e quadratura indicati dal catalogo. Un fallimento mantiene l'ultimo fatto verificato, apre o aggiorna un'anomalia e vieta sovrascritture silenziose.
+Le pagine di sola lettura non emettono comandi mutativi. Le altre possono proporre o confermare soltanto nei limiti di ruolo, riconferma PIN, chiavi esatte e quadratura indicati dal catalogo. Un fallimento mantiene l'ultimo fatto verificato, apre o aggiorna un'anomalia e vieta sovrascritture silenziose.

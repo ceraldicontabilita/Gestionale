@@ -122,7 +122,7 @@ Conseguenze obbligatorie:
 - Le scritture Dare/Avere devono quadrare esattamente al centesimo.
 - Le regole contabili devono essere versionate e approvate.
 - Il periodo contabile deve essere aperto; riapertura e chiusura richiedono
-  motivo, MFA e audit secondo la policy.
+  motivo, riconferma del PIN amministratore e audit secondo la policy.
 - Non cancellare una scrittura registrata: usare storni compensativi o versioni
   sostitutive.
 - Registro eventi e outbox sono immutabili e transazionali; dispatcher e
@@ -180,18 +180,17 @@ test sono passati, falliti o saltati.
 
 Prima di commit controllare il diff per segreti e dati reali. Prima del deploy
 eseguire la checklist di rilascio; dopo il deploy verificare almeno health,
-autenticazione, MFA sulle operazioni sensibili, caricamento UI, API del dominio,
+autenticazione, riconferma PIN sulle operazioni sensibili, caricamento UI, API del dominio,
 persistenza e lettura delle proiezioni.
 
 ## 11. Stato verificato del ramo fatture — 2026-08-13
 
-Baseline nota di `main`: commit
-`0be5032a6d1c9595e7f05bf62ff6c6ccc59c6080`, già contenente il motore centrale
-eventi–contabilità–proiezioni. Verificare sempre che `origin/main` non sia
-cambiato prima di proseguire.
+Baseline verificata di `main`: merge commit
+`a46f10cbd42c709a75903da48ff00398c63d63fb`, pubblicato con la PR #4 e
+distribuito su Render come versione `0.9.0`. Verificare sempre che `origin/main`
+non sia cambiato prima di proseguire.
 
-Il branch locale `codex/albero-flussi-attese` contiene, ma non ha ancora
-pubblicato:
+`main` contiene:
 
 - intake FatturaPA unico da Drive, PEC e upload;
 - staging con SHA-256, provenienza e deduplicazione;
@@ -215,9 +214,17 @@ Verifiche locali registrate il 2026-08-13:
 - catalogo, topologia, albero e inventario connessioni risultano coerenti;
 - smoke HTTP locale di health, pagina e JavaScript riuscito.
 
-Questo snapshot non equivale a commit, merge, deploy o importazione su Render.
-Prima di dichiarare il ramo operativo servono ancora le autorizzazioni e le
-fasi di pubblicazione indicate nella sezione 3.
+La pubblicazione è stata verificata il 2026-08-13 con CI verde e smoke test
+pubblico: health `0.9.0`, MongoDB collegato, UI disponibile e API anonime
+bloccate. Nessuna fattura reale è stata importata durante lo smoke test.
+
+Il branch locale `codex/import-zip-multipli-pin`, derivato da tale baseline,
+estende l'intake con selezione multipla XML/ZIP, ZIP annidati protetti da limiti,
+coda persistita, avanzamento globale e deduplicazione SHA-256. L'intake usa la
+sessione PIN già autenticata; validazione, regolamento ed eliminazioni richiedono
+la riconferma temporanea dello stesso PIN. Questo lavoro locale non equivale a pubblicazione:
+prima di commit, push, PR, merge e deploy si applicano le autorizzazioni della
+sezione 3.
 
 ## 12. Priorità successiva dopo la pubblicazione del verticale
 

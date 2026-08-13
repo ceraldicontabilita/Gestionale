@@ -81,7 +81,7 @@ test('separa la competenza della fattura dal regolamento finanziario', () => {
   assert.match(settlement.action, /non ricrea costo o IVA/);
 });
 
-test('centralizza le proiezioni contabili e riserva la chiusura a persona con MFA', () => {
+test('centralizza le proiezioni contabili e riserva la chiusura a persona con riconferma PIN', () => {
   const topology = loadTopology();
   const accountingEvent = topology.events.find((event) => event.id === 'accounting.entry_projected');
   const periodEvent = topology.events.find((event) => event.id === 'accounting.period_closed');
@@ -93,7 +93,7 @@ test('centralizza le proiezioni contabili e riserva la chiusura a persona con MF
   assert.deepEqual(periodEvent.producerPages, ['controllo.chiusura_mensile']);
   assert.equal(closingCommand.autonomy, 'C');
   assert.match(closingCommand.approval, /HUMAN_APPROVAL_REQUIRED/);
-  assert.match(closingCommand.approval, /MFA/);
+  assert.match(closingCommand.approval, /PIN_CONFIRMATION/);
 });
 
 test('rifiuta la regressione che subordina la competenza al pagamento', () => {

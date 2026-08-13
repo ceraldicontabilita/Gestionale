@@ -104,7 +104,7 @@ Impresa Semplice
 │   ├── Cespiti, finanziamenti e veicoli
 │   ├── Commercialista e consulente
 │   ├── Integrazioni e scheduler
-│   ├── Utenti, ruoli e MFA
+│   ├── Utenti, ruoli e riconferma PIN
 │   └── Configurazione agenti
 └── Controllo
     ├── Coerenza e anomalie operative
@@ -586,7 +586,7 @@ Il matching con un evento futuro deve essere idempotente e auditabile.
 - azioni distruttive Drive richiedono policy amministrativa, audit e recuperabilità;
 - agenti L0/L1 possono analizzare e proporre;
 - L2 resta disabilitato;
-- L3 richiede conferma umana + MFA;
+- L3 richiede conferma umana + riconferma PIN;
 - L4 vietato.
 
 ---

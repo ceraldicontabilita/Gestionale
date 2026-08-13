@@ -19,7 +19,7 @@ import { createProjectionEngineRuntime } from './src/projection-engine.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const version = '0.9.0';
+const version = '0.10.0';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.disable('x-powered-by');

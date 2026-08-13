@@ -77,7 +77,7 @@ Le cartelle non riconosciute restano `TAXONOMY_UNMAPPED`; non vengono riclassifi
 1. Eseguire e validare una scansione reale completa.
 2. Esaminare duplicati, conflitti e collisioni di destinazione.
 3. Approvare un manifest immutabile con digest dell'inventario sorgente.
-4. Introdurre, in un intervento separato, quarantena e spostamenti reversibili con MFA, audit e controllo di concorrenza.
+4. Introdurre, in un intervento separato, quarantena e spostamenti reversibili con riconferma PIN, audit e controllo di concorrenza.
 5. Considerare una rimozione soltanto per duplicati confermati dopo quarantena, nuova verifica del contenuto e approvazione esplicita.
 
 Nessuna fase autorizza cancellazioni automatiche.
