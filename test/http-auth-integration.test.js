@@ -12,6 +12,10 @@ const supplierInvoiceXml = `<?xml version="1.0" encoding="UTF-8"?>
   <FatturaElettronicaHeader><CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdCodice>00000000000</IdCodice></IdFiscaleIVA><Anagrafica><Denominazione>Fornitore HTTP test</Denominazione></Anagrafica></DatiAnagrafici></CedentePrestatore></FatturaElettronicaHeader>
   <FatturaElettronicaBody><DatiGenerali><DatiGeneraliDocumento><TipoDocumento>TD01</TipoDocumento><Divisa>EUR</Divisa><Data>2026-08-01</Data><Numero>HTTP-1</Numero><ImportoTotaleDocumento>12.20</ImportoTotaleDocumento></DatiGeneraliDocumento></DatiGenerali><DatiBeniServizi><DettaglioLinee><NumeroLinea>1</NumeroLinea><Descrizione>Test</Descrizione><PrezzoUnitario>10</PrezzoUnitario><PrezzoTotale>10</PrezzoTotale><AliquotaIVA>22</AliquotaIVA></DettaglioLinee><DatiRiepilogo><AliquotaIVA>22</AliquotaIVA><ImponibileImporto>10</ImponibileImporto><Imposta>2.20</Imposta></DatiRiepilogo></DatiBeniServizi></FatturaElettronicaBody>
 </FatturaElettronica>`;
+const bankStatementCsv = Buffer.from([
+  '"Ragione Sociale";"Data contabile";"Data valuta";"Banca";"Rapporto";"Importo";"Divisa";"Descrizione";"Categoria/sottocategoria";"Hashtag"',
+  '"Impresa sintetica";"01/08/2026";"02/08/2026";"BANCA TEST";"0000";"-12,20";"EUR";"BONIFICO NS RIF. HTTPSYNTH01";"PAGAMENTI";""'
+].join('\n'));
 
 async function freePort() {
   const server = net.createServer();
@@ -100,7 +104,7 @@ test('HTTP reale: anonimato, PIN, CSRF e riconferma PIN sulle operazioni sensibi
   const health = await jsonRequest(`${baseUrl}/api/health`);
   assert.equal(health.status, 200);
   const healthPayload = await health.json();
-  assert.equal(healthPayload.versione, '0.12.0');
+  assert.equal(healthPayload.versione, '0.13.0');
   assert.equal(healthPayload.database, 'connected');
 
   const anonymous = await jsonRequest(`${baseUrl}/api/config`);
@@ -195,10 +199,29 @@ test('HTTP reale: anonimato, PIN, CSRF e riconferma PIN sulle operazioni sensibi
   assert.equal(completedZipJob.totals.duplicateInvoices, 2);
   assert.equal(completedZipJob.totals.canonicalInvoices, 0);
 
+  const bankJobResponse = await jsonRequest(`${baseUrl}/api/bank-movements/import-jobs`, {
+    method: 'POST', cookie, csrf,
+    body: { files: [{ name: 'estratto-test.csv', size: bankStatementCsv.length }] }
+  });
+  assert.equal(bankJobResponse.status, 201);
+  const bankJob = await bankJobResponse.json();
+  const bankUpload = await fetch(`${baseUrl}/api/bank-movements/import-jobs/${bankJob.jobId}/files/0`, {
+    method: 'POST',
+    headers: { Cookie: cookie, 'X-CSRF-Token': csrf, 'X-File-Name': encodeURIComponent('estratto-test.csv'), 'Content-Type': 'application/octet-stream' },
+    body: bankStatementCsv
+  });
+  assert.equal(bankUpload.status, 201);
+  const completedBankJob = await (await jsonRequest(`${baseUrl}/api/bank-movements/import-jobs/${bankJob.jobId}`, { cookie })).json();
+  assert.equal(completedBankJob.status, 'COMPLETED');
+  assert.equal(completedBankJob.totals.inserted, 1);
+  assert.equal(completedBankJob.totals.conflicts, 0);
+
   const testClient = new MongoClient(mongoUri);
   await testClient.connect();
   t.after(() => testClient.close());
   await testClient.db(databaseName).collection('auth_sessions').updateMany({}, { $set: { pinConfirmedAt: new Date(0) } });
+  assert.equal(await testClient.db(databaseName).collection('movimenti').countDocuments({ fonte: 'ESTRATTO_CONTO_CSV' }), 1);
+  assert.equal(await testClient.db(databaseName).collection('domain_events').countDocuments({ type: 'financial.movement_observed' }), 1);
 
   const accountingValidationWithoutPin = await jsonRequest(`${baseUrl}/api/supplier-invoices/validate`, {
     method: 'POST', cookie, csrf, body: { sourceKey: 'not-relevant-before-auth-check' }

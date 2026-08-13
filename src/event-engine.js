@@ -7,6 +7,7 @@ import {
   projectSupplierInvoiceValidated
 } from './supplier-invoice-projection.js';
 import { projectFinancialLedgerEvent } from './ledger-event-projection.js';
+import { projectFinancialMovementObserved } from './financial-movement-projection.js';
 
 export { stableFingerprint } from './fingerprint.js';
 
@@ -20,13 +21,18 @@ export const ACCOUNTING_EVENT_TYPES = Object.freeze([
   'ledger.compensating_entry_projected'
 ]);
 
+export const OBSERVATION_EVENT_TYPES = Object.freeze([
+  'financial.movement_observed'
+]);
+
 export const ENTRY_KINDS = Object.freeze([
   'DOCUMENT_COMPETENCE',
   'FINANCIAL_SETTLEMENT',
   'REVERSAL'
 ]);
 
-const EVENT_TYPES = new Set(ACCOUNTING_EVENT_TYPES);
+const EVENT_TYPES = new Set([...ACCOUNTING_EVENT_TYPES, ...OBSERVATION_EVENT_TYPES]);
+const OBSERVATION_TYPES = new Set(OBSERVATION_EVENT_TYPES);
 const ENTRY_TYPES = new Set(ENTRY_KINDS);
 const EVENT_ENTRY_KINDS = new Map([
   ['invoice.supplier_validated', new Set(['DOCUMENT_COMPETENCE'])],
@@ -161,17 +167,17 @@ export function normalizeDomainEvent(input, { now = new Date() } = {}) {
     id: text(input.aggregate?.id, 'ID aggregato', { max: 200 }),
     version: text(input.aggregate?.version, 'Versione aggregato', { max: 120 })
   };
-  const accounting = normalizeAccountingProjection(input.accounting);
-  if (!EVENT_ENTRY_KINDS.get(type)?.has(accounting.entryKind)) {
-    throw new Error('Tipo evento e tipo scrittura non compatibili');
-  }
-  if (accounting.source.type !== aggregate.type || accounting.source.id !== aggregate.id || accounting.source.version !== aggregate.version) {
+  const observation = OBSERVATION_TYPES.has(type);
+  if (observation && input.accounting != null) throw new Error('Un evento di osservazione non contiene una scrittura contabile');
+  const accounting = observation ? null : normalizeAccountingProjection(input.accounting);
+  if (!observation && !EVENT_ENTRY_KINDS.get(type)?.has(accounting.entryKind)) throw new Error('Tipo evento e tipo scrittura non compatibili');
+  if (!observation && (accounting.source.type !== aggregate.type || accounting.source.id !== aggregate.id || accounting.source.version !== aggregate.version)) {
     throw new Error('Fonte contabile e aggregato evento non coincidono');
   }
   const occurredAt = input.occurredAt ? date(input.occurredAt, 'Data evento') : date(now, 'Data evento');
   const payload = input.payload && typeof input.payload === 'object' && !Array.isArray(input.payload) ? input.payload : {};
   const eventKey = text(input.eventKey, 'Chiave evento', { max: 500, required: false }) ||
-    `${type}:${aggregate.type}:${aggregate.id}:${aggregate.version}:${accounting.entryKind}`;
+    `${type}:${aggregate.type}:${aggregate.id}:${aggregate.version}${accounting ? `:${accounting.entryKind}` : ''}`;
   const normalized = {
     eventKey,
     type,
@@ -362,8 +368,10 @@ async function publishInSession(db, event, session, now) {
     if (existing.fingerprint !== event.fingerprint) throw new Error('EVENT_KEY_CONFLICT');
     return { event: existing, duplicate: true };
   }
-  await assertApprovedPostingRule(db, event.accounting, session);
-  await assertAccountingPeriodOpen(db, event.accounting, session);
+  if (event.accounting) {
+    await assertApprovedPostingRule(db, event.accounting, session);
+    await assertAccountingPeriodOpen(db, event.accounting, session);
+  }
   const stored = { ...event, status: 'RECORDED', recordedAt: now };
   await db.collection('domain_events').insertOne(stored, { session });
   await db.collection('event_outbox').insertOne({
@@ -544,7 +552,10 @@ export async function dispatchNextEvent({ client, db }, {
       if (!event) throw new Error('DOMAIN_EVENT_NOT_FOUND');
       const domainProjection = await projectSupplierInvoiceValidated(db, event, { session, now });
       const ledgerProjection = await projectFinancialLedgerEvent(db, event, { session, now });
-      const projected = await projectAccountingEvent(db, event, { session, now });
+      const movementProjection = await projectFinancialMovementObserved(db, event, { session, now });
+      const projected = event.accounting
+        ? await projectAccountingEvent(db, event, { session, now })
+        : { projected: false };
       const competenceExpectation = await completeSupplierInvoiceAccountingExpectation(db, event, { session, now });
       const settlementExpectation = await completeSupplierInvoiceSettlementLedgerExpectation(db, event, { session, now });
       await db.collection('event_outbox').updateOne(
@@ -552,7 +563,7 @@ export async function dispatchNextEvent({ client, db }, {
         { $set: { status: 'COMPLETED', completedAt: now, updatedAt: now, lockedUntil: null }, $unset: { lastError: '' } },
         { session }
       );
-      return { ...projected, domainProjection, ledgerProjection, competenceExpectation, settlementExpectation };
+      return { ...projected, domainProjection, ledgerProjection, movementProjection, competenceExpectation, settlementExpectation };
     });
     return { eventKey: claimed.eventKey, status: 'COMPLETED', ...output };
   } catch (error) {

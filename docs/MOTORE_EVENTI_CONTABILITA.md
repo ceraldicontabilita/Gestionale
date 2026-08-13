@@ -7,6 +7,8 @@ domini: riceve soltanto eventi già validati dal proprietario funzionale.
 ## Garanzie implementate
 
 - evento, outbox e audit sono registrati nella stessa transazione MongoDB;
+- il registro accetta anche eventi di osservazione non contabili esplicitamente
+  registrati, come `financial.movement_observed`, senza inventare righe Dare/Avere;
 - la chiave evento e la chiave di proiezione rendono i retry idempotenti;
 - la competenza del documento è indipendente dalla prova di pagamento;
 - il regolamento finanziario richiede una prova bancaria, carta o cassa
@@ -99,3 +101,20 @@ il piano dei conti canonico versionato, chiusura/bilancio completi,
 supersessione e note di credito delle fatture, proposta multi-candidato e gli
 altri produttori reali. Le capacità restano
 quindi `PARZIALE` o `ASSENTE` secondo il catalogo canonico.
+
+## Produttore reale movimenti bancari
+
+`POST /api/bank-movements/import-jobs` crea un job persistente protetto da
+riconferma PIN. I file successivi del job sono legati alla stessa sessione e
+possono continuare a caricarsi mentre l'operatore cambia pagina. Il primo
+formato supportato è il CSV Bank BPM “Elenco Entrate/Uscite”; ogni altro schema
+viene rifiutato senza tentare classificazioni euristiche.
+
+L'originale viene conservato una sola volta per SHA-256. Ogni riga valida crea,
+nella stessa transazione, il movimento canonico documentato, la prova bancaria
+reale e l'evento immutabile `financial.movement_observed`. Il dispatcher
+materializza la proiezione finanziaria e una valutazione Coerenza, senza creare
+una scrittura contabile. Import successivi e snapshot sovrapposti aggiungono la
+provenienza al fatto esistente; un fingerprint incompatibile resta errore di
+conflitto. La riconciliazione e la Prima Nota finanziaria rimangono passaggi
+successivi separati.

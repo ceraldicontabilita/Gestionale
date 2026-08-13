@@ -647,9 +647,10 @@
       "id": "financial.movement_observed",
       "type": "financial.movement_observed",
       "owner": "TESORERIA",
-      "producerPages": [
-        "amministrazione.finanziamenti_mutui"
-      ],
+    "producerPages": [
+      "prima_nota.banca",
+      "amministrazione.finanziamenti_mutui"
+    ],
       "producerProcessors": [
         "import_financial_movements"
       ],
@@ -2828,9 +2829,9 @@
       "emits": [
         "financial.movement_observed"
       ],
-      "idempotencyKey": "accountId + sourceTransactionId + sourceStatementVersion + importerVersion",
+      "idempotencyKey": "accountId + sourceTransactionId; fact fingerprint must be exact, while every statement SHA-256 and row remains provenance",
       "approval": "AUTONOMY_B_ON_EXACT_ACCOUNT_AND_TRANSACTION_KEYS; OTHERWISE_TESORERIA_REVIEW",
-      "failure": "KEEP_SOURCE_IN_IMPORT_REVIEW; DO_NOT_CREATE_PARTIAL_MOVEMENT_OR_RECONCILIATION",
+      "failure": "REJECT_UNSUPPORTED_SCHEMA_OR_KEEP_CONFLICT_IN_IMPORT_JOB; DO_NOT_CREATE_PARTIAL_MOVEMENT, ACCOUNTING ENTRY OR RECONCILIATION",
       "correctionAndInvalidation": "Corrected statement produces a new movement version or explicit financial.movement_reversed event; never overwrite/delete prior evidence",
       "autonomy": "B",
       "retry": "EXPONENTIAL_BACKOFF_FOR_TRANSIENT_FAILURES; SAME_IDEMPOTENCY_KEY; DEAD_LETTER_AFTER_BUDGET"
@@ -4207,10 +4208,33 @@
           ],
           "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
           "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        },
+        {
+          "id": "prima_nota.banca.import_statement",
+          "commandOwner": "TESORERIA",
+          "writeEntities": [
+            "financial_movement",
+            "financial_evidence"
+          ],
+          "requiredEvidence": [
+            "authenticated actor and PIN-confirmed import job",
+            "original source SHA-256",
+            "exact supported provider schema",
+            "accountId and sourceTransactionId or deterministic full-row fingerprint"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_ON_EXACT_BANK_CSV_SCHEMA_AND_STABLE_KEYS; OTHERWISE_REJECT_OR_REVIEW",
+          "audit": "REQUIRED_WITH_SOURCE_SHA256_ROW_EVENT_AND_ACTOR",
+          "emits": [
+            "financial.movement_observed"
+          ],
+          "idempotencyKey": "accountId + sourceTransactionId + exact fact fingerprint",
+          "failure": "UNSUPPORTED_SCHEMA_OR_MOVEMENT_KEY_CONFLICT; NEVER_CREATE_LEDGER_ENTRY_OR_RECONCILIATION"
         }
       ],
       "outputEvents": [
-        "ledger.entry_projected"
+        "ledger.entry_projected",
+        "financial.movement_observed"
       ],
       "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
@@ -5348,7 +5372,7 @@
     {
       "pageId": "documenti.estratti_banca_carte",
       "owner": "TESORERIA",
-      "implementationStatus": "ASSENTE",
+      "implementationStatus": "PARZIALE",
       "inputEvents": [
         "financial.movement_observed",
         "projection.invalidation_requested"
@@ -5377,7 +5401,7 @@
       ],
       "commands": [],
       "outputEvents": [],
-      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
+      "failureState": "BANK_BPM_CSV_CONNECTED; PDF_XLSX_CARD_STATEMENTS_DRIVE_ROUTING_AND_CORRECTIONS_REMAIN",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true

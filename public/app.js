@@ -10,8 +10,11 @@ let supplierDirectoryData = { counts: {}, rows: [] };
 let driveDeclarations = [];
 let supplierImportPollTimer = null;
 let supplierImportRuntime = { jobId: null, active: false, networkPercent: null, displayPercent: 0 };
+let bankImportPollTimer = null;
+let bankImportRuntime = { jobId: null, active: false, networkPercent: null, displayPercent: 0 };
 let pinConfirmationRequest = null;
 const SUPPLIER_IMPORT_JOB_KEY = 'impresa_supplier_invoice_import_job';
+const BANK_IMPORT_JOB_KEY = 'impresa_bank_movement_import_job';
 
 function currentYear() { return new Date().getFullYear(); }
 function years() { const now = currentYear(); return Array.from({ length: 9 }, (_, i) => now - i); }
@@ -382,6 +385,111 @@ function openExternalUrl(value) {
 
 function invoiceDateValue(value) { return value ? new Date(value).toISOString().slice(0, 10) : ''; }
 
+function storeBankImportJob(jobId) {
+  try {
+    if (jobId) localStorage.setItem(BANK_IMPORT_JOB_KEY, jobId);
+    else localStorage.removeItem(BANK_IMPORT_JOB_KEY);
+  } catch {}
+}
+
+function savedBankImportJob() {
+  try { return localStorage.getItem(BANK_IMPORT_JOB_KEY); } catch { return null; }
+}
+
+function renderBankImport(job, { networkPercent = null, networkFile = null } = {}) {
+  const monitor = $('#bankImportMonitor');
+  if (!monitor || !job) return;
+  monitor.classList.remove('hidden');
+  const terminal = ['COMPLETED', 'COMPLETED_WITH_ERRORS'].includes(job.status);
+  const percent = terminal ? 100 : Math.max(Number(job.progressPercent || 0), Number(networkPercent || 0), Number(bankImportRuntime.displayPercent || 0));
+  bankImportRuntime.displayPercent = percent;
+  $('#bankImportProgress').value = percent;
+  $('#bankImportProgress').textContent = `${percent}%`;
+  $('#bankImportPercent').textContent = `${percent}%`;
+  const totals = job.totals || {};
+  $('#bankImportSummary').textContent = `${totals.completedFiles || 0}/${totals.totalFiles || 0} file · ${totals.inserted || 0} movimenti nuovi · ${totals.duplicates || 0} già presenti · ${totals.conflicts || 0} da controllare`;
+  const activeFile = job.files?.find((file) => !['COMPLETED', 'COMPLETED_WITH_ERRORS', 'FAILED'].includes(file.status));
+  $('#bankImportCurrent').textContent = terminal
+    ? (job.status === 'COMPLETED' ? 'Importazione completata: i movimenti sono disponibili in Banca e Riconciliazione.' : 'Importazione conclusa con elementi da controllare.')
+    : networkFile ? `Caricamento ${networkFile}. Puoi cambiare pagina nel gestionale.` : activeFile?.name || 'Elaborazione in corso. Puoi cambiare pagina nel gestionale.';
+  const button = $('#bankMovementIntakeForm button[type=submit]');
+  if (button) button.disabled = !terminal && bankImportRuntime.active;
+  $('#bankImportOpenLedger')?.classList.toggle('hidden', !terminal);
+}
+
+async function pollBankImportJob(jobId) {
+  const job = await api(`/api/bank-movements/import-jobs/${encodeURIComponent(jobId)}`);
+  renderBankImport(job, { networkPercent: bankImportRuntime.networkPercent });
+  if (['COMPLETED', 'COMPLETED_WITH_ERRORS'].includes(job.status)) {
+    bankImportRuntime = { jobId: null, active: false, networkPercent: null, displayPercent: 100 };
+    storeBankImportJob(null);
+    if (bankImportPollTimer) clearInterval(bankImportPollTimer);
+    bankImportPollTimer = null;
+    const button = $('#bankMovementIntakeForm button[type=submit]');
+    if (button) button.disabled = false;
+    await Promise.all([loadLedger(), loadDashboard(), loadReconciliation()]).catch(() => {});
+  }
+  return job;
+}
+
+function startBankImportPolling(jobId) {
+  if (bankImportPollTimer) clearInterval(bankImportPollTimer);
+  bankImportPollTimer = setInterval(() => pollBankImportJob(jobId).catch(() => {}), 800);
+  pollBankImportJob(jobId).catch(() => {});
+}
+
+function uploadBankImportFile(jobId, index, file, totalFiles) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/api/bank-movements/import-jobs/${encodeURIComponent(jobId)}/files/${index}`);
+    xhr.responseType = 'json';
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    xhr.setRequestHeader('X-CSRF-Token', decodeURIComponent(cookieValue('impresa_csrf')));
+    xhr.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
+    xhr.upload.addEventListener('progress', (event) => {
+      if (!event.lengthComputable) return;
+      bankImportRuntime.networkPercent = Math.round(((index + 0.2 * event.loaded / event.total) / totalFiles) * 100);
+      bankImportRuntime.displayPercent = Math.max(bankImportRuntime.displayPercent || 0, bankImportRuntime.networkPercent);
+      renderBankImport({ status: 'PROCESSING', progressPercent: bankImportRuntime.displayPercent, totals: { totalFiles, completedFiles: index }, files: [{ name: file.name, status: 'PROCESSING' }] }, { networkPercent: bankImportRuntime.networkPercent, networkFile: file.name });
+    });
+    xhr.upload.addEventListener('load', () => { bankImportRuntime.networkPercent = null; });
+    xhr.addEventListener('load', () => {
+      const data = xhr.response || {};
+      if (xhr.status === 401) showLogin('Sessione scaduta. Inserisci nuovamente il PIN.');
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+      else reject(new Error(data.error || `Errore ${xhr.status} durante ${file.name}`));
+    });
+    xhr.addEventListener('error', () => reject(new Error(`Connessione interrotta durante ${file.name}`)));
+    xhr.send(file);
+  });
+}
+
+async function submitBankMovementIntake(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const files = [...(form.elements.bankFiles.files || [])];
+  if (!files.length || bankImportRuntime.active) return;
+  const unsupported = files.find((file) => !/\.csv$/i.test(file.name));
+  if (unsupported) return void ($('#bankMovementImportResult').innerHTML = `<span class="error">Formato non supportato: ${escapeHtml(unsupported.name)}</span>`);
+  try {
+    const job = await api('/api/bank-movements/import-jobs', { method: 'POST', body: JSON.stringify({ files: files.map((file) => ({ name: file.name, size: file.size, type: file.type, lastModified: file.lastModified })) }) });
+    bankImportRuntime = { jobId: job.jobId, active: true, networkPercent: 0, displayPercent: 0 };
+    storeBankImportJob(job.jobId);
+    renderBankImport(job);
+    startBankImportPolling(job.jobId);
+    form.reset();
+    const errors = [];
+    for (let index = 0; index < files.length; index += 1) {
+      try { await uploadBankImportFile(job.jobId, index, files[index], files.length); }
+      catch (error) { errors.push(error.message); }
+      await pollBankImportJob(job.jobId).catch(() => {});
+    }
+    const finalJob = await pollBankImportJob(job.jobId);
+    $('#bankMovementImportResult').innerHTML = errors.length ? `<span class="error">${escapeHtml(errors.join(' · '))}</span>` : `${finalJob.totals.inserted || 0} movimenti nuovi, ${finalJob.totals.duplicates || 0} già presenti, ${finalJob.totals.conflicts || 0} da controllare.`;
+  } catch (error) { $('#bankMovementImportResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
+}
+
 function storeSupplierImportJob(jobId) {
   try {
     if (jobId) localStorage.setItem(SUPPLIER_IMPORT_JOB_KEY, jobId);
@@ -717,6 +825,8 @@ function bindEvents() {
   $('#archiveQuery').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadArchives().catch((e) => { $('#archiveMessage').textContent = e.message; }); });
   $('#reloadSupplierInvoices').addEventListener('click', () => loadSupplierInvoices().catch((e) => { $('#supplierInvoiceResult').textContent = e.message; }));
   $('#supplierInvoiceIntakeForm').addEventListener('submit', submitSupplierInvoiceIntake);
+  $('#bankMovementIntakeForm').addEventListener('submit', submitBankMovementIntake);
+  $('#bankImportOpenLedger').addEventListener('click', () => { $('#ledgerAccount').value = 'BANCA'; setView('prima-nota'); loadLedger().catch((e) => showLogin(e.message)); });
   $('#reloadSupplierDirectory').addEventListener('click', () => loadSupplierDirectory().catch((e) => { $('#supplierDirectoryMessage').textContent = e.message; }));
   $('#supplierDirectoryQuery').addEventListener('input', renderSupplierDirectory);
   $('#supplierDirectoryStatus').addEventListener('change', renderSupplierDirectory);
@@ -753,6 +863,11 @@ async function boot() {
       if (jobId) {
         supplierImportRuntime = { jobId, active: true, networkPercent: null, displayPercent: 0 };
         startSupplierImportPolling(jobId);
+      }
+      const bankJobId = savedBankImportJob();
+      if (bankJobId) {
+        bankImportRuntime = { jobId: bankJobId, active: true, networkPercent: null, displayPercent: 0 };
+        startBankImportPolling(bankJobId);
       }
     }
   } catch (error) { showLogin(error.message); }

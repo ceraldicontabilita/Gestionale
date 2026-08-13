@@ -185,9 +185,9 @@ persistenza e lettura delle proiezioni.
 
 ## 11. Stato verificato del ramo fatture — 2026-08-13
 
-La baseline di partenza è `main` al merge commit
-`863c9d9270068202bb6b6641649e7537f2a79131`, distribuito su Render come
-versione `0.11.0`. Verificare sempre che `origin/main` non sia cambiato prima di
+La baseline di partenza del produttore bancario è `main` al merge commit
+`80c19c5f3980adf27180edab8774cf24159bc69d`, distribuito su Render come
+versione `0.12.0`. Verificare sempre che `origin/main` non sia cambiato prima di
 proseguire.
 
 Il verticale fatture comprende:
@@ -225,7 +225,23 @@ autorizzate; non inserire mai nei commit nomi, identificativi o importi reali.
 5. un solo produttore reale nuovo alla volta, con test e aggiornamento simultaneo
    di catalogo, topologia e albero.
 
-## 13. Definition of done
+## 13. Verticale estratti banca — release 0.13.0
+
+Il primo produttore reale successivo alle fatture è limitato agli export CSV
+Bank BPM “Elenco Entrate/Uscite”. La pipeline conserva originale GridFS,
+SHA-256 e provenienze di ogni riga; normalizza data contabile, valuta, segno e
+centesimi; deduplica con `accountId + sourceTransactionId` e fingerprint esatto;
+pubblica `financial.movement_observed` senza scrittura contabile; proietta il
+movimento e il controllo Coerenza; espone upload multiplo persistente nella
+pagina Prima Nota.
+
+Il movimento importato è `DOCUMENTATO`, non `RICONCILIATO`. Non soddisfa da
+solo le attese di fatture, F24, paghe o riscossione e non genera Prima Nota
+finanziaria. CSV POS o schemi generici vengono rifiutati. Il blocco resta
+`PARZIALE` finché non copre PDF/XLSX, carte, quadratura saldo, correzioni e
+proposta multi-candidato verificata.
+
+## 14. Definition of done
 
 Un blocco è concluso soltanto quando sono verificati tutti i punti applicabili:
 
