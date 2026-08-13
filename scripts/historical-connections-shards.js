@@ -266,7 +266,7 @@ function readManifest(manifestPath) {
   ) {
     fail('metadati originalArtifact non validi.');
   }
-  if (manifestSource !== `${JSON.stringify(manifest, null, 2)}\n`) {
+  if (manifestSource.replaceAll('\r\n', '\n') !== `${JSON.stringify(manifest, null, 2)}\n`) {
     fail('manifest non serializzato nel formato deterministico atteso.');
   }
   return { manifest, resolved };
@@ -334,14 +334,15 @@ export function verifyHistoricalConnections({ manifestPath = historicalConnectio
       const descriptor = descriptors.get(`${dataset}:${bucket}`);
       const shardPath = safeShardPath(directory, descriptor.path);
       const buffer = fs.readFileSync(shardPath);
-      if (buffer.length !== descriptor.bytes) {
-        fail(`shard ${descriptor.path}: bytes attesi ${descriptor.bytes}, trovati ${buffer.length}.`);
+      const normalizedBuffer = Buffer.from(buffer.toString('utf8').replaceAll('\r\n', '\n'), 'utf8');
+      if (normalizedBuffer.length !== descriptor.bytes) {
+        fail(`shard ${descriptor.path}: bytes attesi ${descriptor.bytes}, trovati ${normalizedBuffer.length}.`);
       }
-      const digest = sha256(buffer);
+      const digest = sha256(normalizedBuffer);
       if (digest !== descriptor.sha256) {
         fail(`shard ${descriptor.path}: hash SHA-256 atteso ${descriptor.sha256}, trovato ${digest}.`);
       }
-      const shardRecords = parseShard(buffer, descriptor);
+      const shardRecords = parseShard(normalizedBuffer, descriptor);
       if (shardRecords.length !== descriptor.recordCount) {
         fail(`shard ${descriptor.path}: record attesi ${descriptor.recordCount}, trovati ${shardRecords.length}.`);
       }

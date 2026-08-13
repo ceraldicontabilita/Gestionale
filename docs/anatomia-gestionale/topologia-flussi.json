@@ -896,6 +896,7 @@
       ],
       "consumerProcessors": [
         "project_supplier_obligation",
+        "project_supplier_invoice_expectations",
         "project_invoice_vat",
         "dispatch_projection_invalidation",
         "evaluate_coherence",
@@ -1094,9 +1095,11 @@
       ],
       "consumerProcessors": [
         "evaluate_coherence",
+        "project_supplier_invoice_expectations",
         "project_accounting_entries"
       ],
       "consumerDomains": [
+        "AMMINISTRAZIONE",
         "CONTROLLO",
         "PRIMA_NOTA",
         "TESORERIA",
@@ -2178,6 +2181,39 @@
       "correctionAndInvalidation": "Adjustment event supersedes obligation version and reopens/recalculates open item",
       "autonomy": "B",
       "retry": "EXPONENTIAL_BACKOFF_FOR_TRANSIENT_FAILURES; SAME_IDEMPOTENCY_KEY; DEAD_LETTER_AFTER_BUDGET"
+    },
+    {
+      "id": "project_supplier_invoice_expectations",
+      "owner": "AMMINISTRAZIONE",
+      "consumesEvents": [
+        "invoice.supplier_validated",
+        "ledger.entry_projected"
+      ],
+      "readEntities": [
+        "invoice_supplier",
+        "obligation",
+        "open_item",
+        "reconciliation",
+        "ledger_entry",
+        "accounting_entry"
+      ],
+      "writeEntities": [
+        "expectation",
+        "expectation_process"
+      ],
+      "gates": [
+        "the branch is created by the event that creates the obligation",
+        "future evidence satisfies an existing expectation and never creates it",
+        "required expectations close only on positive terminal status",
+        "same process and expectation type are idempotent"
+      ],
+      "emits": [],
+      "idempotencyKey": "sourceEventId + processId + expectationType + expectationRuleVersion",
+      "approval": "AUTONOMY_B_FROM_VALIDATED_SOURCE_EVENT; HUMAN_REVIEW_FOR_AMBIGUOUS_EVIDENCE",
+      "failure": "KEEP_EXPECTATION_OPEN_AND_AUDIT_THE_FAILED_TRANSITION",
+      "correctionAndInvalidation": "Superseding source event marks prior expectations SUPERATO and creates a new process; history is never deleted",
+      "autonomy": "B",
+      "retry": "IDEMPOTENT_REPLAY_WITH_SAME_EXPECTATION_ID; DEAD_LETTER_AFTER_BUDGET"
     },
     {
       "id": "project_customer_receivable",
@@ -4556,7 +4592,7 @@
       "outputEvents": [
         "ledger.entry_projected"
       ],
-      "failureState": "DOMAIN_PRODUCERS_AND_COMPLETE_UI_NOT_YET_CONNECTED",
+      "failureState": "SUPPLIER_INVOICE_PRODUCER_AND_PAGE_CONSUMERS_CONNECTED; COMPLETE_UI_AND_OTHER_DOMAIN_PRODUCERS_NOT_YET_CONNECTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true
@@ -4971,7 +5007,10 @@
         "invoice_supplier",
         "invoice_supplier_line",
         "supplier",
-        "obligation"
+        "obligation",
+        "open_item",
+        "expectation",
+        "expectation_process"
       ],
       "projection": {
         "kind": "MATERIALIZED_VIEW",
@@ -4979,7 +5018,10 @@
           "invoice_supplier",
           "invoice_supplier_line",
           "supplier",
-          "obligation"
+          "obligation",
+          "open_item",
+          "expectation",
+          "expectation_process"
         ],
         "sourcePageDependencies": [
           "documenti.acquisizione_inbox"
@@ -5022,7 +5064,7 @@
       "outputEvents": [
         "invoice.supplier_validated"
       ],
-      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failureState": "CANONICAL_VALIDATION_INTAKE_EXPECTATION_TREE_AND_EVENT_CONNECTED; SUPERSESSION_AND_CREDIT_NOTE_MISSING",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true
@@ -5864,7 +5906,7 @@
     {
       "pageId": "riconciliazione.fatture_pagamenti",
       "owner": "FATTURE_FORNITORI",
-      "implementationStatus": "ASSENTE",
+      "implementationStatus": "PARZIALE",
       "inputEvents": [
         "invoice.supplier_validated",
         "obligation.opened_or_adjusted",
@@ -5874,16 +5916,26 @@
       "inputEntities": [
         "invoice_supplier",
         "obligation",
+        "open_item",
         "financial_movement",
-        "allocation"
+        "financial_evidence",
+        "reconciliation",
+        "allocation",
+        "expectation",
+        "expectation_process"
       ],
       "projection": {
         "kind": "MATERIALIZED_VIEW",
         "sourceEntities": [
           "invoice_supplier",
           "obligation",
+          "open_item",
           "financial_movement",
-          "allocation"
+          "financial_evidence",
+          "reconciliation",
+          "allocation",
+          "expectation",
+          "expectation_process"
         ],
         "sourcePageDependencies": [
           "documenti.fatture_fornitori",
@@ -5971,7 +6023,7 @@
         "reconciliation.confirmed",
         "reconciliation.allocations_invalidated"
       ],
-      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
+      "failureState": "SUPPLIER_INVOICE_EXACT_SETTLEMENT_CONNECTED; GENERAL_PROPOSAL_UI_AND_SUPERSESSION_MISSING",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true
@@ -7348,7 +7400,7 @@
       ],
       "commands": [],
       "outputEvents": [],
-      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failureState": "ACCOUNTING_COHERENCE_CONSUMER_CONNECTED; CROSS_DOMAIN_RULE_CATALOG_AND_COMPLETE_UI_MISSING",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true
@@ -7632,7 +7684,7 @@
       "outputEvents": [
         "domain.correction_recorded"
       ],
-      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
+      "failureState": "OBSERVED_ACCOUNT_CONSUMER_CONNECTED; CANONICAL_VERSIONED_CHART_AND_UI_MISSING",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true
@@ -7671,7 +7723,7 @@
       ],
       "commands": [],
       "outputEvents": [],
-      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
+      "failureState": "TRIAL_BALANCE_CONSUMER_CONNECTED; CANONICAL_CHART_PERIOD_CLOSE_AND_UI_MISSING",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true

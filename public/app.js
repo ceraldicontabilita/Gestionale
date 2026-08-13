@@ -5,6 +5,7 @@ let config = { conti: [], stati: [] };
 let appReady = false;
 let reconciliationData = null;
 let reconciliationSelection = { movementId: null, causeId: null, causeType: 'F24' };
+let supplierInvoiceStaging = [];
 
 function currentYear() { return new Date().getFullYear(); }
 function years() { const now = currentYear(); return Array.from({ length: 9 }, (_, i) => now - i); }
@@ -252,6 +253,98 @@ async function openDriveDocument(id) {
   window.open(document.drive.webViewLink, '_blank', 'noopener,noreferrer');
 }
 
+function invoiceDateValue(value) { return value ? new Date(value).toISOString().slice(0, 10) : ''; }
+
+async function loadSupplierInvoices() {
+  const [staging, canonical] = await Promise.all([
+    api('/api/supplier-invoices/staging?limit=200'),
+    api('/api/supplier-invoices?limit=200')
+  ]);
+  supplierInvoiceStaging = staging;
+  $('#supplierInvoiceStagingRows').innerHTML = staging.length ? staging.map((row) => `<tr>
+    <td><strong>${escapeHtml(row.numero || 'Senza numero')}</strong><small>${escapeHtml(row.tipoDocumento || '')} · ${escapeHtml(row.sourceType || 'DRIVE')}</small></td>
+    <td>${escapeHtml(row.fornitore?.denominazione || 'Da verificare')}<small>${escapeHtml(row.fornitore?.partitaIva || row.fornitore?.codiceFiscale || '')}</small></td>
+    <td>${fmtDate(row.data)}</td><td class="num">${euro.format(Number(row.totaleDocumento || 0))}</td>
+    <td>${badge(row.quadraturaEstrazione?.status || 'REVIEW')}</td>
+    <td><button type="button" class="supplier-invoice-select" data-source-key="${escapeHtml(row.sourceKey)}">Valida</button></td>
+  </tr>`).join('') : '<tr><td colspan="6" class="muted">Nessuna fattura XML in staging.</td></tr>';
+  $('#supplierInvoiceCanonicalRows').innerHTML = canonical.length ? canonical.map((row) => `<tr>
+    <td><strong>${escapeHtml(row.number)}</strong><small>${fmtDate(row.dates?.documentDate)}</small></td>
+    <td>${escapeHtml(row.supplier?.name || '')}<small>${escapeHtml(row.naturalKey)}</small></td>
+    <td>${badge(row.validation?.status || 'VALIDATED')}</td>
+    <td class="num">${euro.format(Number(row.openItem?.residualCents || 0) / 100)}</td>
+    <td>${badge(row.expectationProcess?.status || 'APERTO')}<small>${row.expectationProcess?.openRequiredExpectations ?? '—'} attese aperte</small></td>
+    <td><button type="button" class="supplier-invoice-tree" data-invoice-id="${escapeHtml(row.invoiceId)}">Albero</button></td>
+  </tr>`).join('') : '<tr><td colspan="6" class="muted">Nessuna fattura canonica validata.</td></tr>';
+}
+
+function selectSupplierInvoiceForValidation(sourceKey) {
+  const row = supplierInvoiceStaging.find((item) => item.sourceKey === sourceKey);
+  if (!row) return;
+  const form = $('#supplierInvoiceValidationForm');
+  form.classList.remove('hidden');
+  form.elements.sourceKey.value = row.sourceKey;
+  form.elements.ivaDetraibile.value = '';
+  form.elements.ivaDetraibile.max = Number(row.ivaEsposta || 0).toFixed(2);
+  form.elements.receiptDate.value = '';
+  form.elements.competenceDate.value = invoiceDateValue(row.data);
+  form.elements.registrationDate.value = invoiceDateValue(new Date());
+  form.elements.vatDate.value = '';
+  form.elements.dueDate.value = invoiceDateValue(row.pagamenti?.find((item) => item?.scadenza)?.scadenza);
+  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function submitSupplierInvoiceIntake(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const file = form.elements.invoiceXml.files?.[0];
+  if (!file) return;
+  $('#supplierInvoiceResult').textContent = 'Importazione XML in corso…';
+  try {
+    const result = await api('/api/supplier-invoices/intake', {
+      method: 'POST',
+      body: JSON.stringify({ xml: await file.text(), filename: file.name })
+    });
+    $('#supplierInvoiceResult').textContent = result.duplicate ? 'XML già presente: nessun duplicato creato.' : `${result.counts.inserted} fattura XML importata in staging.`;
+    form.reset();
+    await loadSupplierInvoices();
+  } catch (error) { $('#supplierInvoiceResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
+}
+
+async function submitSupplierInvoiceValidation(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const values = Object.fromEntries(new FormData(form).entries());
+  const body = {
+    sourceKey: values.sourceKey,
+    version: '1',
+    ivaDetraibile: Number(values.ivaDetraibile),
+    receiptDate: values.receiptDate,
+    competenceDate: values.competenceDate,
+    registrationDate: values.registrationDate,
+    vatDate: values.vatDate,
+    dueDate: values.dueDate || null,
+    costAccountCode: values.costAccountCode,
+    vatAccountCode: Number(values.ivaDetraibile) > 0 ? values.vatAccountCode : undefined,
+    payableAccountCode: values.payableAccountCode,
+    postingRule: { id: values.postingRuleId, version: values.postingRuleVersion },
+    reason: values.reason
+  };
+  try {
+    const result = await api('/api/supplier-invoices/validate', { method: 'POST', body: JSON.stringify(body) });
+    $('#supplierInvoiceResult').textContent = result.duplicate ? 'Fattura già validata: identità canonica invariata.' : 'Fattura validata: competenza e partita aperta generate.';
+    form.classList.add('hidden');
+    await loadSupplierInvoices();
+  } catch (error) { $('#supplierInvoiceResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
+}
+
+async function showSupplierInvoiceTree(invoiceId) {
+  const data = await api(`/api/supplier-invoices/${encodeURIComponent(invoiceId)}/tree`);
+  const process = data.processes[0];
+  $('#supplierInvoiceTree').innerHTML = `<div class="expectation-tree-head"><strong>${escapeHtml(data.invoice.number)} · ${escapeHtml(data.invoice.supplier?.name || '')}</strong>${badge(process?.status || 'APERTO')}</div>
+    <div class="expectation-grid">${data.expectations.map((row) => `<article><span>${escapeHtml(row.expectationType.replaceAll('_', ' '))}</span>${badge(row.status)}${row.dueDate ? `<small>Scadenza ${fmtDate(row.dueDate)}</small>` : ''}</article>`).join('')}</div>`;
+}
+
 async function loadDriveIndex(force = false) {
   $('#driveIndexMessage').textContent = 'Lettura indice in corso…';
   const [overview, imported] = await Promise.all([
@@ -269,6 +362,7 @@ async function loadDriveIndex(force = false) {
   const declarations = await api('/api/drive-index/declarations');
   $('#driveDeclarationRows').innerHTML = declarations.map((row) => `<tr><td>${escapeHtml(row.year)}</td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.protocol || '—')}</td><td><button type="button" class="drive-open" data-document-id="${escapeHtml(row.documentId)}">Apri su Drive</button><small>${escapeHtml(row.archivePath)}</small></td></tr>`).join('');
   await loadDriveDocuments();
+  await loadSupplierInvoices();
 }
 
 async function loadDriveDocuments() {
@@ -346,10 +440,15 @@ function bindEvents() {
   $('#controlYear').addEventListener('change', () => loadControls().catch((e) => { $('#controlIssues').innerHTML = issue('ALTA', 'Controllo non disponibile', e.message); }));
   $('#reloadControls').addEventListener('click', () => loadControls().catch((e) => { $('#controlIssues').innerHTML = issue('ALTA', 'Controllo non disponibile', e.message); }));
   $('#refreshDriveIndex').addEventListener('click', () => loadDriveIndex(true).catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
+  $('#reloadSupplierInvoices').addEventListener('click', () => loadSupplierInvoices().catch((e) => { $('#supplierInvoiceResult').textContent = e.message; }));
+  $('#supplierInvoiceIntakeForm').addEventListener('submit', submitSupplierInvoiceIntake);
+  $('#supplierInvoiceValidationForm').addEventListener('submit', submitSupplierInvoiceValidation);
   $('#searchDriveDocuments').addEventListener('click', () => loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
   $('#driveDocumentQuery').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
   document.addEventListener('click', (event) => { const button = event.target.closest('.drive-open'); if (button) openDriveDocument(button.dataset.documentId).catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
   document.addEventListener('click', (event) => { const button = event.target.closest('.drive-open-url'); if (button?.dataset.url) window.open(button.dataset.url, '_blank', 'noopener,noreferrer'); });
+  document.addEventListener('click', (event) => { const button = event.target.closest('.supplier-invoice-select'); if (button) selectSupplierInvoiceForValidation(button.dataset.sourceKey); });
+  document.addEventListener('click', (event) => { const button = event.target.closest('.supplier-invoice-tree'); if (button) showSupplierInvoiceTree(button.dataset.invoiceId).catch((e) => { $('#supplierInvoiceTree').textContent = e.message; }); });
   $('#newMovement').addEventListener('click', () => $('#movementDialog').showModal()); $('#closeDialog').addEventListener('click', () => $('#movementDialog').close());
   $('#movementForm').addEventListener('submit', submitMovement); $('#receiptsForm').addEventListener('submit', submitReceipts); $('#tributoForm').addEventListener('submit', submitTributo); $('#riscossioneForm').addEventListener('submit', submitRiscossione);
   $('#loginForm').addEventListener('submit', submitLogin); $('#mfaForm').addEventListener('submit', submitMfa); $('#cancelMfa').addEventListener('click', hideMfa); $('#logoutButton').addEventListener('click', logout);

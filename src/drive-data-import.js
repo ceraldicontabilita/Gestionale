@@ -2,6 +2,9 @@ import crypto from 'node:crypto';
 import { XMLParser } from 'fast-xml-parser';
 import { calculateF24Totals, normalizeF24Row } from './f24.js';
 import { relationKey } from './domain.js';
+import { stageSupplierInvoiceXml } from './supplier-invoice-xml.js';
+
+export { parseInvoiceXml } from './supplier-invoice-xml.js';
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
 const INDEX_SOURCE = 'DRIVE_DOCUMENT_INDEX';
@@ -528,19 +531,6 @@ export function parseCorrispettivoXml(buffer, file) {
   return { sourceKey: `DRIVE_FILE:${file.id}`, driveFileId: file.id, percorsoDrive: file.path, dataGiorno: clean(root.DataOraRilevazione).slice(0, 10), dataOraRilevazione: root.DataOraRilevazione ? new Date(root.DataOraRilevazione) : null, dispositivo: clean(root.Trasmissione?.Dispositivo?.IdDispositivo) || null, progressivo: clean(root.Trasmissione?.Progressivo) || null, imponibile, iva, totaleDocumento: paymentTotal || money(imponibile + iva), pagatoContanti: contanti, pagatoElettronico: elettronico, numeroDocumenti: Number(totals.NumeroDocCommerciali || 0), riepiloghiIva: summaries.map((row) => ({ aliquota: Number(row.IVA?.AliquotaIVA || 0), natura: clean(row.Natura) || null, imponibile: money(row.Ammontare), iva: money(row.IVA?.Imposta) })) };
 }
 
-export function parseInvoiceXml(buffer, file) {
-  const parsed = xmlParser.parse(buffer.toString('utf8'))?.FatturaElettronica;
-  if (!parsed?.FatturaElettronicaHeader) throw new Error('XML fattura non riconosciuto');
-  const header = parsed.FatturaElettronicaHeader; const supplier = header.CedentePrestatore?.DatiAnagrafici || {};
-  const vat = clean(supplier.IdFiscaleIVA?.IdCodice) || clean(supplier.CodiceFiscale); const name = clean(supplier.Anagrafica?.Denominazione) || [supplier.Anagrafica?.Nome, supplier.Anagrafica?.Cognome].filter(Boolean).join(' ');
-  return asArray(parsed.FatturaElettronicaBody).map((body, index) => {
-    const general = body.DatiGenerali?.DatiGeneraliDocumento || {}; const summaries = asArray(body.DatiBeniServizi?.DatiRiepilogo);
-    const imponibile = money(summaries.reduce((sum, row) => sum + Number(row.ImponibileImporto || 0), 0)); const iva = money(summaries.reduce((sum, row) => sum + Number(row.Imposta || 0), 0));
-    const payments = asArray(body.DatiPagamento).flatMap((section) => asArray(section.DettaglioPagamento));
-    return { sourceKey: `DRIVE_FILE:${file.id}:${index + 1}`, driveFileId: file.id, percorsoDrive: file.path, fornitore: { partitaIva: vat || null, codiceFiscale: clean(supplier.CodiceFiscale) || null, denominazione: name || null }, tipoDocumento: clean(general.TipoDocumento), numero: clean(general.Numero), data: sourceDate(general.Data), divisa: clean(general.Divisa) || 'EUR', imponibile, ivaEsposta: iva, ivaDetraibile: null, totaleDocumento: money(general.ImportoTotaleDocumento || imponibile + iva), ritenuta: money(asArray(general.DatiRitenuta).reduce((sum, row) => sum + Number(row.ImportoRitenuta || 0), 0)), pagamenti: payments.map((row) => ({ modalita: clean(row.ModalitaPagamento), scadenza: row.DataScadenzaPagamento ? sourceDate(row.DataScadenzaPagamento) : null, importo: money(row.ImportoPagamento), iban: clean(row.IBAN) || null })), stato: 'IMPORTATA_DA_VERIFICARE' };
-  });
-}
-
 async function mapConcurrent(items, concurrency, worker) {
   let cursor = 0; const results = [];
   async function run() { while (cursor < items.length) { const index = cursor; cursor += 1; results[index] = await worker(items[index]); } }
@@ -549,18 +539,37 @@ async function mapConcurrent(items, concurrency, worker) {
 
 async function importStructuredXml(db, driveClient, files, now) {
   const targets = files.filter((file) => file.extension === '.xml' && ['Corrispettivi', 'Fatture Xml Gestionale'].includes(file.topFolder) && Number(file.size || 0) <= 5 * 1024 * 1024);
-  const errors = []; const corr = []; const invoices = [];
+  const errors = []; const corr = [];
+  let invoiceTotal = 0; let invoiceInserted = 0; let invoiceDuplicates = 0;
   await mapConcurrent(targets, 8, async (file) => {
     try {
       const buffer = await driveClient.downloadBuffer(file.id);
       if (file.topFolder === 'Corrispettivi') corr.push(parseCorrispettivoXml(buffer, file));
-      else invoices.push(...parseInvoiceXml(buffer, file));
+      else {
+        const staged = await stageSupplierInvoiceXml(db, {
+          buffer,
+          source: {
+            sourceType: 'GOOGLE_DRIVE',
+            externalId: file.id,
+            version: file.version || file.modifiedTime || file.md5Checksum || '1',
+            sourceKeyBase: `DRIVE_FILE:${file.id}`,
+            filename: file.name,
+            path: file.path,
+            driveFileId: file.id,
+            sha256: file.sha256Checksum || null
+          },
+          now
+        });
+        invoiceTotal += staged.counts.total;
+        invoiceInserted += staged.counts.inserted;
+        invoiceDuplicates += staged.counts.duplicates;
+      }
     } catch (error) { errors.push({ driveFileId: file.id, percorso: file.path, code: error.code || 'XML_PARSE_FAILED', message: error.message }); }
   });
   const corrResult = await runBulk(db.collection('corrispettivi_rt'), corr.map((row) => ({ updateOne: { filter: { sourceKey: row.sourceKey }, update: { $set: { ...row, aggiornatoIl: now }, $setOnInsert: { creatoIl: now } }, upsert: true } })));
-  const invoiceResult = await runBulk(db.collection('fatture'), invoices.map((row) => ({ updateOne: { filter: { sourceKey: row.sourceKey }, update: { $set: { ...row, aggiornatoIl: now }, $setOnInsert: { creatoIl: now } }, upsert: true } })));
+  const invoiceResult = { matchedCount: invoiceDuplicates, modifiedCount: invoiceDuplicates, upsertedCount: invoiceInserted };
   if (errors.length) await db.collection('drive_import_errori').insertMany(errors.map((row) => ({ ...row, importatoIl: now })));
-  return { counts: { targets: targets.length, corrispettivi: corr.length, fatture: invoices.length, errors: errors.length }, corrResult, invoiceResult, errors: errors.slice(0, 100) };
+  return { counts: { targets: targets.length, corrispettivi: corr.length, fatture: invoiceTotal, fattureInserite: invoiceInserted, fattureDuplicate: invoiceDuplicates, errors: errors.length }, corrResult, invoiceResult, errors: errors.slice(0, 100) };
 }
 
 export function createDriveDataImportService({ getDb, getIndex, driveClient, rootFolderId, rootAdoptionConfirmation = null, leaseMs = 30 * 60 * 1000, logger = console }) {

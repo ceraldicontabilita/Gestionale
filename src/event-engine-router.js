@@ -6,6 +6,7 @@ import {
   registerPostingRule,
   requeueOutboxEvent
 } from './event-engine.js';
+import { dispatchPendingProjections, rebuildAccountingProjections } from './projection-engine.js';
 
 function context(getClient, getDb, res) {
   const client = getClient?.();
@@ -56,6 +57,9 @@ export function registerEventEngineRoutes(app, { getClient, getDb }) {
   app.post('/api/event-engine/events', async (req, res) => {
     try {
       const current = context(getClient, getDb, res); if (!current) return;
+      if (/[._]validated$/.test(String(req.body?.type || ''))) {
+        return res.status(409).json({ error: 'DOMAIN_VALIDATOR_REQUIRED' });
+      }
       const output = await publishDomainEvent(current, {
         ...req.body,
         provenance: { ...req.body?.provenance, actor: String(req.auth?.sessionId || 'SYSTEM') }
@@ -82,6 +86,29 @@ export function registerEventEngineRoutes(app, { getClient, getDb }) {
     }
   });
 
+  app.post('/api/event-engine/projections/dispatch', async (req, res) => {
+    try {
+      const current = context(getClient, getDb, res); if (!current) return;
+      const results = await dispatchPendingProjections(current, { limit: limit(req.body?.limit, 100) });
+      res.json({ ok: true, processed: results.length, results });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/event-engine/projections/rebuild', async (req, res) => {
+    try {
+      const current = context(getClient, getDb, res); if (!current) return;
+      const output = await rebuildAccountingProjections(current, {
+        actor: String(req.auth?.sessionId || 'SYSTEM'),
+        reason: req.body?.reason
+      });
+      res.status(output.duplicate ? 200 : 202).json({ ok: true, ...output });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post('/api/event-engine/events/:eventKey/requeue', async (req, res) => {
     try {
       const current = context(getClient, getDb, res); if (!current) return;
@@ -101,8 +128,9 @@ export function registerEventEngineRoutes(app, { getClient, getDb }) {
       const db = getDb?.();
       if (!db) return res.status(503).json({ error: 'MongoDB non configurato' });
       await ensureEventEngineIndexes(db);
-      const [outbox, events, entries, deadLetters] = await Promise.all([
+      const [outbox, projectionOutbox, events, entries, deadLetters] = await Promise.all([
         db.collection('event_outbox').aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]).toArray(),
+        db.collection('projection_outbox').aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]).toArray(),
         db.collection('domain_events').countDocuments(),
         db.collection('accounting_entries').countDocuments(),
         db.collection('event_outbox').find({ status: 'DEAD_LETTER' }).sort({ updatedAt: -1 }).limit(20).toArray()
@@ -113,6 +141,7 @@ export function registerEventEngineRoutes(app, { getClient, getDb }) {
         events,
         accountingEntries: entries,
         outbox: Object.fromEntries(outbox.map((row) => [row._id, row.count])),
+        projectionOutbox: Object.fromEntries(projectionOutbox.map((row) => [row._id, row.count])),
         deadLetters
       });
     } catch (error) {

@@ -43,6 +43,7 @@ function proposeType({ filename, subject, text }) {
   if (/rateizzazione|piano di ammortamento/.test(haystack)) return 'RATEIZZAZIONE';
   if (/cedolino|busta paga/.test(haystack)) return 'CEDOLINO';
   if (/pagopa/.test(haystack)) return 'PAGOPA';
+  if (/\.xml(?:\s|$)/.test(haystack)) return 'FATTURA_XML';
   return null;
 }
 

@@ -227,8 +227,8 @@
           "status": "PARZIALE",
           "entities": ["accounting_entry", "chart_account", "ledger_entry"],
           "dependsOn": ["controllo.piano_conti"],
-          "currentEvidence": ["src/event-engine.js", "src/event-engine-router.js", "test/event-engine.test.js", "test/event-engine-mongo.test.js"],
-          "notes": "È presente il motore transazionale append-only con regole versionate approvate, scritture quadrate, competenza distinta dal regolamento, storni compensativi, saldi di mastro e outbox delle proiezioni. Restano da collegare i produttori di dominio reali e da costruire la schermata completa del giornale/mastro.",
+          "currentEvidence": ["src/event-engine.js", "src/event-engine-router.js", "src/projection-engine.js", "test/event-engine.test.js", "test/event-engine-mongo.test.js"],
+          "notes": "È presente il motore transazionale append-only con regole versionate approvate, scritture quadrate, competenza distinta dal regolamento, storni compensativi, saldi di mastro e consumer con lease/retry per le proiezioni. Il primo produttore reale collegato è la validazione delle fatture fornitori. Restano la schermata completa del giornale/mastro e gli altri produttori di dominio.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
         }
       ]
@@ -330,10 +330,10 @@
           "route": "/documenti/fatture-fornitori",
           "owner": "FATTURE_FORNITORI",
           "status": "PARZIALE",
-          "entities": ["invoice_supplier", "invoice_supplier_line", "supplier", "obligation"],
+          "entities": ["invoice_supplier", "invoice_supplier_line", "supplier", "obligation", "open_item", "expectation", "expectation_process"],
           "dependsOn": ["documenti.acquisizione_inbox"],
-          "currentEvidence": ["src/drive-data-import.js", "src/drive-fiscale.js"],
-          "notes": "XML catalogati; mancano ciclo passivo, anagrafica, scadenze e riconciliazione completi.",
+          "currentEvidence": ["public/index.html", "public/app.js", "src/drive-data-import.js", "src/document-pipeline.js", "src/supplier-invoice-xml.js", "src/supplier-invoice.js", "src/supplier-invoice-projection.js", "src/expectation-engine.js", "src/obligation-engine.js", "src/supplier-invoice-router.js", "test/supplier-invoice.test.js", "test/frontend-events.test.js", "test/event-engine-mongo.test.js"],
+          "notes": "Drive, PEC e upload convergono nello stesso staging FatturaPA con originale e SHA-256. La validazione canonica transazionale pubblica invoice.supplier_validated, crea l'albero delle attese, competenza, IVA esplicitamente detraibile, debito e partita aperta senza attendere il pagamento. UI di intake, validazione e albero presente. Restano supersessione/nota di credito e anagrafica estesa.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
         },
         {
@@ -470,11 +470,11 @@
           "label": "Fatture e pagamenti",
           "route": "/riconciliazione/fatture",
           "owner": "FATTURE_FORNITORI",
-          "status": "ASSENTE",
-          "entities": ["invoice_supplier", "obligation", "financial_movement", "allocation"],
+          "status": "PARZIALE",
+          "entities": ["invoice_supplier", "obligation", "open_item", "financial_movement", "financial_evidence", "reconciliation", "allocation", "expectation", "expectation_process"],
           "dependsOn": ["documenti.fatture_fornitori", "riconciliazione.partite_aperte"],
-          "currentEvidence": [],
-          "notes": "Deve supportare pagamenti parziali e cumulativi senza marcare pagato da un PDF di disposizione.",
+          "currentEvidence": ["src/supplier-invoice-settlement.js", "src/obligation-engine.js", "src/ledger-event-projection.js", "src/event-engine.js", "src/supplier-invoice-router.js", "test/event-engine-mongo.test.js"],
+          "notes": "Il verticale fatture supporta allocazioni parziali o integrali, identità fattura e riferimento movimento espliciti, prova bancaria/carta/cassa riferita, retry idempotente, scrittura finanziaria separata e chiusura della partita. Restano proposta automatica multi-candidato, UI dedicata di conferma e supersessione della riconciliazione.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
         },
         {
@@ -707,8 +707,8 @@
           "status": "PARZIALE",
           "entities": ["coherence_rule", "coherence_evaluation", "anomaly", "audit_event"],
           "dependsOn": ["home.attivita_aperte"],
-          "currentEvidence": ["public/index.html", "public/app.js", "src/fiscal-controls.js", "test/frontend-events.test.js"],
-          "notes": "Motore trasversale di regole versionate e risultati riproducibili. Legge i fatti autorevoli, segnala completezza, unicità, integrità, quadrature, temporalità, provenienza e freschezza; non riscrive mai i dati controllati.",
+          "currentEvidence": ["public/index.html", "public/app.js", "src/fiscal-controls.js", "src/projection-engine.js", "test/frontend-events.test.js", "test/event-engine-mongo.test.js"],
+          "notes": "Il consumer contabile materializza valutazioni riproducibili di quadratura, identità fonte, regola e provenienza. Il motore trasversale resta parziale: deve ancora applicare l'intero registro versionato di completezza, unicità, integrità, temporalità e freschezza senza riscrivere i fatti autorevoli.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": [], "mfaActions": [] }
         },
         {
@@ -864,6 +864,8 @@
     { "id": "product_dictionary_item", "owner": "FATTURE_FORNITORI", "naturalKey": "verifiedGtin oppure canonicalProductId", "authority": "Identità contabile del prodotto acquistato, distinta da giacenze e lotti" },
     { "id": "supplier_product_alias", "owner": "FATTURE_FORNITORI", "naturalKey": "supplierId + supplierItemCode + packageFingerprint", "authority": "Mappatura versionata fra descrizione o codice del fornitore e prodotto canonico" },
     { "id": "obligation", "owner": "AMMINISTRAZIONE", "naturalKey": "domain + sourceEntityId + component", "authority": "Scadenza trasversale materializzata dall'entità fonte; non può inventare o modificare autonomamente l'importo documentato" },
+    { "id": "expectation", "owner": "AMMINISTRAZIONE", "naturalKey": "processId + expectationType", "authority": "Attesa derivata dall'evento che crea l'obbligo; un'evidenza futura può soddisfarla ma non crearla retroattivamente" },
+    { "id": "expectation_process", "owner": "AMMINISTRAZIONE", "naturalKey": "processId", "authority": "Stato aggregato riproducibile delle attese richieste, aperto finché almeno una attesa obbligatoria non è terminale positiva" },
     { "id": "open_item", "owner": "RICONCILIAZIONE", "naturalKey": "obligationId", "authority": "Residuo dopo allocazioni confermate" },
     { "id": "financial_movement", "owner": "TESORERIA", "naturalKey": "accountId + sourceTransactionId", "authority": "Fatto finanziario osservato" },
     { "id": "financial_evidence", "owner": "TESORERIA", "naturalKey": "sourceAssetId + movementId", "authority": "Prova del movimento o attestazione di cassa" },
@@ -935,6 +937,8 @@
     { "id": "supplier_invoice_projects_accounting", "from": "invoice_supplier", "to": "accounting_entry", "cardinality": "1:N", "authority": "accounting_entry", "autoLink": "SOURCE_INVOICE_ID_ENTRY_KIND_AND_APPROVED_POSTING_RULE" },
     { "id": "customer_invoice_generates_vat_entries", "from": "invoice_customer", "to": "vat_entry", "cardinality": "1:N", "authority": "vat_entry", "autoLink": "SOURCE_INVOICE_ID_COMPONENT_RATE_AND_CENTS" },
     { "id": "invoice_creates_obligation", "from": "invoice_supplier", "to": "obligation", "cardinality": "1:N", "authority": "invoice_supplier", "autoLink": "SOURCE_ENTITY_ID" },
+    { "id": "invoice_creates_expectations", "from": "invoice_supplier", "to": "expectation", "cardinality": "1:N", "authority": "expectation", "autoLink": "SOURCE_EVENT_ID_AND_EXPECTATION_RULE_VERSION" },
+    { "id": "expectation_belongs_process", "from": "expectation", "to": "expectation_process", "cardinality": "N:1", "authority": "expectation_process", "autoLink": "PROCESS_ID" },
     { "id": "obligation_has_open_item", "from": "obligation", "to": "open_item", "cardinality": "1:1", "authority": "open_item", "autoLink": "OBLIGATION_ID" },
     { "id": "movement_has_evidence", "from": "financial_movement", "to": "financial_evidence", "cardinality": "1:N", "authority": "financial_movement", "autoLink": "SOURCE_TRANSACTION_ID" },
     { "id": "reconciliation_uses_movement", "from": "reconciliation", "to": "financial_movement", "cardinality": "N:1", "authority": "reconciliation", "autoLink": "NEVER_BY_AMOUNT_ONLY" },

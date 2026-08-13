@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { GridFSBucket } from 'mongodb';
+import { GridFSBucket, ObjectId } from 'mongodb';
 
 const readyDatabases = new WeakSet();
 
@@ -53,4 +53,32 @@ export async function storeOriginalOnce(db, content, { sha256 = null, filename, 
     if (error?.code === 11000) return registry.findOne({ sha256: computed });
     throw error;
   }
+}
+
+export async function readOriginalBuffer(db, gridFsId, { maxBytes = 10 * 1024 * 1024 } = {}) {
+  if (!db) throw new Error('Database richiesto');
+  const id = gridFsId instanceof ObjectId
+    ? gridFsId
+    : ObjectId.isValid(String(gridFsId || ''))
+      ? new ObjectId(String(gridFsId))
+      : null;
+  if (!id) throw Object.assign(new Error('ID originale non valido'), { code: 'ORIGINALE_MANCANTE' });
+  const limit = Number(maxBytes);
+  if (!Number.isSafeInteger(limit) || limit <= 0) throw new Error('Limite originale non valido');
+  const bucket = new GridFSBucket(db, { bucketName: 'documenti_originali' });
+  const stream = bucket.openDownloadStream(id);
+  const chunks = [];
+  let size = 0;
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > limit) {
+        stream.destroy(Object.assign(new Error('Originale oltre il limite consentito'), { code: 'ORIGINALE_TROPPO_GRANDE' }));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    stream.once('error', reject);
+    stream.once('end', () => resolve(Buffer.concat(chunks)));
+  });
 }

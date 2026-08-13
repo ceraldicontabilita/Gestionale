@@ -7,8 +7,10 @@ import {
   catalogSummary,
   inventoriesDirectory,
   loadCatalog,
+  loadExpectationTree,
   loadTopology,
   validateCatalog,
+  validateExpectationTree,
   validateInventories,
   validateTopology
 } from '../scripts/validate-anatomia.js';
@@ -34,12 +36,23 @@ test('il catalogo anatomico canonico e gli inventari storici sono coerenti', () 
   assert.deepEqual(validateCatalog(catalog), []);
   assert.deepEqual(validateInventories(catalog), []);
   assert.deepEqual(validateTopology(catalog, loadTopology()), []);
+  assert.deepEqual(validateExpectationTree(loadExpectationTree()), []);
   const summary = catalogSummary(catalog);
   assert.equal(summary.sections, 6);
   assert.ok(summary.pages >= 50);
   assert.ok(summary.entities >= 40);
   assert.ok(summary.relations >= 30);
   assert.ok(summary.flows >= 6);
+});
+
+test('l albero vincola la nascita del ramo all obbligo e non alla prova futura', () => {
+  const tree = copy(loadExpectationTree());
+  const supplierFlow = new Map(tree.flussi['Fattura fornitore'].map((step) => [step[0], step[1]]));
+  assert.equal(supplierFlow.get('Documento originale'), 'SODDISFATTO');
+  assert.equal(supplierFlow.get('Pagamento'), 'ATTESO');
+  assert.equal(supplierFlow.get('Chiusura debito'), 'ATTESO');
+  tree.principio = 'Il pagamento crea il ramo';
+  assert.match(validateExpectationTree(tree).join('\n'), /principio obbligo-evidenza/);
 });
 
 test('la topologia copre ogni pagina esattamente una volta e registra ogni evento', () => {

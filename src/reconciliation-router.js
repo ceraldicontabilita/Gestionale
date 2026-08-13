@@ -2,7 +2,8 @@ import { startOfNextYear, startOfYear, validateYear } from './ledger.js';
 
 const FINANCIAL_EVIDENCE = Object.freeze({
   BANCA: new Set(['ESTRATTO_CONTO', 'MOVIMENTO_BANCARIO']),
-  MASTERCARD: new Set(['ESTRATTO_CARTA', 'MOVIMENTO_CARTA'])
+  MASTERCARD: new Set(['ESTRATTO_CARTA', 'MOVIMENTO_CARTA']),
+  CASSA: new Set(['ATTESTAZIONE_CASSA'])
 });
 
 export function hasRealFinancialEvidence(movement) {
