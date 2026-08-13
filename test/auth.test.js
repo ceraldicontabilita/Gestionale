@@ -10,7 +10,7 @@ import {
   verifyTotp
 } from '../src/auth.js';
 
-test('verifica il PIN legacy senza conservarlo in chiaro', () => {
+test('verifica il PIN SHA-256 compatibile senza conservarlo in chiaro', () => {
   const pin = '123456';
   const env = { PIN_HASH_ADMIN: crypto.createHash('sha256').update(pin).digest('hex') };
   assert.equal(authConfigured(env), true);

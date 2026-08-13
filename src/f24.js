@@ -17,6 +17,17 @@ export const F24_DOCUMENT_TYPES = Object.freeze([
   'F24_FORMATO_STAMPABILE'
 ]);
 
+export const F24_FIELD_STATES = Object.freeze([
+  'ESTRATTO',
+  'VALIDATO',
+  'QUADRATO',
+  'CONFERMATO',
+  'CONTESTATO',
+  'NON_DETERMINABILE'
+]);
+
+export const F24_DOCUMENT_STATE = 'MODELLO_F24_TROVATO';
+
 export const F24_STATES = Object.freeze([
   'DA_VERIFICARE',
   'DOCUMENTATO',
@@ -98,7 +109,10 @@ export function buildF24FromIndexRow(input = {}) {
     sha256,
     urlSorgente: String(input.url_sorgente ?? input.urlSorgente ?? '').trim() || null,
     nota: String(input.nota || '').trim() || null,
+    documentState: F24_DOCUMENT_STATE,
     provaPagamento: false,
+    paymentEvidence: false,
+    autoReconcile: false,
     stato: saldoRilevante === 0 ? 'COMPENSATO' : 'IN_ATTESA_RISCONTRO'
   };
 }
@@ -155,6 +169,114 @@ export function calculateF24Totals(rows = []) {
   const debiti = roundMoney(rows.reduce((sum, row) => sum + Number(row.debito || 0), 0));
   const crediti = roundMoney(rows.reduce((sum, row) => sum + Number(row.credito || 0), 0));
   return { debiti, crediti, saldo: roundMoney(debiti - crediti) };
+}
+
+export function buildF24FieldEvidence(value, {
+  rawText = null,
+  sourceFileId = null,
+  modelIndex = null,
+  page = null,
+  coordinates = null,
+  extractionMethod = 'NATIVE_TEXT',
+  confidence = null,
+  state = 'ESTRATTO',
+  alternatives = [],
+  warnings = [],
+  verifiedBy = []
+} = {}) {
+  const normalizedState = String(state || '').toUpperCase();
+  if (!F24_FIELD_STATES.includes(normalizedState)) throw new Error('Stato affidabilità campo F24 non valido');
+  const numericConfidence = confidence === null || confidence === undefined ? null : Number(confidence);
+  if (numericConfidence !== null && (!Number.isFinite(numericConfidence) || numericConfidence < 0 || numericConfidence > 1)) {
+    throw new Error('Confidenza campo F24 non valida');
+  }
+  return {
+    value,
+    rawText: rawText === null ? null : String(rawText),
+    sourceFileId: clean(sourceFileId),
+    modelIndex: toIntegerOrNull(modelIndex),
+    page: toIntegerOrNull(page),
+    coordinates: coordinates || null,
+    extractionMethod: String(extractionMethod || 'NATIVE_TEXT').toUpperCase(),
+    confidence: numericConfidence,
+    state: normalizedState,
+    alternatives: Array.isArray(alternatives) ? alternatives : [],
+    warnings: Array.isArray(warnings) ? warnings : [String(warnings)],
+    verifiedBy: Array.isArray(verifiedBy) ? verifiedBy : [String(verifiedBy)]
+  };
+}
+
+export function calculateF24SectionTotals(rows = []) {
+  const sections = {};
+  for (const row of rows) {
+    const section = normalizeSection(row.sezione);
+    if (!sections[section]) sections[section] = { debiti: 0, crediti: 0, saldo: 0 };
+    sections[section].debiti = roundMoney(sections[section].debiti + Number(row.debito || 0));
+    sections[section].crediti = roundMoney(sections[section].crediti + Number(row.credito || 0));
+    sections[section].saldo = roundMoney(sections[section].debiti - sections[section].crediti);
+  }
+  return sections;
+}
+
+export function assessF24Reliability({
+  rows = [],
+  statedTotals = null,
+  essentialFields = [],
+  extractionConflicts = [],
+  paymentEvidence = false,
+  bankMovementVerified = false,
+  modelIndex = null
+} = {}) {
+  const calculatedTotals = calculateF24Totals(rows);
+  const sectionTotals = calculateF24SectionTotals(rows);
+  const warnings = [];
+  const conflicts = Array.isArray(extractionConflicts) ? extractionConflicts.filter(Boolean) : [];
+  if (conflicts.length) warnings.push('DISCORDANZA_ESTRAZIONE');
+  const missingEssential = essentialFields.filter((field) => field?.value === null || field?.value === undefined || field?.state === 'NON_DETERMINABILE');
+  if (missingEssential.length) warnings.push('CAMPI_ESSENZIALI_NON_DETERMINABILI');
+
+  let accountingStatus = 'NON_VERIFICATO';
+  if (statedTotals) {
+    const expected = {
+      debiti: parseItalianAmount(statedTotals.debiti) ?? 0,
+      crediti: parseItalianAmount(statedTotals.crediti) ?? 0,
+      saldo: parseItalianAmount(statedTotals.saldo) ?? 0
+    };
+    const exact = expected.debiti === calculatedTotals.debiti
+      && expected.crediti === calculatedTotals.crediti
+      && expected.saldo === calculatedTotals.saldo;
+    accountingStatus = exact ? 'QUADRATO' : 'CONTESTATO';
+    if (!exact) warnings.push('QUADRATURA_F24_FALLITA');
+  }
+
+  const extractionStatus = conflicts.length || missingEssential.length ? 'DA_VERIFICARE' : 'VALIDATO';
+  const zeroBalance = calculatedTotals.saldo === 0;
+  const paymentStatus = paymentEvidence && bankMovementVerified
+    ? 'CONFERMATO'
+    : paymentEvidence
+      ? 'EVIDENZA_DOCUMENTALE_SENZA_RISCONTRO_BANCARIO'
+      : bankMovementVerified
+        ? 'MOVIMENTO_BANCARIO_SENZA_EVIDENZA_DOCUMENTALE'
+        : 'ASSENTE';
+  const autoReconcile = !zeroBalance
+    && extractionStatus === 'VALIDATO'
+    && accountingStatus === 'QUADRATO'
+    && paymentEvidence === true
+    && bankMovementVerified === true;
+
+  if (zeroBalance) warnings.push('SALDO_ZERO_NESSUNA_USCITA_BANCARIA');
+  if (!paymentEvidence) warnings.push('PROVA_PAGAMENTO_ASSENTE');
+
+  return {
+    modelIndex: toIntegerOrNull(modelIndex),
+    documentState: F24_DOCUMENT_STATE,
+    extraction: { status: extractionStatus, conflicts, missingEssential: missingEssential.length },
+    accounting: { status: accountingStatus, calculatedTotals, sectionTotals },
+    payment: { status: paymentStatus, paymentEvidence: Boolean(paymentEvidence), bankMovementVerified: Boolean(bankMovementVerified) },
+    autoReconcile,
+    financialOutflowAllowed: !zeroBalance && autoReconcile,
+    warnings: [...new Set(warnings)]
+  };
 }
 
 export function parseQuietanzaText(text = '') {

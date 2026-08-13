@@ -10,7 +10,7 @@ test('la whitelist mittenti usa corrispondenze esatte o dominio, non sottostring
   assert.equal(senderTrusted('notifiche@fakepec.ader.it', patterns), false);
 });
 
-test('un reset UIDVALIDITY ricomincia da UID 1 senza ereditare il vecchio cursore', () => {
+test('un reset UIDVALIDITY ricomincia da UID 1 senza ereditare il cursore precedente', () => {
   const result = selectImapUids([1, 2, 3, 4, 5], { uidValidity: '10', lastUid: 999 }, { uidValidity: '11', maxMessages: 2, overlapUids: 1 });
   assert.deepEqual(result.selected, [1, 2]);
   assert.equal(result.lastUid, 0);
@@ -18,7 +18,7 @@ test('un reset UIDVALIDITY ricomincia da UID 1 senza ereditare il vecchio cursor
   assert.equal(result.morePending, true);
 });
 
-test('il backfill procede dal più vecchio e non salta messaggi', () => {
+test('il backfill procede dal messaggio meno recente e non salta elementi', () => {
   const first = selectImapUids([1, 2, 3, 4, 5], {}, { uidValidity: '1', maxMessages: 2, overlapUids: 1 });
   assert.deepEqual(first.selected, [1, 2]);
   const second = selectImapUids([1, 2, 3, 4, 5], { uidValidity: '1', lastUid: 2 }, { uidValidity: '1', maxMessages: 2, overlapUids: 1 });

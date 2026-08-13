@@ -9,6 +9,15 @@ const INDEX_SOURCE = 'DRIVE_DOCUMENT_INDEX';
 function clean(value) { return value === null || value === undefined ? '' : String(value).trim(); }
 function asArray(value) { return value === undefined || value === null ? [] : Array.isArray(value) ? value : [value]; }
 function money(value) { const result = Number(value || 0); return Number.isFinite(result) ? Math.round(result * 100) / 100 : 0; }
+function driveSize(value) {
+  const provided = value !== undefined && value !== null && value !== '';
+  const numericShape = typeof value === 'number'
+    ? Number.isSafeInteger(value) && value >= 0
+    : typeof value === 'string' && /^\d+$/.test(value);
+  const parsed = provided && numericShape ? Number(value) : null;
+  const valid = !provided || (numericShape && Number.isSafeInteger(parsed) && parsed >= 0);
+  return { value: valid ? parsed : null, invalid: provided && !valid };
+}
 function normalizedPath(value) { return clean(value).replaceAll('\\', '/').replace(/^\/+|\/+$/g, ''); }
 function yearFromPath(value) { const match = normalizedPath(value).match(/(?:^|[^0-9])(20\d{2})(?:[^0-9]|$)/); return match ? Number(match[1]) : null; }
 function sourceDate(value) {
@@ -25,12 +34,15 @@ function periodFields(value) {
 }
 
 export function proposedDocumentType(pathValue) {
-  const top = normalizedPath(pathValue).split('/')[0].toUpperCase();
+  const authoritativeSegments = Array.isArray(pathValue) ? pathValue : null;
+  const rawTopSegment = authoritativeSegments ? String(authoritativeSegments[0] || '') : normalizedPath(pathValue).split('/')[0];
+  if (authoritativeSegments && (rawTopSegment !== rawTopSegment.trim() || /[\\/\u0000-\u001f\u007f]/.test(rawTopSegment) || rawTopSegment === '.' || rawTopSegment === '..')) return 'DOCUMENTO_DRIVE';
+  const topSegment = rawTopSegment.trim();
+  const top = topSegment.toUpperCase();
   const types = {
     'CORRISPETTIVI': 'CORRISPETTIVO_XML',
     'FATTURE XML GESTIONALE': 'FATTURA_XML',
     'FATTURE ESTERO': 'FATTURA_ESTERO',
-    'FATTURE PDF LEGACY': 'FATTURA_PDF_LEGACY',
     'CEDOLINI PAGA': 'CEDOLINO',
     'BONIFICI EFFETTUATI': 'BONIFICO',
     'ESTRATTI CONTO': 'ESTRATTO_CONTO',
@@ -131,12 +143,34 @@ async function runBulk(collection, operations, size = 500) {
   return { matched, upserted, modified };
 }
 
+async function loadDriveSourceDocuments(db, files, size = 500) {
+  const documents = [];
+  for (let index = 0; index < files.length; index += size) {
+    const sourceKeys = files.slice(index, index + size).map((file) => `DRIVE_FILE:${file.id}`);
+    const batch = await db.collection('documenti').find(
+      { primarySourceKey: { $in: sourceKeys } },
+      { projection: { _id: 1, primarySourceKey: 1 } }
+    ).toArray();
+    documents.push(...batch);
+  }
+  return documents;
+}
+
 async function ensureIndexes(db) {
   await Promise.all([
     db.collection('documenti').createIndex({ sha256: 1 }, { unique: true, sparse: true }),
     db.collection('documenti').createIndex({ primarySourceKey: 1 }, { unique: true, sparse: true }),
     db.collection('drive_files').createIndex({ driveFileId: 1 }, { unique: true }),
+    db.collection('drive_files').createIndex({ rootFolderId: 1, attivo: 1, scanId: 1 }),
     db.collection('drive_files').createIndex({ topFolder: 1, extension: 1 }),
+    db.collection('drive_files').createIndex({ attivo: 1, scanId: 1, sha256Checksum: 1, dimensione: 1 }),
+    db.collection('drive_files').createIndex({ attivo: 1, scanId: 1, md5Checksum: 1, dimensione: 1 }),
+    db.collection('drive_document_links').createIndex({ driveFileId: 1 }, { unique: true }),
+    db.collection('drive_document_links').createIndex({ documentoId: 1, verified: 1 }),
+    db.collection('drive_document_links').createIndex({ scanId: 1, attivo: 1 }),
+    db.collection('drive_folders').createIndex({ driveFolderId: 1 }, { unique: true }),
+    db.collection('drive_folders').createIndex({ rootFolderId: 1, attivo: 1, scanId: 1 }),
+    db.collection('drive_folders').createIndex({ scanId: 1, attivo: 1 }),
     db.collection('f24_operazioni').createIndex({ sourceKey: 1 }, { unique: true }),
     db.collection('quietanze_f24').createIndex({ sourceKey: 1 }, { unique: true }),
     db.collection('f24_righe_indice').createIndex({ sourceRowKey: 1 }, { unique: true }),
@@ -146,8 +180,127 @@ async function ensureIndexes(db) {
     db.collection('collegamenti').createIndex({ relationKey: 1 }, { unique: true }),
     db.collection('fatture').createIndex({ sourceKey: 1 }, { unique: true }),
     db.collection('corrispettivi_rt').createIndex({ sourceKey: 1 }, { unique: true }),
-    db.collection('drive_import_runs').createIndex({ iniziatoIl: -1 })
+    db.collection('drive_import_runs').createIndex({ iniziatoIl: -1 }),
+    db.collection('drive_import_locks').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
   ]);
+}
+
+function driveRootError(message, code) {
+  return Object.assign(new Error(message), { code });
+}
+
+export async function ensureCanonicalDriveRoot(db, rootFolderId, adoptionConfirmation = null, now = new Date()) {
+  const root = clean(rootFolderId);
+  if (!root) throw driveRootError('Radice Drive non identificata', 'DRIVE_ROOT_NOT_IDENTIFIED');
+  const configCollection = db.collection('drive_inventory_config');
+  const current = await configCollection.findOne({ _id: 'CANONICAL_ROOT' });
+  if (current?.rootFolderId && String(current.rootFolderId) !== root) {
+    throw driveRootError('Radice Drive diversa dalla radice canonica registrata; migrazione esplicita richiesta', 'DRIVE_ROOT_CHANGED');
+  }
+
+  const rootedFilter = { attivo: true, rootFolderId: { $exists: true, $ne: null } };
+  const [fileRoots, folderRoots] = await Promise.all([
+    db.collection('drive_files').distinct('rootFolderId', rootedFilter),
+    db.collection('drive_folders').distinct('rootFolderId', rootedFilter)
+  ]);
+  const activeRoots = [...new Set([...fileRoots, ...folderRoots].map(String))];
+  if (activeRoots.some((value) => String(value) !== root)) {
+    throw driveRootError('L’inventario attivo appartiene a una radice Drive diversa', 'DRIVE_ROOT_CHANGED');
+  }
+  const unscopedFilter = { attivo: true, $or: [{ rootFolderId: { $exists: false } }, { rootFolderId: null }] };
+  const unscopedDriveDocuments = {
+    primarySourceKey: /^DRIVE_FILE:/,
+    $or: [{ rootFolderId: { $exists: false } }, { rootFolderId: null }]
+  };
+  const [unscopedFiles, unscopedFolders, unscopedLinks, unscopedDocuments] = await Promise.all([
+    db.collection('drive_files').countDocuments(unscopedFilter),
+    db.collection('drive_folders').countDocuments(unscopedFilter),
+    db.collection('drive_document_links').countDocuments(unscopedFilter),
+    db.collection('documenti').countDocuments(unscopedDriveDocuments)
+  ]);
+  const adoptUnscoped = unscopedFiles > 0 || unscopedFolders > 0 || unscopedLinks > 0 || unscopedDocuments > 0;
+  if (adoptUnscoped && clean(adoptionConfirmation) !== root) {
+    throw driveRootError('Inventario Drive esistente senza radice: confermare esplicitamente la radice configurata', 'DRIVE_ROOT_ADOPTION_REQUIRED');
+  }
+  if (adoptUnscoped) {
+    await db.collection('documenti').updateMany(
+      unscopedDriveDocuments,
+      { $set: { rootFolderId: root, recordKind: 'DRIVE_SOURCE', sourceActive: true, aggiornatoIl: now } }
+    );
+    await db.collection('drive_document_links').updateMany(
+      { $or: [{ rootFolderId: { $exists: false } }, { rootFolderId: null }] },
+      { $set: { rootFolderId: root, aggiornatoIl: now } }
+    );
+  }
+
+  try {
+    await configCollection.updateOne(
+      { _id: 'CANONICAL_ROOT' },
+      { $setOnInsert: { rootFolderId: root, creatoIl: now }, $set: { aggiornatoIl: now } },
+      { upsert: true }
+    );
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+  }
+  const canonical = await configCollection.findOne({ _id: 'CANONICAL_ROOT' });
+  if (!canonical || String(canonical.rootFolderId) !== root) {
+    throw driveRootError('Un’altra radice Drive è stata registrata come canonica', 'DRIVE_ROOT_CHANGED');
+  }
+  return { rootFolderId: root, adoptUnscoped };
+}
+
+export async function acquireDriveImportLease(db, rootFolderId, ownerId, {
+  leaseMs = 30 * 60 * 1000,
+  now = () => new Date()
+} = {}) {
+  const duration = Number(leaseMs);
+  if (!Number.isSafeInteger(duration) || duration < 30_000) throw new TypeError('Durata lock Drive non valida');
+  const collection = db.collection('drive_import_locks');
+  const lockId = `ROOT:${rootFolderId}`;
+  const acquiredAt = now();
+  try {
+    await collection.updateOne(
+      { _id: lockId, $or: [{ expiresAt: { $lte: acquiredAt } }, { ownerId }] },
+      { $set: { ownerId, rootFolderId, acquiredAt, expiresAt: new Date(acquiredAt.getTime() + duration) } },
+      { upsert: true }
+    );
+  } catch (error) {
+    if (error?.code === 11000) throw driveRootError('Una scansione Drive è già in corso per questa radice', 'DRIVE_IMPORT_ALREADY_RUNNING');
+    throw error;
+  }
+  const acquired = await collection.findOne({ _id: lockId, ownerId });
+  if (!acquired) throw driveRootError('Una scansione Drive è già in corso per questa radice', 'DRIVE_IMPORT_ALREADY_RUNNING');
+
+  let stopped = false;
+  let leaseError = null;
+  const heartbeatMs = Math.max(10_000, Math.floor(duration / 3));
+  const heartbeat = setInterval(async () => {
+    if (stopped) return;
+    try {
+      const heartbeatAt = now();
+      const result = await collection.updateOne(
+        { _id: lockId, ownerId },
+        { $set: { expiresAt: new Date(heartbeatAt.getTime() + duration), heartbeatAt } }
+      );
+      if (result.matchedCount !== 1) leaseError = driveRootError('Titolarità della scansione Drive persa', 'DRIVE_IMPORT_LEASE_LOST');
+    } catch (error) {
+      leaseError = driveRootError(`Rinnovo del lock Drive fallito: ${error.message}`, 'DRIVE_IMPORT_LEASE_LOST');
+    }
+  }, heartbeatMs);
+  heartbeat.unref?.();
+
+  return {
+    async assertOwned() {
+      if (leaseError) throw leaseError;
+      const record = await collection.findOne({ _id: lockId, ownerId, expiresAt: { $gt: now() } });
+      if (!record) throw driveRootError('Titolarità della scansione Drive persa', 'DRIVE_IMPORT_LEASE_LOST');
+    },
+    async release() {
+      stopped = true;
+      clearInterval(heartbeat);
+      await collection.deleteOne({ _id: lockId, ownerId });
+    }
+  };
 }
 
 function relationOperation(aTipo, aId, bTipo, bId, relazione, now) {
@@ -173,7 +326,7 @@ async function importIndex(db, index, revision, now) {
     }, upsert: true
   } })));
 
-  const savedDocuments = await db.collection('documenti').find({ sha256: { $in: data.documents.map((row) => row.sha256) } }, { projection: { sha256: 1, 'datiEstratti.driveIndex.id': 1, 'datiEstratti.driveIndex.percorso': 1 } }).toArray();
+  const savedDocuments = await db.collection('documenti').find({ sha256: { $in: data.documents.map((row) => row.sha256) } }, { projection: { sha256: 1, 'datiEstratti.driveIndex.id': 1, 'datiEstratti.driveIndex.percorso': 1, 'datiEstratti.driveIndex.dimensione': 1 } }).toArray();
   const documentByIndexId = new Map(savedDocuments.map((row) => [row.datiEstratti?.driveIndex?.id, row]));
 
   const canonical = data.f24Documents.filter((row) => !row.quietanza);
@@ -232,38 +385,135 @@ async function importIndex(db, index, revision, now) {
   return { data, documentByIndexId, counts: { documents: data.documents.length, f24Canonical: canonical.length, quietanze: receipts.length, f24Rows: data.f24Rows.length, declarations: data.declarations.length, discards: data.discards.length }, writes: { documentResult, f24Result, receiptResult, indexedRowsResult, canonicalRowResult, declarationResult, discardResult, relationResult } };
 }
 
-async function scanDrive(driveClient, rootFolderId) {
-  const stack = [{ id: rootFolderId, path: [] }]; const visited = new Set(); const files = []; const errors = [];
+export async function scanDriveTree(driveClient, rootFolderId) {
+  const root = {
+    id: rootFolderId,
+    driveFolderId: rootFolderId,
+    name: '(radice)',
+    nome: '(radice)',
+    mimeType: FOLDER_MIME,
+    parentId: null,
+    path: '',
+    pathSegments: []
+  };
+  const stack = [root]; const visited = new Set(); const files = []; const folderRecords = []; const errors = [];
   while (stack.length) {
     const current = stack.pop(); if (visited.has(current.id)) continue; visited.add(current.id);
+    folderRecords.push(current);
     try {
       const children = await driveClient.listChildren(current.id);
       for (const item of children) {
-        if (item.mimeType === FOLDER_MIME) stack.push({ id: item.id, path: [...current.path, item.name] });
+        const pathSegments = [...current.pathSegments, item.name];
+        if (item.mimeType === FOLDER_MIME) stack.push({
+          ...item,
+          driveFolderId: item.id,
+          nome: item.name,
+          parentId: current.id,
+          path: pathSegments.join('/'),
+          pathSegments
+        });
         else {
-          const fullPath = [...current.path, item.name].join('/'); const topFolder = current.path[0] || '(radice)';
-          files.push({ ...item, path: fullPath, topFolder, extension: item.name.includes('.') ? `.${item.name.split('.').at(-1).toLowerCase()}` : '', year: yearFromPath(fullPath), parentId: current.id });
+          const fullPath = pathSegments.join('/'); const topFolder = current.pathSegments[0] || '(radice)';
+          files.push({ ...item, path: fullPath, pathSegments, topFolder, extension: item.name.includes('.') ? `.${item.name.split('.').at(-1).toLowerCase()}` : '', year: yearFromPath(fullPath), parentId: current.id });
         }
       }
-    } catch (error) { errors.push({ folderId: current.id, path: current.path.join('/'), code: error.code || 'DRIVE_LIST_FAILED', message: error.message }); }
+    } catch (error) { errors.push({ folderId: current.id, path: current.path, pathSegments: [...current.pathSegments], code: error.code || 'DRIVE_LIST_FAILED', message: error.message }); }
   }
-  return { files, folders: visited.size, errors };
+  return { files, folders: visited.size, folderRecords, errors };
 }
 
-async function importDriveMetadata(db, scan, documentByIndexId, now, scanId) {
-  const indexedPathMap = new Map([...documentByIndexId.values()].map((row) => [normalizedPath(row.datiEstratti?.driveIndex?.percorso).toLowerCase(), row]));
-  const driveResult = await runBulk(db.collection('drive_files'), scan.files.map((file) => ({ updateOne: { filter: { driveFileId: file.id }, update: { $set: { driveFileId: file.id, nome: file.name, mimeType: file.mimeType, dimensione: Number(file.size || 0), md5Checksum: file.md5Checksum || null, sha256Checksum: file.sha256Checksum || null, versioneFonte: file.version || file.modifiedTime || null, percorso: normalizedPath(file.path), topFolder: file.topFolder, extension: file.extension, anno: file.year, parentId: file.parentId, webViewLink: file.webViewLink || null, modificatoIlFonte: file.modifiedTime ? new Date(file.modifiedTime) : null, tipoProposto: proposedDocumentType(file.path), scanId, attivo: true, aggiornatoIl: now }, $setOnInsert: { creatoIl: now } }, upsert: true } })));
+export async function persistDriveMetadata(db, scan, documentByIndexId, now, scanId, rootFolderId, { adoptUnscoped = false, assertLease = async () => {} } = {}) {
+  if (!rootFolderId) throw Object.assign(new Error('Radice Drive non identificata'), { code: 'DRIVE_ROOT_NOT_IDENTIFIED' });
+  await assertLease();
+  const indexedBySha = new Map();
+  for (const document of documentByIndexId.values()) {
+    const hash = clean(document.sha256).toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(hash)) continue;
+    if (!indexedBySha.has(hash)) indexedBySha.set(hash, []);
+    indexedBySha.get(hash).push(document);
+  }
+  function verifiedIndexMatch(file) {
+    const hash = clean(file.sha256Checksum).toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(hash)) return null;
+    const matches = indexedBySha.get(hash) || [];
+    if (matches.length !== 1) return null;
+    const fileBytes = driveSize(file.size).value;
+    const indexBytes = driveSize(matches[0].datiEstratti?.driveIndex?.dimensione).value;
+    if (fileBytes !== null && indexBytes !== null && fileBytes !== indexBytes) return null;
+    return matches[0];
+  }
+  const folderResult = await runBulk(db.collection('drive_folders'), scan.folderRecords.map((folder) => ({ updateOne: { filter: { driveFolderId: folder.driveFolderId || folder.id }, update: { $set: {
+    driveFolderId: folder.driveFolderId || folder.id,
+    nome: folder.nome || folder.name,
+    mimeType: folder.mimeType || FOLDER_MIME,
+    parentId: folder.parentId ?? null,
+    percorso: folder.path,
+    pathSegments: [...folder.pathSegments],
+    versioneFonte: folder.version || folder.modifiedTime || null,
+    modificatoIlFonte: folder.modifiedTime ? new Date(folder.modifiedTime) : null,
+    webViewLink: folder.webViewLink || null,
+    rootFolderId,
+    scanId,
+    attivo: true,
+    aggiornatoIl: now
+  }, $setOnInsert: { creatoIl: now } }, upsert: true } })));
+  const driveResult = await runBulk(db.collection('drive_files'), scan.files.map((file) => {
+    const bytes = driveSize(file.size); const indexed = verifiedIndexMatch(file);
+    return { updateOne: { filter: { driveFileId: file.id }, update: { $set: { driveFileId: file.id, nome: file.name, mimeType: file.mimeType, dimensione: bytes.value, dimensioneFonteNonValida: bytes.invalid, md5Checksum: file.md5Checksum || null, sha256Checksum: file.sha256Checksum || null, versioneFonte: file.version || file.modifiedTime || null, percorso: normalizedPath(file.path), pathSegments: [...file.pathSegments], topFolder: file.topFolder, extension: file.extension, anno: file.year, parentId: file.parentId, rootFolderId, webViewLink: file.webViewLink || null, modificatoIlFonte: file.modifiedTime ? new Date(file.modifiedTime) : null, tipoProposto: proposedDocumentType(file.pathSegments), verifiedIndexMatch: Boolean(indexed), documentIndexId: indexed?.datiEstratti?.driveIndex?.id || null, documentoId: indexed?._id || null, scanId, attivo: true, aggiornatoIl: now }, $setOnInsert: { creatoIl: now } }, upsert: true } };
+  }));
 
   const documentOperations = scan.files.map((file) => {
-    const indexed = indexedPathMap.get(normalizedPath(file.path).toLowerCase());
-    const filter = indexed ? { _id: indexed._id } : { primarySourceKey: `DRIVE_FILE:${file.id}` };
-    const set = { nomeOriginale: file.name, 'datiEstratti.drive': { fileId: file.id, percorso: normalizedPath(file.path), topFolder: file.topFolder, mimeType: file.mimeType, dimensione: Number(file.size || 0), modificatoIl: file.modifiedTime || null }, aggiornatoIl: now };
-    if (!indexed) set.primarySourceKey = `DRIVE_FILE:${file.id}`;
-    return { updateOne: { filter, update: { $set: set, $setOnInsert: { tipo: proposedDocumentType(file.path), stato: 'DA_VERIFICARE', creatoIl: now }, $addToSet: { fonti: { sourceKey: `DRIVE_FILE:${file.id}`, tipo: 'GOOGLE_DRIVE', riferimento: file.webViewLink || normalizedPath(file.path) } } }, upsert: true } };
+    const indexed = verifiedIndexMatch(file); const bytes = driveSize(file.size);
+    const filter = { primarySourceKey: `DRIVE_FILE:${file.id}` };
+    const set = { nomeOriginale: file.name, recordKind: 'DRIVE_SOURCE', rootFolderId, sourceActive: true, sourceScanId: scanId, sourceDeletedAt: null, 'datiEstratti.drive': { fileId: file.id, percorso: normalizedPath(file.path), pathSegments: [...file.pathSegments], topFolder: file.topFolder, mimeType: file.mimeType, dimensione: bytes.value, dimensioneFonteNonValida: bytes.invalid, modificatoIl: file.modifiedTime || null }, aggiornatoIl: now };
+    set.primarySourceKey = `DRIVE_FILE:${file.id}`;
+    return { updateOne: { filter, update: { $set: set, $setOnInsert: { tipo: proposedDocumentType(file.pathSegments), stato: 'DA_VERIFICARE', creatoIl: now }, $addToSet: { fonti: { sourceKey: `DRIVE_FILE:${file.id}`, tipo: 'GOOGLE_DRIVE', riferimento: file.webViewLink || normalizedPath(file.path) } } }, upsert: true } };
   });
   const documentResult = await runBulk(db.collection('documenti'), documentOperations);
-  if (!scan.errors.length) await db.collection('drive_files').updateMany({ scanId: { $ne: scanId }, attivo: true }, { $set: { attivo: false, aggiornatoIl: now } });
-  return { driveResult, documentResult };
+  const savedDriveDocuments = await loadDriveSourceDocuments(db, scan.files);
+  const driveDocumentByFileId = new Map(savedDriveDocuments.map((document) => [String(document.primarySourceKey).slice('DRIVE_FILE:'.length), document]));
+  const linkResult = await runBulk(db.collection('drive_document_links'), scan.files.map((file) => {
+    const indexed = verifiedIndexMatch(file); const sourceDocument = driveDocumentByFileId.get(file.id);
+    return { updateOne: { filter: { driveFileId: file.id }, update: { $set: {
+      driveFileId: file.id,
+      documentoDriveId: sourceDocument?._id || null,
+      documentoId: indexed?._id || sourceDocument?._id || null,
+      documentIndexId: indexed?.datiEstratti?.driveIndex?.id || null,
+      verified: Boolean(indexed),
+      matchBasis: indexed ? 'SHA256_AND_OPTIONAL_SIZE' : 'STABLE_DRIVE_FILE_ID',
+      rootFolderId,
+      scanId,
+      attivo: true,
+      aggiornatoIl: now
+    }, $setOnInsert: { creatoIl: now } }, upsert: true } };
+  }));
+  let driveDeactivationResult = null; let folderDeactivationResult = null; let linkDeactivationResult = null; let documentDeactivationResult = null;
+  if (!scan.errors.length) {
+    await assertLease();
+    const rootScope = adoptUnscoped
+      ? { $or: [{ rootFolderId }, { rootFolderId: { $exists: false } }, { rootFolderId: null }] }
+      : { rootFolderId };
+    [driveDeactivationResult, folderDeactivationResult, linkDeactivationResult] = await Promise.all([
+      db.collection('drive_files').updateMany({ ...rootScope, scanId: { $ne: scanId }, attivo: true }, { $set: { attivo: false, aggiornatoIl: now } }),
+      db.collection('drive_folders').updateMany({ ...rootScope, scanId: { $ne: scanId }, attivo: true }, { $set: { attivo: false, aggiornatoIl: now } }),
+      db.collection('drive_document_links').updateMany({ ...rootScope, scanId: { $ne: scanId }, attivo: true }, { $set: { attivo: false, aggiornatoIl: now } })
+    ]);
+    documentDeactivationResult = await db.collection('documenti').updateMany(
+      { ...rootScope, primarySourceKey: /^DRIVE_FILE:/, sourceScanId: { $ne: scanId }, sourceActive: { $ne: false } },
+      { $set: { sourceActive: false, sourceDeletedAt: now, aggiornatoIl: now } }
+    );
+  }
+  const writes = {
+    driveFiles: driveResult,
+    driveFolders: folderResult,
+    documents: documentResult,
+    documentLinks: linkResult,
+    inactiveDriveFiles: driveDeactivationResult,
+    inactiveDriveFolders: folderDeactivationResult,
+    inactiveDocumentLinks: linkDeactivationResult,
+    inactiveDocuments: documentDeactivationResult
+  };
+  return { driveResult, folderResult, documentResult, linkResult, driveDeactivationResult, folderDeactivationResult, linkDeactivationResult, documentDeactivationResult, writes };
 }
 
 const xmlParser = new XMLParser({ ignoreAttributes: false, removeNSPrefix: true, parseTagValue: true, trimValues: true });
@@ -313,41 +563,53 @@ async function importStructuredXml(db, driveClient, files, now) {
   return { counts: { targets: targets.length, corrispettivi: corr.length, fatture: invoices.length, errors: errors.length }, corrResult, invoiceResult, errors: errors.slice(0, 100) };
 }
 
-export function createDriveDataImportService({ getDb, getIndex, driveClient, rootFolderId, logger = console }) {
+export function createDriveDataImportService({ getDb, getIndex, driveClient, rootFolderId, rootAdoptionConfirmation = null, leaseMs = 30 * 60 * 1000, logger = console }) {
   let running = null;
   async function run({ force = false } = {}) {
     if (running) return running;
     running = (async () => {
       const db = getDb(); if (!db) throw new Error('MongoDB non configurato');
       await ensureIndexes(db);
+      const rootState = await ensureCanonicalDriveRoot(db, rootFolderId, rootAdoptionConfirmation);
       const now = new Date(); const scanId = crypto.randomUUID();
-      const runRecord = { scanId, stato: 'IN_CORSO', iniziatoIl: now, force };
-      const inserted = await db.collection('drive_import_runs').insertOne(runRecord);
+      const lease = await acquireDriveImportLease(db, rootState.rootFolderId, scanId, { leaseMs });
+      let inserted = null;
       try {
-        const index = await getIndex({ force }); const revision = index.revision;
-        await db.collection('drive_import_runs').updateOne({ _id: inserted.insertedId }, { $set: { indexRevision: revision, indiceConteggi: index.counts } });
-        const indexResult = await importIndex(db, index, revision, now);
-        const scan = await scanDrive(driveClient, rootFolderId);
-        const metadataResult = await importDriveMetadata(db, scan, indexResult.documentByIndexId, now, scanId);
-        const xmlResult = await importStructuredXml(db, driveClient, scan.files, now);
-        const counts = { ...indexResult.counts, driveFiles: scan.files.length, driveFolders: scan.folders, driveErrors: scan.errors.length, ...xmlResult.counts };
-        await db.collection('drive_import_runs').updateOne({ _id: inserted.insertedId }, { $set: { stato: scan.errors.length ? 'COMPLETATO_CON_AVVISI' : 'COMPLETATO', counts, erroriDrive: scan.errors.slice(0, 100), completatoIl: new Date() } });
-        logger.info?.(`[drive-data] documenti=${counts.documents} file=${counts.driveFiles} F24=${counts.f24Canonical} quietanze=${counts.quietanze} righe=${counts.f24Rows} fatture=${counts.fatture} corrispettivi=${counts.corrispettivi}`);
-        return { scanId, counts, indexResult: indexResult.writes, metadataResult, xmlResult };
-      } catch (error) {
-        await db.collection('drive_import_runs').updateOne({ _id: inserted.insertedId }, { $set: { stato: 'ERRORE', errore: { code: error.code || 'IMPORT_FAILED', message: error.message }, completatoIl: new Date() } });
-        throw error;
+        const runRecord = { scanId, rootFolderId: rootState.rootFolderId, stato: 'IN_CORSO', iniziatoIl: now, force };
+        inserted = await db.collection('drive_import_runs').insertOne(runRecord);
+        try {
+          const index = await getIndex({ force }); const revision = index.revision;
+          await db.collection('drive_import_runs').updateOne({ _id: inserted.insertedId }, { $set: { indexRevision: revision, indiceConteggi: index.counts } });
+          const indexResult = await importIndex(db, index, revision, now);
+          const scan = await scanDriveTree(driveClient, rootState.rootFolderId);
+          await lease.assertOwned();
+          const metadataResult = await persistDriveMetadata(db, scan, indexResult.documentByIndexId, now, scanId, rootState.rootFolderId, {
+            adoptUnscoped: rootState.adoptUnscoped,
+            assertLease: lease.assertOwned
+          });
+          const xmlResult = await importStructuredXml(db, driveClient, scan.files, now);
+          await lease.assertOwned();
+          const counts = { ...indexResult.counts, driveFiles: scan.files.length, driveFolders: scan.folders, driveErrors: scan.errors.length, ...xmlResult.counts };
+          await db.collection('drive_import_runs').updateOne({ _id: inserted.insertedId }, { $set: { stato: scan.errors.length ? 'COMPLETATO_CON_AVVISI' : 'COMPLETATO', counts, erroriDrive: scan.errors.slice(0, 100), completatoIl: new Date() } });
+          logger.info?.(`[drive-data] documenti=${counts.documents} file=${counts.driveFiles} F24=${counts.f24Canonical} quietanze=${counts.quietanze} righe=${counts.f24Rows} fatture=${counts.fatture} corrispettivi=${counts.corrispettivi}`);
+          return { scanId, counts, indexResult: indexResult.writes, metadataResult, xmlResult };
+        } catch (error) {
+          await db.collection('drive_import_runs').updateOne({ _id: inserted.insertedId }, { $set: { stato: 'ERRORE', errore: { code: error.code || 'IMPORT_FAILED', message: error.message }, completatoIl: new Date() } });
+          throw error;
+        }
+      } finally {
+        await lease.release().catch((error) => logger.error?.(`[drive-data] rilascio lock fallito: ${error.message}`));
       }
     })().finally(() => { running = null; });
     return running;
   }
-  async function status() { const db = getDb(); if (!db) throw new Error('MongoDB non configurato'); return db.collection('drive_import_runs').findOne({}, { sort: { iniziatoIl: -1 } }); }
+  async function status() { const db = getDb(); if (!db) throw new Error('MongoDB non configurato'); return db.collection('drive_import_runs').findOne({ rootFolderId }, { sort: { iniziatoIl: -1 } }); }
   async function summary() {
     const db = getDb(); if (!db) throw new Error('MongoDB non configurato');
-    const [documents, driveFiles, f24, quietanze, rows, declarations, invoices, receipts, byDomain, lastRun] = await Promise.all([
-      db.collection('documenti').countDocuments({}), db.collection('drive_files').countDocuments({ attivo: true }), db.collection('f24_operazioni').countDocuments({}), db.collection('quietanze_f24').countDocuments({}), db.collection('f24_righe_indice').countDocuments({ attivo: true }), db.collection('dichiarazioni_fiscali').countDocuments({ attivo: true }), db.collection('fatture').countDocuments({}), db.collection('corrispettivi_rt').countDocuments({}), db.collection('drive_files').aggregate([{ $match: { attivo: true } }, { $group: { _id: '$topFolder', count: { $sum: 1 } } }, { $sort: { count: -1 } }]).toArray(), status()
+    const [documents, driveFiles, driveFolders, f24, quietanze, rows, declarations, invoices, receipts, byDomain, lastRun] = await Promise.all([
+      db.collection('documenti').countDocuments({ recordKind: { $ne: 'DRIVE_SOURCE' }, sourceActive: { $ne: false } }), db.collection('drive_files').countDocuments({ attivo: true, rootFolderId }), db.collection('drive_folders').countDocuments({ attivo: true, rootFolderId }), db.collection('f24_operazioni').countDocuments({}), db.collection('quietanze_f24').countDocuments({}), db.collection('f24_righe_indice').countDocuments({ attivo: true }), db.collection('dichiarazioni_fiscali').countDocuments({ attivo: true }), db.collection('fatture').countDocuments({}), db.collection('corrispettivi_rt').countDocuments({}), db.collection('drive_files').aggregate([{ $match: { attivo: true, rootFolderId } }, { $group: { _id: '$topFolder', count: { $sum: 1 } } }, { $sort: { count: -1 } }]).toArray(), status()
     ]);
-    return { counts: { documents, driveFiles, f24, quietanze, f24Rows: rows, declarations, invoices, corrispettivi: receipts }, byDomain, lastRun };
+    return { counts: { documents, driveFiles, driveFolders, f24, quietanze, f24Rows: rows, declarations, invoices, corrispettivi: receipts }, byDomain, lastRun };
   }
   return { run, status, summary, isRunning: () => Boolean(running) };
 }

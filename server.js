@@ -10,6 +10,7 @@ import { registerF24Routes } from './src/f24-router.js';
 import { registerRiscossioneRoutes } from './src/riscossione-router.js';
 import { registerDriveIndexRoutes } from './src/drive-index-router.js';
 import { registerDriveDataRoutes } from './src/drive-data-router.js';
+import { registerDrivePlanRoutes } from './src/drive-plan-router.js';
 import { registerReconciliationRoutes } from './src/reconciliation-router.js';
 
 const app = express();
@@ -60,6 +61,7 @@ const driveDataRegistration = registerDriveDataRoutes(app, {
   getDb: () => db,
   getIndex: (options) => driveIndexRegistration.getService().load(options)
 });
+registerDrivePlanRoutes(app, { getDb: () => db });
 registerReconciliationRoutes(app, { getDb: () => db });
 
 const server = app.listen(port, () => console.log(`Impresa Semplice v${version} in ascolto sulla porta ${port}`));

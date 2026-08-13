@@ -2,7 +2,7 @@
 
 Versione iniziale consolidata: 12/08/2026.
 
-Questa specifica sostituisce la copia meccanica delle logiche del gestionale legacy. `GestionaleCloud` resta una fonte di riferimento per parser, formati e casi reali, ma il nuovo progetto deve conservare solo regole coerenti, verificabili e comprensibili.
+Questa specifica definisce in modo autonomo il comportamento del progetto. Il gestionale deve conservare soltanto regole coerenti, verificabili e comprensibili, con provenienza dei dati e responsabilità operative esplicite.
 
 ## 1. Principio generale
 

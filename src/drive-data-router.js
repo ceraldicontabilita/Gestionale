@@ -16,7 +16,14 @@ export function registerDriveDataRoutes(app, { getDb, getIndex, env = process.en
     timeoutMs: Number(env.GOOGLE_HTTP_TIMEOUT_MS || 30_000),
     maxRetries: Number(env.GOOGLE_HTTP_MAX_RETRIES || 3)
   });
-  const service = createDriveDataImportService({ getDb, getIndex, driveClient, rootFolderId });
+  const service = createDriveDataImportService({
+    getDb,
+    getIndex,
+    driveClient,
+    rootFolderId,
+    rootAdoptionConfirmation: extractDriveId(env.DRIVE_DATA_ROOT_ADOPTION_CONFIRM),
+    leaseMs: Number(env.DRIVE_IMPORT_LEASE_MS || 30 * 60 * 1000)
+  });
 
   app.get('/api/drive-data/status', async (_req, res) => {
     try { res.json({ running: service.isRunning(), lastRun: await service.status() }); }
@@ -29,7 +36,7 @@ export function registerDriveDataRoutes(app, { getDb, getIndex, env = process.en
   app.get('/api/drive-data/files', async (req, res) => {
     try {
       const db = getDb(); if (!db) throw new Error('MongoDB non configurato');
-      const filter = { attivo: true }; const query = escapedRegex(req.query.q); const year = Number(req.query.year || 0);
+      const filter = { attivo: true, rootFolderId }; const query = escapedRegex(req.query.q); const year = Number(req.query.year || 0);
       if (query) filter.$or = [{ nome: { $regex: query, $options: 'i' } }, { percorso: { $regex: query, $options: 'i' } }, { tipoProposto: { $regex: query, $options: 'i' } }];
       if (year >= 2000 && year <= 2100) filter.anno = year;
       const limit = Math.max(1, Math.min(500, Number(req.query.limit || 200)));

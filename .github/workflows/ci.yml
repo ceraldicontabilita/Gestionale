@@ -3,7 +3,8 @@ name: Impresa Semplice CI
 on:
   push:
     branches:
-      - feat/impresa-semplice-clean
+      - main
+      - 'codex/**'
   pull_request:
     branches:
       - main
@@ -17,6 +18,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verifica repository canonico
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REPOSITORY" != "ceraldicontabilita/Gestionale" ]]; then
+            echo "Repository non autorizzato: $GITHUB_REPOSITORY" >&2
+            exit 1
+          fi
 
       - name: Node
         uses: actions/setup-node@v4
