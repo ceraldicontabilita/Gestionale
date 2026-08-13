@@ -51,3 +51,50 @@ Le relazioni sono bidirezionali:
 `F24 ↔ DOCUMENTO ↔ QUIETANZA ↔ MOVIMENTO FINANZIARIO`
 
 La relazione non trasferisce l'autorità della fonte: modificare un F24 non modifica il movimento bancario e viceversa.
+
+
+## Contratto di affidabilità del dato
+
+Ogni campo estratto conserva valore normalizzato, testo originale, file sorgente, indice modello, pagina, coordinate, metodo di estrazione, confidenza, stato, alternative, warning e controlli che lo hanno verificato.
+
+Stati campo: `ESTRATTO`, `VALIDATO`, `QUADRATO`, `CONFERMATO`, `CONTESTATO`, `NON_DETERMINABILE`.
+
+Il sistema espone separatamente:
+
+1. affidabilità dell'estrazione;
+2. coerenza contabile e matematica;
+3. forza della prova di pagamento.
+
+Un modello letto perfettamente può avere prova di pagamento assente.
+
+## Quadrature e modelli multipli
+
+Le quadrature sono esatte al centesimo e vengono eseguite per sezione e per singolo modello. Debiti meno crediti deve coincidere con il saldo dichiarato. Un PDF con più modelli mantiene unità autonome tramite `modelIndex`; non è consentito fondere righe o saldi. Una differenza genera `CONTESTATO` e blocca la riconciliazione automatica.
+
+## Estrazione indipendente
+
+Quando disponibili, testo nativo e OCR della pagina renderizzata devono essere confrontati sui campi essenziali. Una discordanza su contribuente, codice fiscale, date, codici, periodi, debiti, crediti o saldo invia il modello a verifica. Un dato non leggibile produce `null`/`NON_DETERMINABILE`, mai un valore inventato.
+
+## Evidenze e riconciliazione
+
+La catena probatoria mantiene oggetti distinti:
+
+- modello F24: obbligo/delega dichiarata;
+- ricevuta: trasmissione o acquisizione;
+- quietanza/esito positivo: accettazione per gli identificativi riportati;
+- movimento bancario: addebito finanziario;
+- quietanza e movimento coerenti: riconciliazione completa dopo deduplicazione.
+
+Il solo modello produce sempre `MODELLO_F24_TROVATO`, `paymentEvidence=false` e `autoReconcile=false`. La sola uguaglianza dell'importo non è sufficiente. Più candidati, differenze d'importo o prove discordanti restano `DA_VERIFICARE`. Un saldo zero vieta sempre la creazione di un'uscita bancaria.
+
+## Deduplicazione e audit
+
+La pipeline deve usare hash binario, hash del testo normalizzato e impronta contabile. Ogni elaborazione conserva versione del parser, OCR e dizionari, data, valori precedenti e successivi, autore e motivazione. Un nuovo parser produce un confronto e non sovrascrive silenziosamente dati confermati o riconciliati.
+
+## Regola invariabile
+
+```text
+F24 letto correttamente != F24 pagato
+F24 quietanzato != movimento bancario riconciliato
+Riconciliazione completa = modello + prova valida + riscontro finanziario coerente
+```
