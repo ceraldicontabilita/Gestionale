@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  assessF24Reliability,
+  buildF24FieldEvidence,
   buildF24FromIndexRow,
   normalizeF24Row,
+  calculateF24SectionTotals,
   parseItalianAmount,
   parseQuietanzaText
 } from '../src/f24.js';
@@ -73,4 +76,71 @@ TRIB.LOCALI B000 8952 00/06 2026 0,05 0,00`;
   assert.equal(parsed.totali.debiti, 7666.65);
   assert.equal(parsed.totali.crediti, 600);
   assert.equal(parsed.totali.saldo, 7066.65);
+});
+
+
+test('conserva provenienza e confidenza per ogni campo F24', () => {
+  const field = buildF24FieldEvidence('2029.67', {
+    rawText: '2.009,67', sourceFileId: 'drive-file-id', modelIndex: 1, page: 2,
+    extractionMethod: 'native_text', confidence: 0.99, state: 'QUADRATO', verifiedBy: ['MODEL_TOTAL']
+  });
+  assert.equal(field.rawText, '2.009,67');
+  assert.equal(field.sourceFileId, 'drive-file-id');
+  assert.equal(field.extractionMethod, 'NATIVE_TEXT');
+  assert.equal(field.state, 'QUADRATO');
+});
+
+test('quadrature per sezione e modello restano separate', () => {
+  const rows = [
+    normalizeF24Row({ sezione: 'ERARIO', codice: '1001', debito: '1.000,00' }),
+    normalizeF24Row({ sezione: 'ERARIO', codice: '1704', credito: '100,00' }),
+    normalizeF24Row({ sezione: 'INPS', causale: 'DM10', debito: '500,00' })
+  ];
+  const sections = calculateF24SectionTotals(rows);
+  assert.deepEqual(sections.ERARIO, { debiti: 1000, crediti: 100, saldo: 900 });
+  assert.deepEqual(sections.INPS, { debiti: 500, crediti: 0, saldo: 500 });
+  const reliability = assessF24Reliability({ rows, statedTotals: { debiti: '1.500,00', crediti: '100,00', saldo: '1.400,00' } });
+  assert.equal(reliability.accounting.status, 'QUADRATO');
+  assert.equal(reliability.documentState, 'MODELLO_F24_TROVATO');
+  assert.equal(reliability.autoReconcile, false);
+});
+
+test('una quadratura incoerente blocca la riconciliazione automatica', () => {
+  const rows = [normalizeF24Row({ sezione: 'ERARIO', codice: '1001', debito: '57,44' })];
+  const reliability = assessF24Reliability({
+    rows,
+    statedTotals: { debiti: '58,44', crediti: '0,00', saldo: '58,44' },
+    paymentEvidence: true,
+    bankMovementVerified: true
+  });
+  assert.equal(reliability.accounting.status, 'CONTESTATO');
+  assert.equal(reliability.autoReconcile, false);
+  assert.ok(reliability.warnings.includes('QUADRATURA_F24_FALLITA'));
+});
+
+test('saldo zero vieta uscita bancaria anche con evidenze valorizzate', () => {
+  const rows = [
+    normalizeF24Row({ sezione: 'ERARIO', codice: '1001', debito: '57,44' }),
+    normalizeF24Row({ sezione: 'ERARIO', codice: '3797', credito: '57,44' })
+  ];
+  const reliability = assessF24Reliability({
+    rows,
+    statedTotals: { debiti: '57,44', crediti: '57,44', saldo: '0,00' },
+    paymentEvidence: true,
+    bankMovementVerified: true
+  });
+  assert.equal(reliability.accounting.status, 'QUADRATO');
+  assert.equal(reliability.autoReconcile, false);
+  assert.equal(reliability.financialOutflowAllowed, false);
+  assert.ok(reliability.warnings.includes('SALDO_ZERO_NESSUNA_USCITA_BANCARIA'));
+});
+
+test('discordanza OCR e testo nativo invia il modello a verifica', () => {
+  const reliability = assessF24Reliability({
+    rows: [],
+    extractionConflicts: [{ field: 'saldo', native: '528,79', ocr: '526,79' }],
+    essentialFields: [buildF24FieldEvidence(null, { state: 'NON_DETERMINABILE' })]
+  });
+  assert.equal(reliability.extraction.status, 'DA_VERIFICARE');
+  assert.equal(reliability.autoReconcile, false);
 });
