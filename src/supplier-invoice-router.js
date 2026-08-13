@@ -215,7 +215,7 @@ async function importSupplierInvoiceAsset(context, buffer, { filename, actor, co
   return { counts, errors: errors.slice(0, 100), archive: extracted.summary };
 }
 
-export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
+export function registerSupplierInvoiceRoutes(app, { getClient, getDb, env = process.env, autoStart = true }) {
   const uploadLimitMb = Math.max(1, Math.min(250, Number(process.env.SUPPLIER_INVOICE_UPLOAD_MAX_MB || DEFAULT_UPLOAD_LIMIT_MB)));
   app.get('/api/supplier-invoices/staging', async (req, res) => {
     try {
@@ -493,6 +493,7 @@ export function registerSupplierInvoiceRoutes(app, { getClient, getDb }) {
   });
 
   function start() {
+    if (!autoStart || String(env.SCHEDULER_ENABLED || 'true').toLowerCase() === 'false') return null;
     let running = false;
     async function processBacklog() {
       if (running) return;
