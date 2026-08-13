@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 68330)
-Total output lines: 7956
-
 {
   "schemaVersion": "1.0.0",
   "updatedAt": "2026-08-13",
@@ -2912,7 +2909,2189 @@ Total output lines: 7956
         "allocations inactive",
         "open item recalculated",
         "original ledger entry exact"
-…18330 tokens truncated…licy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      ],
+      "emits": [
+        "ledger.compensating_entry_projected"
+      ],
+      "idempotencyKey": "originalLedgerEntryId + reconciliationInvalidationEventId",
+      "approval": "AUTONOMY_B_BALANCED_COMPENSATING_ENTRY",
+      "failure": "KEEP_ORIGINAL_AND_OPEN_CRITICAL_ANOMALY; NO_PARTIAL_DELETE",
+      "correctionAndInvalidation": "ledger_entry_reverses_entry creates compensating entry; dispatcher invalidates accounting/paid views",
+      "autonomy": "B",
+      "retry": "EXPONENTIAL_BACKOFF_FOR_TRANSIENT_FAILURES; SAME_IDEMPOTENCY_KEY; DEAD_LETTER_AFTER_BUDGET"
+    },
+    {
+      "id": "project_accounting_entries",
+      "owner": "CONTABILITA",
+      "consumesEvents": [
+        "invoice.supplier_validated",
+        "invoice.customer_validated",
+        "receipt.day_validated",
+        "payroll.validated",
+        "f24.model_validated",
+        "vat.entries_projected",
+        "ledger.entry_projected",
+        "ledger.compensating_entry_projected"
+      ],
+      "readEntities": [
+        "invoice_supplier",
+        "invoice_customer",
+        "receipt_day",
+        "payroll",
+        "f24_model",
+        "vat_entry",
+        "ledger_entry",
+        "chart_account",
+        "accounting_period"
+      ],
+      "writeEntities": [
+        "accounting_entry"
+      ],
+      "gates": [
+        "source domain event validated and current",
+        "entry kind is DOCUMENT_COMPETENCE or FINANCIAL_SETTLEMENT and never both",
+        "approved posting rule version",
+        "balanced debit and credit exact to cents",
+        "document entry does not require payment evidence",
+        "settlement entry requires confirmed financial evidence or explicit audited cash attestation",
+        "period open or explicitly reopened with human approval and MFA"
+      ],
+      "emits": [
+        "accounting.entry_projected"
+      ],
+      "idempotencyKey": "sourceEventId + entryKind + approvedPostingRuleVersion + sourceVersion",
+      "approval": "AUTONOMY_B_ONLY_BALANCED_APPROVED_RULE_IN_OPEN_PERIOD; HUMAN_APPROVAL_AND_MFA_FOR_CLOSED_PERIOD",
+      "failure": "KEEP_LAST_VERIFIED_ACCOUNTING_ENTRY_AND_OPEN_ANOMALY; NEVER_DELAY_DOCUMENT_COMPETENCE_FOR_MISSING_PAYMENT",
+      "correctionAndInvalidation": "Append superseding or compensating accounting entry and rebuild affected views idempotently",
+      "autonomy": "B",
+      "retry": "EXPONENTIAL_BACKOFF_FOR_TRANSIENT_FAILURES; SAME_IDEMPOTENCY_KEY; DEAD_LETTER_AFTER_BUDGET"
+    },
+    {
+      "id": "rebuild_accounting_after_ledger_reversal",
+      "owner": "CONTABILITA",
+      "consumesEvents": [
+        "ledger.compensating_entry_projected",
+        "projection.invalidation_requested"
+      ],
+      "readEntities": [
+        "ledger_entry",
+        "accounting_entry",
+        "chart_account",
+        "accounting_period"
+      ],
+      "writeEntities": [
+        "accounting_entry"
+      ],
+      "gates": [
+        "compensating ledger balanced",
+        "affected projection manifest complete",
+        "period policy allows rebuild or approved reopening"
+      ],
+      "emits": [
+        "accounting.projections_rebuilt"
+      ],
+      "idempotencyKey": "ledgerCompensatingEventId + accountingProjectionVersion",
+      "approval": "AUTONOMY_B_OPEN_PERIOD; HUMAN_APPROVAL_IF_CLOSED_PERIOD",
+      "failure": "CHECKPOINT_RETRY_THEN_DEAD_LETTER_AND_CRITICAL_ANOMALY",
+      "correctionAndInvalidation": "Append compensating accounting projection and idempotently rebuild derived paid/accounting views",
+      "autonomy": "B",
+      "retry": "EXPONENTIAL_BACKOFF_FOR_TRANSIENT_FAILURES; SAME_IDEMPOTENCY_KEY; DEAD_LETTER_AFTER_BUDGET"
+    }
+  ],
+  "cashEvidencePolicy": {
+    "entity": "financial_evidence",
+    "rule": "Manual cash attestation is explicit evidence with actor, time, amount, reason and audit; it is never inferred from supplier habits.",
+    "forbiddenInference": "Supplier usual payment method, invoice payment terms or a recurring pattern never prove that a payment occurred."
+  },
+  "entryPoints": [
+    {
+      "id": "drive",
+      "event": "drive.inventory_observed",
+      "owner": "INTAKE_DOCUMENTALE",
+      "accepted": [
+        "Drive files and folders"
+      ],
+      "canonicalOutputs": [
+        "drive_node",
+        "source_asset",
+        "document",
+        "document_source"
+      ],
+      "dedupKey": "rootFolderId + driveFileId + observedVersion; document sha256",
+      "approval": "None for observation; ADMIN+MFA for move, rename or delete"
+    },
+    {
+      "id": "central_upload",
+      "event": "upload.asset_received",
+      "owner": "INTAKE_DOCUMENTALE",
+      "accepted": [
+        "PDF",
+        "XML",
+        "ZIP",
+        "XLSX",
+        "CSV",
+        "images only as OCR fallback"
+      ],
+      "canonicalOutputs": [
+        "source_asset",
+        "document",
+        "document_source",
+        "extraction"
+      ],
+      "dedupKey": "sourceType + externalId + version; document sha256",
+      "approval": "Ambiguous classification goes to review"
+    },
+    {
+      "id": "pec_email",
+      "event": "mail.message_received",
+      "owner": "INTAKE_DOCUMENTALE",
+      "accepted": [
+        "PEC/email message and attachments"
+      ],
+      "canonicalOutputs": [
+        "source_asset",
+        "document",
+        "document_source"
+      ],
+      "dedupKey": "mailbox + messageId + attachmentOrdinal; document sha256",
+      "approval": "Ambiguous attachment ownership goes to review"
+    },
+    {
+      "id": "supplier_customer_invoice_xml",
+      "event": "invoice.xml_received",
+      "owner": "INTAKE_DOCUMENTALE",
+      "handoffOwner": [
+        "AMMINISTRAZIONE",
+        "FATTURE_FORNITORI",
+        "FATTURE_CLIENTI",
+        "CONTABILITA"
+      ],
+      "accepted": [
+        "FatturaPA XML and ZIP"
+      ],
+      "canonicalOutputs": [
+        "source_asset",
+        "document",
+        "document_source",
+        "extraction"
+      ],
+      "dedupKey": "source identity/version and document sha256; domain keys only after validation",
+      "approval": "Unknown party, totals or non-explicit credit-note target goes to review"
+    },
+    {
+      "id": "bank_cards",
+      "event": "treasury.statement_received",
+      "owner": "INTAKE_DOCUMENTALE",
+      "accepted": [
+        "Bank/card statements and provider reports"
+      ],
+      "canonicalOutputs": [
+        "source_asset",
+        "document",
+        "document_source",
+        "extraction"
+      ],
+      "dedupKey": "source identity/version and content sha256; account/sourceTransactionId only after TESORERIA validation",
+      "approval": "Ambiguous account, currency, date or transaction identity goes to TESORERIA review; amount alone never links a cause",
+      "handoffOwner": [
+        "TESORERIA"
+      ]
+    },
+    {
+      "id": "f24_receipts",
+      "event": "fiscal.document_received",
+      "owner": "INTAKE_DOCUMENTALE",
+      "handoffOwner": [
+        "FISCO_F24",
+        "AMMINISTRAZIONE"
+      ],
+      "accepted": [
+        "F24",
+        "telematic receipts",
+        "tax declarations"
+      ],
+      "canonicalOutputs": [
+        "source_asset",
+        "document",
+        "document_source",
+        "extraction"
+      ],
+      "dedupKey": "source identity/version and document sha256; fiscal keys only after validation",
+      "approval": "Unknown codes, periods or non-quadrature go to review"
+    },
+    {
+      "id": "payroll_documents",
+      "event": "payroll.document_received",
+      "owner": "INTAKE_DOCUMENTALE",
+      "handoffOwner": [
+        "PAGHE",
+        "AMMINISTRAZIONE"
+      ],
+      "accepted": [
+        "Payslips",
+        "payroll summaries",
+        "TFR summaries"
+      ],
+      "canonicalOutputs": [
+        "source_asset",
+        "document",
+        "document_source",
+        "extraction"
+      ],
+      "dedupKey": "source identity/version and document sha256; payroll key only after validation",
+      "approval": "Ambiguous employee identity goes to review"
+    },
+    {
+      "id": "receipt_xml_pos",
+      "event": "receipt.xml_received",
+      "owner": "INTAKE_DOCUMENTALE",
+      "handoffOwner": [
+        "CORRISPETTIVI_POS",
+        "CONTABILITA"
+      ],
+      "accepted": [
+        "XML RT",
+        "POS closure reports"
+      ],
+      "canonicalOutputs": [
+        "source_asset",
+        "document",
+        "document_source",
+        "extraction"
+      ],
+      "dedupKey": "source identity/version and document sha256; business/date only after validation",
+      "approval": "Fiscal/POS differences become anomalies"
+    },
+    {
+      "id": "ader_pagopa",
+      "event": "collection.document_received",
+      "owner": "INTAKE_DOCUMENTALE",
+      "handoffOwner": [
+        "RISCOSSIONE",
+        "TESORERIA",
+        "AMMINISTRAZIONE"
+      ],
+      "accepted": [
+        "Collection acts",
+        "debt snapshots",
+        "installment plans",
+        "PagoPA receipts",
+        "fines"
+      ],
+      "canonicalOutputs": [
+        "source_asset",
+        "document",
+        "document_source",
+        "extraction"
+      ],
+      "dedupKey": "source identity/version and document sha256; act/IUV/fine keys only after domain validation",
+      "approval": "Ambiguous plan allocation or vehicle assignment goes to review"
+    }
+  ],
+  "coherenceEngine": {
+    "pageId": "controllo.anomalie",
+    "mode": "READ_ONLY_CROSS_DOMAIN_RULE_ENGINE",
+    "owner": "CONTROLLO",
+    "checks": [
+      "COMPLETENESS",
+      "UNIQUENESS",
+      "REFERENTIAL_INTEGRITY",
+      "EXACT_QUADRATURE",
+      "TEMPORAL_CONSISTENCY",
+      "PROVENANCE",
+      "FRESHNESS"
+    ],
+    "reads": [
+      "source_asset",
+      "document",
+      "document_source",
+      "domain_document_link",
+      "drive_node",
+      "extraction",
+      "party",
+      "supplier",
+      "customer",
+      "employee",
+      "invoice_supplier",
+      "invoice_customer",
+      "invoice_supplier_line",
+      "invoice_customer_line",
+      "product_dictionary_item",
+      "supplier_product_alias",
+      "obligation",
+      "open_item",
+      "financial_movement",
+      "financial_evidence",
+      "reconciliation",
+      "allocation",
+      "ledger_account",
+      "ledger_entry",
+      "chart_account",
+      "accounting_entry",
+      "accounting_period",
+      "vat_entry",
+      "tax_code_version",
+      "receipt_day",
+      "receipt_day_provisional",
+      "pos_closure",
+      "pos_credit",
+      "pos_payout",
+      "f24_model",
+      "f24_line",
+      "f24_receipt",
+      "tax_declaration",
+      "payroll",
+      "payroll_component",
+      "payroll_expected_tax",
+      "collection_act",
+      "collection_snapshot",
+      "installment_plan",
+      "collection_plan_act_allocation",
+      "pagopa_receipt",
+      "check",
+      "asset",
+      "vehicle",
+      "vehicle_assignment",
+      "rental_contract",
+      "fine",
+      "loan",
+      "coherence_rule",
+      "coherence_evaluation",
+      "anomaly",
+      "approval",
+      "audit_event",
+      "job_run",
+      "user_identity",
+      "assistant_memory",
+      "integration_observation",
+      "budget_version",
+      "forecast",
+      "architecture_capability"
+    ],
+    "writes": [
+      "coherence_evaluation",
+      "anomaly",
+      "audit_event"
+    ],
+    "forbidden": [
+      "REWRITE_SOURCE_ASSET",
+      "REWRITE_CANONICAL_DOMAIN_FACT",
+      "AUTO_FIX_AMBIGUOUS_LINK",
+      "DELETE_EVIDENCE"
+    ],
+    "anomalyKey": "ruleId + entityType + entityId + occurrence",
+    "resolution": "Owner fixes or supersedes the canonical fact; engine re-evaluates and closes/supersedes anomaly with audit"
+  },
+  "canonicalFlows": [
+    {
+      "id": "supplier_invoice_drive_to_ledger",
+      "kind": "DETAILED_FLOW",
+      "label": "Fattura passiva: competenza e regolamento finanziario separati",
+      "triggerEvents": [
+        "drive.inventory_observed",
+        "upload.asset_received",
+        "mail.message_received",
+        "invoice.xml_received"
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "owner": "INTAKE_DOCUMENTALE",
+          "action": "Preserva bytes, fonte e sha256; deduplica il documento senza perdere le fonti multiple",
+          "produces": [
+            "source_asset",
+            "document",
+            "document_source",
+            "extraction"
+          ],
+          "relations": [
+            "document_has_sources",
+            "source_preserves_asset",
+            "document_has_extractions"
+          ],
+          "auto": "YES_IF_SOURCE_IDENTIFIERS_AND_HASH_EXACT",
+          "failure": "QUARANTINED_OR_AMBIGUOUS_DOCUMENT"
+        },
+        {
+          "order": 2,
+          "owner": "AMMINISTRAZIONE",
+          "action": "Risolvi l’identità legale soltanto da CF/PIVA verificato",
+          "produces": [
+            "party"
+          ],
+          "relations": [],
+          "auto": "ONLY_VERIFIED_LEGAL_IDENTIFIER",
+          "failure": "LEGAL_IDENTITY_REVIEW"
+        },
+        {
+          "order": 3,
+          "owner": "FATTURE_FORNITORI",
+          "action": "Consuma l’identità risolta, valida XML/totali e crea una sola fattura passiva con righe e fornitore",
+          "produces": [
+            "invoice_supplier",
+            "invoice_supplier_line",
+            "supplier"
+          ],
+          "relations": [
+            "supplier_invoice_document",
+            "supplier_invoice_party",
+            "supplier_is_party",
+            "supplier_invoice_has_lines"
+          ],
+          "auto": "YES_IF_PARTY_DOCUMENT_KEY_AND_TOTALS_EXACT",
+          "failure": "SUPPLIER_OR_TOTALS_REVIEW"
+        },
+        {
+          "order": 4,
+          "owner": "CONTABILITA",
+          "action": "Deriva componenti IVA dall’evento fattura validata senza duplicare il totale documentato",
+          "produces": [
+            "vat_entry"
+          ],
+          "relations": [
+            "supplier_invoice_generates_vat_entries"
+          ],
+          "auto": "YES_IF_COMPONENTS_RATES_AND_CENTS_QUADRATE",
+          "failure": "VAT_QUADRATURE_REVIEW"
+        },
+        {
+          "order": 5,
+          "owner": "CONTABILITA",
+          "action": "Proietta la scrittura documento per competenza, costo e IVA dalla fattura validata senza attendere il pagamento",
+          "produces": [
+            "accounting_entry"
+          ],
+          "relations": [
+            "supplier_invoice_projects_accounting",
+            "accounting_entry_uses_chart"
+          ],
+          "auto": "ONLY_APPROVED_BALANCED_POSTING_RULE_IN_OPEN_PERIOD",
+          "failure": "ACCOUNTING_DOCUMENT_ENTRY_BLOCKED; DEBT_AND_OPEN_ITEM_REMAIN_TRACEABLE; NEVER_MARK_PAID"
+        },
+        {
+          "order": 6,
+          "owner": "FATTURE_FORNITORI",
+          "action": "Osserva descrizione, codice, EAN e confezione; crea candidato alias. Risolve il prodotto soltanto per EAN verificato o mapping confermato",
+          "produces": [
+            "supplier_product_alias",
+            "product_dictionary_item"
+          ],
+          "relations": [
+            "supplier_line_uses_product_alias",
+            "product_alias_resolves_dictionary_item"
+          ],
+          "auto": "ONLY_VERIFIED_GTIN_OR_EXACT_CONFIRMED_ALIAS",
+          "failure": "PRODUCT_MAPPING_REVIEW",
+          "boundary": "invoice_supplier_line is read-only provenance; mapping never mutates or revalidates the invoice; no stock, lots, recipes or production"
+        },
+        {
+          "order": 7,
+          "owner": "AMMINISTRAZIONE",
+          "action": "Crea o rettifica il debito dalla fattura validata; una nota di credito genera una versione compensativa",
+          "produces": [
+            "obligation"
+          ],
+          "relations": [
+            "invoice_creates_obligation",
+            "supplier_invoice_adjusts_invoice"
+          ],
+          "auto": "YES_IF_SOURCE_COMPONENT_AND_CENTS_EXACT",
+          "failure": "OBLIGATION_REVIEW"
+        },
+        {
+          "order": 8,
+          "owner": "RICONCILIAZIONE",
+          "action": "Calcola la partita aperta dal debito e dalle sole allocazioni attive",
+          "produces": [
+            "open_item"
+          ],
+          "relations": [
+            "obligation_has_open_item"
+          ],
+          "auto": "DETERMINISTIC_IDEMPOTENT_RECALCULATION",
+          "failure": "OPEN_ITEM_REVIEW"
+        },
+        {
+          "order": 9,
+          "owner": "TESORERIA",
+          "action": "Importa il movimento reale e conserva la prova finanziaria separata",
+          "produces": [
+            "financial_movement",
+            "financial_evidence"
+          ],
+          "relations": [
+            "movement_has_evidence",
+            "financial_evidence_preserves_asset"
+          ],
+          "auto": "YES_IF_ACCOUNT_AND_SOURCE_TRANSACTION_ID_EXACT",
+          "failure": "MOVEMENT_DUPLICATE_OR_MISSING_EVIDENCE"
+        },
+        {
+          "order": 10,
+          "owner": "RICONCILIAZIONE",
+          "action": "Propone il legame fra movimento e debito; conferma soltanto con chiavi compatibili, centesimi quadrati e causa univoca",
+          "produces": [
+            "reconciliation",
+            "allocation"
+          ],
+          "relations": [
+            "reconciliation_uses_movement",
+            "reconciliation_has_allocations",
+            "allocation_closes_obligation"
+          ],
+          "auto": "ONLY_EXACT_KEYS_UNIQUE_CAUSE_AND_CENTS",
+          "approval": "HUMAN_REVIEW_IF_MULTIPLE_CANDIDATES_OR_NON_EXACT",
+          "failure": "DA_VERIFICARE"
+        },
+        {
+          "order": 11,
+          "owner": "PRIMA_NOTA",
+          "action": "Proietta la scrittura definitiva soltanto dalla riconciliazione confermata e idempotente",
+          "produces": [
+            "ledger_entry"
+          ],
+          "relations": [
+            "reconciliation_projects_ledger",
+            "ledger_uses_account"
+          ],
+          "auto": "ONLY_CONFIRMED_RECONCILIATION_WITH_FINANCIAL_EVIDENCE",
+          "failure": "PROVISIONAL_ONLY_NO_DEFINITIVE_FINANCIAL_ENTRY"
+        },
+        {
+          "order": 12,
+          "owner": "CONTABILITA",
+          "action": "Proietta la distinta scrittura di regolamento dalla Prima Nota del pagamento confermato; non ricrea costo o IVA",
+          "produces": [
+            "accounting_entry"
+          ],
+          "relations": [
+            "ledger_projects_accounting",
+            "accounting_entry_uses_chart"
+          ],
+          "auto": "ONLY_APPROVED_BALANCED_SETTLEMENT_RULE_WITH_CONFIRMED_FINANCIAL_EVIDENCE",
+          "failure": "SETTLEMENT_ACCOUNTING_PROJECTION_BLOCKED; DOCUMENT_ENTRY_REMAINS_VALID"
+        },
+        {
+          "order": 13,
+          "owner": "CONTROLLO",
+          "action": "Controlla completezza, unicità, riferimenti, quadrature, tempi, provenienza e freshness senza riscrivere fonti",
+          "produces": [
+            "coherence_evaluation",
+            "anomaly",
+            "audit_event"
+          ],
+          "relations": [
+            "coherence_evaluation_uses_rule",
+            "coherence_evaluation_raises_anomaly",
+            "coherence_evaluation_recorded_in_audit"
+          ],
+          "auto": "READ_ONLY",
+          "failure": "ANOMALY_OPENED_OR_UPDATED"
+        }
+      ],
+      "corrections": {
+        "invoiceCreditNote": "supplier_invoice_adjusts_invoice; append compensating document entry; adjust obligation/open item; do not invent bank movement",
+        "reconciliationCorrection": "supersede reconciliation and append settlement reversal only; never reverse the valid document competence entry",
+        "ledgerCorrection": "ledger_entry_reverses_entry; create compensating entry",
+        "projectionRefresh": "Emit projection.invalidation_requested and rebuild materialized views idempotently"
+      },
+      "failure": "KEEP_LAST_VERIFIED_FACT; OPEN_OR_UPDATE_ANOMALY_AT_FAILED_STEP; RETRY_IDEMPOTENTLY_OR_ROUTE_TO_HUMAN_REVIEW",
+      "branches": {
+        "competence": {
+          "startsAt": "invoice.supplier_validated",
+          "endsAt": "accounting.entry_projected DOCUMENT_COMPETENCE plus obligation and open_item",
+          "requiresPayment": false
+        },
+        "settlement": {
+          "startsAt": "financial.movement_observed",
+          "endsAt": "accounting.entry_projected FINANCIAL_SETTLEMENT",
+          "requiresConfirmedFinancialEvidence": true
+        }
+      }
+    },
+    {
+      "id": "f24_receipt_bank_ledger",
+      "kind": "FLOW_SUMMARY",
+      "label": "F24 a debito: modello, quietanza, banca e scrittura di regolamento",
+      "triggerEvents": [
+        "fiscal.document_received",
+        "treasury.statement_received",
+        "f24.tax_code_version_changed"
+      ],
+      "owners": [
+        "FISCO_F24",
+        "TESORERIA",
+        "RICONCILIAZIONE",
+        "PRIMA_NOTA"
+      ],
+      "entities": [
+        "f24_model",
+        "f24_line",
+        "f24_receipt",
+        "tax_code_version",
+        "obligation",
+        "financial_movement",
+        "reconciliation",
+        "allocation",
+        "ledger_entry"
+      ],
+      "relations": [
+        "f24_has_lines",
+        "f24_has_receipt",
+        "f24_credit_offsets_debit",
+        "f24_line_creates_obligation",
+        "reconciliation_uses_movement",
+        "reconciliation_has_allocations",
+        "reconciliation_projects_ledger"
+      ],
+      "gates": [
+        "Receipt proves telematic outcome; bank movement proves financial payment.",
+        "Definitive financial ledger requires both compatible evidence and exact cents.",
+        "A tax-code registry change versions only tax_code_version; it cannot create, modify or revalidate an F24 model, line or receipt."
+      ],
+      "corrections": "Credit offsets and later corrections produce explicit compensating/superseding records and invalidate downstream projections; a tax-code correction appends a new validity-bounded tax_code_version and never rewrites F24 document facts.",
+      "failure": "FISCAL_OR_FINANCIAL_EVIDENCE_MISSING_OR_NOT_QUADRATED"
+    },
+    {
+      "id": "f24_zero_balance_compensation",
+      "kind": "FLOW_SUMMARY",
+      "label": "F24 a saldo zero: compensazione fiscale senza movimento bancario",
+      "triggerEvents": [
+        "fiscal.document_received"
+      ],
+      "owners": [
+        "FISCO_F24",
+        "CONTABILITA",
+        "CONTROLLO"
+      ],
+      "entities": [
+        "f24_model",
+        "f24_line",
+        "f24_receipt",
+        "domain_document_link",
+        "obligation",
+        "accounting_entry"
+      ],
+      "relations": [
+        "f24_has_lines",
+        "f24_has_receipt",
+        "f24_model_has_documents",
+        "f24_receipt_has_documents",
+        "f24_credit_offsets_debit",
+        "f24_line_creates_obligation"
+      ],
+      "gates": [
+        "When exact net balance is zero, no bank movement is expected.",
+        "Credits extinguish debits only through explicit exact-cent offsets.",
+        "Fiscal/accounting effects never masquerade as financial ledger movement."
+      ],
+      "corrections": "Corrected model or receipt supersedes derived offsets, adjusts only residual obligations and invalidates fiscal/accounting projections.",
+      "failure": "ZERO_BALANCE_NOT_QUADRATED_OR_RECEIPT_EVIDENCE_MISSING"
+    },
+    {
+      "id": "payroll_payment_f24",
+      "kind": "FLOW_SUMMARY",
+      "label": "Cedolini: competenza, pagamenti e attese fiscali F24",
+      "triggerEvents": [
+        "payroll.document_received",
+        "treasury.statement_received",
+        "fiscal.document_received"
+      ],
+      "owners": [
+        "PAGHE",
+        "TESORERIA",
+        "RICONCILIAZIONE",
+        "FISCO_F24",
+        "PRIMA_NOTA"
+      ],
+      "entities": [
+        "payroll",
+        "payroll_component",
+        "payroll_expected_tax",
+        "employee",
+        "obligation",
+        "financial_movement",
+        "financial_evidence",
+        "reconciliation",
+        "allocation",
+        "f24_line"
+      ],
+      "relations": [
+        "payroll_belongs_employee",
+        "payroll_has_components",
+        "payroll_has_documents",
+        "payroll_creates_obligation",
+        "payroll_anticipates_tax",
+        "expected_tax_matches_f24_line",
+        "movement_has_evidence",
+        "reconciliation_uses_movement",
+        "reconciliation_has_allocations"
+      ],
+      "gates": [
+        "Employee and period exact.",
+        "Advances and balance are N:M allocations and cannot duplicate movement cents.",
+        "Bank/cash evidence is required for definitive payment.",
+        "Tax expectation reconciles by period, section, code and cents."
+      ],
+      "corrections": "Replacement payroll recalculates components, TFR and F24 expectations, supersedes affected allocations and invalidates downstream views without deleting paid history.",
+      "failure": "EMPLOYEE_PERIOD_COMPONENT_OR_PAYMENT_REVIEW_REQUIRED"
+    },
+    {
+      "id": "receipts_pos_payout_bank",
+      "kind": "FLOW_SUMMARY",
+      "label": "Corrispettivi, POS, payout e accredito bancario",
+      "triggerEvents": [
+        "receipt.xml_received",
+        "treasury.statement_received"
+      ],
+      "owners": [
+        "CORRISPETTIVI_POS",
+        "TESORERIA",
+        "RICONCILIAZIONE",
+        "PRIMA_NOTA"
+      ],
+      "entities": [
+        "receipt_day",
+        "receipt_day_provisional",
+        "vat_entry",
+        "pos_closure",
+        "pos_credit",
+        "pos_payout",
+        "financial_movement",
+        "allocation",
+        "ledger_entry"
+      ],
+      "relations": [
+        "receipt_day_has_documents",
+        "official_receipt_supersedes_provisional",
+        "receipt_day_generates_vat_entries",
+        "receipt_has_pos_closures",
+        "pos_closure_creates_credit",
+        "pos_payout_allocates_credit",
+        "pos_payout_matches_movements"
+      ],
+      "gates": [
+        "Fiscal total, VAT, POS closure, provider payout and bank credit stay distinct.",
+        "Manual day data is explicitly provisional and the official XML is the single fiscal writer.",
+        "Allocation requires provider references and exact components."
+      ],
+      "corrections": "Official XML supersedes provisional manual data, then invalidates/rebuilds VAT and ledger views; corrected payout supersedes derived allocations.",
+      "failure": "POS_COMPONENTS_OR_BANK_CREDIT_NOT_QUADRATED"
+    },
+    {
+      "id": "collection_plan_pagopa_bank",
+      "kind": "FLOW_SUMMARY",
+      "label": "Riscossione: atti, piano, PagoPA e prova bancaria senza duplicare importi",
+      "triggerEvents": [
+        "collection.document_received",
+        "treasury.statement_received"
+      ],
+      "owners": [
+        "RISCOSSIONE",
+        "TESORERIA",
+        "RICONCILIAZIONE",
+        "PRIMA_NOTA"
+      ],
+      "entities": [
+        "collection_act",
+        "collection_snapshot",
+        "installment_plan",
+        "collection_plan_act_allocation",
+        "obligation",
+        "pagopa_receipt",
+        "financial_movement",
+        "financial_evidence",
+        "reconciliation",
+        "allocation",
+        "ledger_entry"
+      ],
+      "relations": [
+        "collection_act_has_documents",
+        "collection_act_has_snapshots",
+        "collection_act_has_plan_allocations",
+        "installment_plan_allocates_acts",
+        "installment_plan_creates_obligations",
+        "pagopa_documents_payment",
+        "pagopa_receipt_has_documents",
+        "movement_has_evidence",
+        "reconciliation_uses_movement",
+        "reconciliation_has_allocations",
+        "reconciliation_projects_ledger"
+      ],
+      "gates": [
+        "Snapshots are immutable point-in-time observations.",
+        "A plan may cover multiple acts; allocation links explanatory shares but never multiplies the single monetary installment allocation.",
+        "A settlement/definition communication is not proof of payment.",
+        "PagoPA receipt and bank movement remain distinct evidence and payment needs reconciliation/allocation."
+      ],
+      "corrections": "New snapshots and amended plans are versioned; allocations are superseded with audit and projections invalidated.",
+      "failure": "ACT_PLAN_ALLOCATION_OR_PAYMENT_EVIDENCE_REVIEW_REQUIRED"
+    },
+    {
+      "id": "fine_vehicle_payroll_recovery",
+      "kind": "FLOW_SUMMARY",
+      "label": "Verbali: veicolo, conducente, pagamento e recupero in cedolino",
+      "triggerEvents": [
+        "collection.document_received",
+        "payroll.document_received"
+      ],
+      "owners": [
+        "AMMINISTRAZIONE",
+        "PAGHE",
+        "RISCOSSIONE"
+      ],
+      "entities": [
+        "fine",
+        "vehicle",
+        "vehicle_assignment",
+        "employee",
+        "payroll_component",
+        "obligation",
+        "pagopa_receipt",
+        "financial_movement",
+        "reconciliation",
+        "allocation",
+        "approval",
+        "rental_contract",
+        "invoice_supplier"
+      ],
+      "relations": [
+        "fine_belongs_vehicle",
+        "vehicle_has_assignments",
+        "vehicle_assignment_identifies_employee",
+        "fine_resolves_vehicle_assignment",
+        "fine_recovered_by_payroll_component",
+        "fine_has_documents",
+        "fine_creates_obligation",
+        "fine_relates_rental_contract",
+        "fine_relates_supplier_invoice",
+        "pagopa_documents_payment",
+        "reconciliation_uses_movement",
+        "reconciliation_has_allocations"
+      ],
+      "gates": [
+        "Company payment and employee recovery are separate economic events.",
+        "Driver resolves only from unique assignment valid at event time.",
+        "Payroll recovery needs explicit authorization and payroll evidence.",
+        "Rental invoice/contract links prevent double recognition of the same fine cost."
+      ],
+      "corrections": "Assignment or authorization correction creates a superseding record and invalidates driver/recovery projections.",
+      "failure": "VEHICLE_ASSIGNMENT_OR_RECOVERY_AUTHORIZATION_AMBIGUOUS"
+    },
+    {
+      "id": "generic_reversal_end_to_end",
+      "kind": "FLOW_SUMMARY",
+      "label": "Storno end-to-end con riapertura delle partite e ricostruzione delle viste",
+      "triggerEvents": [
+        "domain.correction_recorded",
+        "projection.invalidation_requested"
+      ],
+      "owners": [
+        "RICONCILIAZIONE",
+        "PRIMA_NOTA",
+        "CONTABILITA",
+        "CONTROLLO"
+      ],
+      "entities": [
+        "reconciliation",
+        "allocation",
+        "obligation",
+        "open_item",
+        "ledger_entry",
+        "accounting_entry",
+        "audit_event"
+      ],
+      "relations": [
+        "reconciliation_supersedes_reconciliation",
+        "reconciliation_has_allocations",
+        "allocation_closes_obligation",
+        "obligation_has_open_item",
+        "ledger_entry_reverses_entry",
+        "ledger_projects_accounting"
+      ],
+      "gates": [
+        "Supersede reconciliation; never delete it.",
+        "Inactivate affected allocations with audit and reopen residual obligation/open item.",
+        "Create compensating ledger reversal.",
+        "Invalidate and idempotently rebuild accounting and paid-state views through the outbox."
+      ],
+      "corrections": "This is the canonical correction path itself; retries reuse the same correction/outbox idempotency keys.",
+      "failure": "REVERSAL_PARTIAL_FAILURE_RETRY_FROM_CHECKPOINT_AND_OPEN_ANOMALY"
+    }
+  ],
+  "pageProjections": [
+    {
+      "pageId": "home.quadro_operativo",
+      "owner": "CONTROLLO",
+      "implementationStatus": "PRESENTE",
+      "inputEvents": [
+        "ledger.entry_projected",
+        "document.extraction_completed",
+        "f24.model_validated",
+        "collection.act_validated"
+      ],
+      "inputEntities": [
+        "ledger_entry",
+        "document",
+        "f24_model",
+        "collection_act"
+      ],
+      "projection": {
+        "kind": "QUERY_VIEW",
+        "sourceEntities": [
+          "ledger_entry",
+          "document",
+          "f24_model",
+          "collection_act"
+        ],
+        "sourcePageDependencies": [],
+        "ownsCanonicalData": false,
+        "refresh": "ON_DEMAND_QUERY",
+        "queryEndpoint": "/api/dashboard"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION"
+      ],
+      "commands": [],
+      "outputEvents": [],
+      "failureState": "DASHBOARD_QUERY_UNAVAILABLE",
+      "failurePolicy": "SHOW_QUERY_FAILURE_OR_LAST_EXPLICITLY_TIMESTAMPED_RESPONSE; NEVER_PRESENT_CACHED_VALUES_AS_CURRENT",
+      "approvalPolicy": "READ_ONLY_ON_DEMAND_QUERY; NO_CANONICAL_WRITE",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "home.attivita_aperte",
+      "owner": "CONTROLLO",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "coherence.anomaly_observed",
+        "document.extraction_completed",
+        "financial.movement_observed"
+      ],
+      "inputEntities": [
+        "anomaly",
+        "document",
+        "financial_movement"
+      ],
+      "projection": {
+        "kind": "QUERY_VIEW",
+        "sourceEntities": [
+          "anomaly",
+          "document",
+          "financial_movement"
+        ],
+        "sourcePageDependencies": [
+          "home.quadro_operativo"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "ON_DEMAND_QUERY",
+        "queryEndpoint": "/api/dashboard"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION"
+      ],
+      "commands": [],
+      "outputEvents": [],
+      "failureState": "DASHBOARD_COUNTER_QUERY_UNAVAILABLE",
+      "failurePolicy": "SHOW_QUERY_FAILURE_OR_LAST_EXPLICITLY_TIMESTAMPED_COUNTERS; NEVER_INVENT_A_QUEUE_OR_ASSIGNMENT",
+      "approvalPolicy": "READ_ONLY_COUNTERS; NO_ASSIGNMENT_OR_CANONICAL_WRITE",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "home.scadenze_priorita",
+      "owner": "CONTROLLO",
+      "implementationStatus": "ASSENTE",
+      "inputEvents": [
+        "obligation.opened_or_adjusted",
+        "open_item.recalculated",
+        "reconciliation.confirmed",
+        "coherence.anomaly_observed"
+      ],
+      "inputEntities": [
+        "obligation",
+        "open_item",
+        "anomaly"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "obligation",
+          "open_item",
+          "anomaly"
+        ],
+        "sourcePageDependencies": [
+          "riconciliazione.partite_aperte"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "FILTER",
+        "EXPORT_READ_ONLY"
+      ],
+      "commands": [],
+      "outputEvents": [],
+      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "home.assistente_memoria",
+      "owner": "ASSISTENTE",
+      "implementationStatus": "ASSENTE",
+      "inputEvents": [
+        "domain.correction_recorded",
+        "coherence.anomaly_observed",
+        "approval.recorded"
+      ],
+      "inputEntities": [
+        "assistant_memory",
+        "anomaly",
+        "audit_event"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "assistant_memory",
+          "anomaly",
+          "audit_event"
+        ],
+        "sourcePageDependencies": [
+          "controllo.provenienza_relazioni"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "PROPOSE_EXPLANATION"
+      ],
+      "commands": [
+        {
+          "id": "home.assistente_memoria.submit",
+          "commandOwner": "ASSISTENTE",
+          "writeEntities": [
+            "assistant_memory"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "assistant.memory_changed"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "assistant.memory_changed"
+      ],
+      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "prima_nota.registro_saldi",
+      "owner": "PRIMA_NOTA",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "ledger.entry_projected"
+      ],
+      "inputEntities": [
+        "ledger_account",
+        "ledger_entry"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "ledger_account",
+          "ledger_entry"
+        ],
+        "sourcePageDependencies": [],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "PROPOSE_ENTRY",
+        "REVERSE_BY_COMPENSATING_ENTRY"
+      ],
+      "commands": [
+        {
+          "id": "prima_nota.registro_saldi.submit",
+          "commandOwner": "PRIMA_NOTA",
+          "writeEntities": [
+            "ledger_account",
+            "ledger_entry"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "ledger.entry_projected"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "ledger.entry_projected"
+      ],
+      "failureState": "STALE_OR_INCONSISTENT_PROJECTION",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "prima_nota.cassa",
+      "owner": "PRIMA_NOTA",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "ledger.entry_projected",
+        "financial.movement_observed"
+      ],
+      "inputEntities": [
+        "ledger_entry",
+        "financial_evidence"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "ledger_entry",
+          "financial_evidence"
+        ],
+        "sourcePageDependencies": [
+          "prima_nota.registro_saldi"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "ATTEST_MANUAL_CASH_EVIDENCE",
+        "PROPOSE_ENTRY",
+        "REVERSE_BY_COMPENSATING_ENTRY"
+      ],
+      "commands": [
+        {
+          "id": "prima_nota.cassa.submit",
+          "commandOwner": "PRIMA_NOTA",
+          "writeEntities": [
+            "ledger_entry"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "ledger.entry_projected"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "ledger.entry_projected"
+      ],
+      "failureState": "STALE_OR_INCONSISTENT_PROJECTION",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "prima_nota.banca",
+      "owner": "PRIMA_NOTA",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "ledger.entry_projected",
+        "financial.movement_observed"
+      ],
+      "inputEntities": [
+        "ledger_entry",
+        "financial_movement",
+        "financial_evidence"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "ledger_entry",
+          "financial_movement",
+          "financial_evidence"
+        ],
+        "sourcePageDependencies": [
+          "documenti.estratti_banca_carte"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "PROPOSE_ENTRY",
+        "REVERSE_BY_COMPENSATING_ENTRY"
+      ],
+      "commands": [
+        {
+          "id": "prima_nota.banca.submit",
+          "commandOwner": "PRIMA_NOTA",
+          "writeEntities": [
+            "ledger_entry"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "ledger.entry_projected"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "ledger.entry_projected"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "prima_nota.carte_circuiti",
+      "owner": "TESORERIA",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "ledger.entry_projected",
+        "financial.movement_observed"
+      ],
+      "inputEntities": [
+        "ledger_entry",
+        "financial_movement",
+        "pos_payout"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "ledger_entry",
+          "financial_movement",
+          "pos_payout"
+        ],
+        "sourcePageDependencies": [
+          "documenti.estratti_banca_carte"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "PROPOSE_ENTRY",
+        "REVERSE_BY_COMPENSATING_ENTRY"
+      ],
+      "commands": [
+        {
+          "id": "prima_nota.carte_circuiti.submit",
+          "commandOwner": "PRIMA_NOTA",
+          "writeEntities": [
+            "ledger_entry"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "ledger.entry_projected"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "ledger.entry_projected"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "prima_nota.salari",
+      "owner": "PAGHE",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "payroll.validated",
+        "obligation.opened_or_adjusted",
+        "ledger.entry_projected"
+      ],
+      "inputEntities": [
+        "payroll",
+        "obligation",
+        "ledger_entry"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "payroll",
+          "obligation",
+          "ledger_entry"
+        ],
+        "sourcePageDependencies": [
+          "documenti.cedolini_paghe",
+          "riconciliazione.salari"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "PROPOSE_ENTRY",
+        "REVERSE_BY_COMPENSATING_ENTRY"
+      ],
+      "commands": [
+        {
+          "id": "prima_nota.salari.submit",
+          "commandOwner": "PRIMA_NOTA",
+          "writeEntities": [
+            "ledger_entry"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "ledger.entry_projected"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "ledger.entry_projected"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "prima_nota.finanziamenti_soci",
+      "owner": "PRIMA_NOTA",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "party.legal_identity_resolved",
+        "obligation.opened_or_adjusted",
+        "ledger.entry_projected"
+      ],
+      "inputEntities": [
+        "party",
+        "obligation",
+        "ledger_entry"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "party",
+          "obligation",
+          "ledger_entry"
+        ],
+        "sourcePageDependencies": [
+          "prima_nota.registro_saldi"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "PROPOSE_ENTRY",
+        "REVERSE_BY_COMPENSATING_ENTRY"
+      ],
+      "commands": [
+        {
+          "id": "prima_nota.finanziamenti_soci.submit",
+          "commandOwner": "PRIMA_NOTA",
+          "writeEntities": [
+            "ledger_entry"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "ledger.entry_projected"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "ledger.entry_projected"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "prima_nota.provvisoria",
+      "owner": "PRIMA_NOTA",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "ledger.entry_projected",
+        "coherence.anomaly_observed"
+      ],
+      "inputEntities": [
+        "ledger_entry",
+        "anomaly"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "ledger_entry",
+          "anomaly"
+        ],
+        "sourcePageDependencies": [
+          "prima_nota.registro_saldi"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "PROPOSE_ENTRY",
+        "PROMOTE_ONLY_AFTER_CONFIRMED_EVIDENCE",
+        "REVERSE_BY_COMPENSATING_ENTRY"
+      ],
+      "commands": [
+        {
+          "id": "prima_nota.provvisoria.submit",
+          "commandOwner": "PRIMA_NOTA",
+          "writeEntities": [
+            "ledger_entry"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "ledger.entry_projected"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "ledger.entry_projected"
+      ],
+      "failureState": "STALE_OR_INCONSISTENT_PROJECTION",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "prima_nota.corrispettivi_pos",
+      "owner": "CORRISPETTIVI_POS",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "receipt.day_validated",
+        "vat.entries_projected",
+        "ledger.entry_projected"
+      ],
+      "inputEntities": [
+        "receipt_day",
+        "receipt_day_provisional",
+        "pos_closure",
+        "pos_credit",
+        "vat_entry",
+        "ledger_entry"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "receipt_day",
+          "receipt_day_provisional",
+          "pos_closure",
+          "pos_credit",
+          "vat_entry",
+          "ledger_entry"
+        ],
+        "sourcePageDependencies": [
+          "documenti.corrispettivi_xml"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "PROPOSE_ENTRY",
+        "REVERSE_BY_COMPENSATING_ENTRY"
+      ],
+      "commands": [
+        {
+          "id": "prima_nota.corrispettivi_pos.submit",
+          "commandOwner": "PRIMA_NOTA",
+          "writeEntities": [
+            "ledger_entry"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "ledger.entry_projected"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "ledger.entry_projected"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "prima_nota.libro_giornale_mastro",
+      "owner": "CONTABILITA",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "accounting.entry_projected",
+        "ledger.entry_projected"
+      ],
+      "inputEntities": [
+        "accounting_entry",
+        "chart_account",
+        "ledger_entry"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "accounting_entry",
+          "chart_account",
+          "ledger_entry"
+        ],
+        "sourcePageDependencies": [
+          "controllo.piano_conti"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "POST_APPROVED_BALANCED_ENTRY",
+        "REVERSE_BY_COMPENSATING_ENTRY"
+      ],
+      "commands": [
+        {
+          "id": "prima_nota.libro_giornale_mastro.submit",
+          "commandOwner": "PRIMA_NOTA",
+          "writeEntities": [
+            "ledger_entry"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "ledger.entry_projected"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "ledger.entry_projected"
+      ],
+      "failureState": "DOMAIN_PRODUCERS_AND_COMPLETE_UI_NOT_YET_CONNECTED",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "documenti.acquisizione_inbox",
+      "owner": "INTAKE_DOCUMENTALE",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "drive.inventory_observed",
+        "upload.asset_received",
+        "mail.message_received",
+        "invoice.xml_received",
+        "treasury.statement_received",
+        "fiscal.document_received",
+        "payroll.document_received",
+        "receipt.xml_received",
+        "collection.document_received",
+        "document.extraction_completed"
+      ],
+      "inputEntities": [
+        "source_asset",
+        "document",
+        "extraction"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "source_asset",
+          "document",
+          "extraction"
+        ],
+        "sourcePageDependencies": [],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "ACQUIRE_SOURCE",
+        "CLASSIFY",
+        "REQUEST_REVIEW"
+      ],
+      "commands": [
+        {
+          "id": "documenti.acquisizione_inbox.submit",
+          "commandOwner": "INTAKE_DOCUMENTALE",
+          "writeEntities": [
+            "source_asset",
+            "document",
+            "extraction"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "document.extraction_completed"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "document.extraction_completed"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "documenti.archivio",
+      "owner": "INTAKE_DOCUMENTALE",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "document.extraction_completed",
+        "drive.inventory_observed",
+        "upload.asset_received",
+        "mail.message_received",
+        "invoice.xml_received",
+        "treasury.statement_received",
+        "fiscal.document_received",
+        "payroll.document_received",
+        "receipt.xml_received",
+        "collection.document_received"
+      ],
+      "inputEntities": [
+        "document",
+        "document_source",
+        "source_asset"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "document",
+          "document_source",
+          "source_asset"
+        ],
+        "sourcePageDependencies": [
+          "documenti.acquisizione_inbox"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "ACQUIRE_SOURCE",
+        "CLASSIFY",
+        "REQUEST_REVIEW"
+      ],
+      "commands": [
+        {
+          "id": "documenti.archivio.submit",
+          "commandOwner": "INTAKE_DOCUMENTALE",
+          "writeEntities": [
+            "document",
+            "document_source",
+            "source_asset"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "document.extraction_completed"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "document.extraction_completed"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "documenti.viewer",
+      "owner": "INTAKE_DOCUMENTALE",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "document.extraction_completed",
+        "reconciliation.proposed",
+        "reconciliation.confirmed"
+      ],
+      "inputEntities": [
+        "document",
+        "document_source",
+        "reconciliation"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "document",
+          "document_source",
+          "reconciliation"
+        ],
+        "sourcePageDependencies": [
+          "documenti.archivio"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "ACQUIRE_SOURCE",
+        "CLASSIFY",
+        "REQUEST_REVIEW"
+      ],
+      "commands": [],
+      "outputEvents": [],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "documenti.indice_drive",
+      "owner": "INTAKE_DOCUMENTALE",
+      "implementationStatus": "PRESENTE",
+      "inputEvents": [
+        "drive.inventory_observed"
+      ],
+      "inputEntities": [
+        "drive_node",
+        "document",
+        "document_source"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "drive_node",
+          "document",
+          "document_source"
+        ],
+        "sourcePageDependencies": [],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "FILTER",
+        "EXPORT_READ_ONLY"
+      ],
+      "commands": [],
+      "outputEvents": [],
+      "failureState": "STALE_OR_INCONSISTENT_PROJECTION",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "documenti.albero_drive",
+      "owner": "INTAKE_DOCUMENTALE",
+      "implementationStatus": "PRESENTE",
+      "inputEvents": [
+        "drive.inventory_observed",
+        "job.completed"
+      ],
+      "inputEntities": [
+        "drive_node",
+        "source_asset",
+        "job_run"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "drive_node",
+          "source_asset",
+          "job_run"
+        ],
+        "sourcePageDependencies": [
+          "documenti.indice_drive"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "FILTER",
+        "EXPORT_READ_ONLY"
+      ],
+      "commands": [],
+      "outputEvents": [],
+      "failureState": "STALE_OR_INCONSISTENT_PROJECTION",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "documenti.manutenzione_drive",
+      "owner": "CONTROLLO",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "drive.inventory_observed",
+        "job.completed"
+      ],
+      "inputEntities": [
+        "drive_node",
+        "source_asset",
+        "anomaly"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "drive_node",
+          "source_asset",
+          "anomaly"
+        ],
+        "sourcePageDependencies": [
+          "documenti.albero_drive"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PLAN",
+        "PREVIEW_MUTATION",
+        "REQUEST_ADMIN_MFA_APPROVAL"
+      ],
+      "commands": [
+        {
+          "id": "documenti.manutenzione_drive.submit",
+          "commandOwner": "INTAKE_DOCUMENTALE",
+          "writeEntities": [
+            "drive_node",
+            "source_asset"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "C",
+          "approval": "ADMIN_MFA:APPLICA_PIANO_DRIVE,SPOSTA_RINOMINA_ELEMENTO_DRIVE,ELIMINA_DUPLICATO_DRIVE",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "drive.inventory_observed",
+            "document.extraction_completed"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "drive.inventory_observed",
+        "document.extraction_completed"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "HUMAN_ADMIN_MFA_FOR:APPLICA_PIANO_DRIVE,SPOSTA_RINOMINA_ELEMENTO_DRIVE,ELIMINA_DUPLICATO_DRIVE",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "documenti.email_pec",
+      "owner": "INTAKE_DOCUMENTALE",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "drive.inventory_observed",
+        "upload.asset_received",
+        "mail.message_received",
+        "invoice.xml_received",
+        "treasury.statement_received",
+        "fiscal.document_received",
+        "payroll.document_received",
+        "receipt.xml_received",
+        "collection.document_received",
+        "document.extraction_completed",
+        "job.completed"
+      ],
+      "inputEntities": [
+        "source_asset",
+        "document",
+        "job_run"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "source_asset",
+          "document",
+          "job_run"
+        ],
+        "sourcePageDependencies": [
+          "documenti.acquisizione_inbox"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "ACQUIRE_SOURCE",
+        "CLASSIFY",
+        "REQUEST_REVIEW"
+      ],
+      "commands": [
+        {
+          "id": "documenti.email_pec.submit",
+          "commandOwner": "INTAKE_DOCUMENTALE",
+          "writeEntities": [
+            "source_asset",
+            "document"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "document.extraction_completed"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "document.extraction_completed"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "documenti.fatture_fornitori",
+      "owner": "FATTURE_FORNITORI",
+      "implementationStatus": "PARZIALE",
+      "inputEvents": [
+        "invoice.supplier_validated",
+        "obligation.opened_or_adjusted",
+        "product.candidate_observed",
+        "product.alias_resolved",
+        "projection.invalidation_requested"
+      ],
+      "inputEntities": [
+        "invoice_supplier",
+        "invoice_supplier_line",
+        "supplier",
+        "obligation"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "invoice_supplier",
+          "invoice_supplier_line",
+          "supplier",
+          "obligation"
+        ],
+        "sourcePageDependencies": [
+          "documenti.acquisizione_inbox"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "VALIDATE_TOTALS",
+        "PROPOSE_SUPPLIER_ALIAS",
+        "RECORD_CREDIT_NOTE_AS_ADJUSTMENT",
+        "REQUEST_REVIEW"
+      ],
+      "commands": [
+        {
+          "id": "documenti.fatture_fornitori.submit",
+          "commandOwner": "FATTURE_FORNITORI",
+          "writeEntities": [
+            "invoice_supplier",
+            "invoice_supplier_line",
+            "supplier"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "invoice.supplier_validated"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "invoice.supplier_validated"
+      ],
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
+      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "statusDoesNotImplyOwnership": true
+    },
+    {
+      "pageId": "documenti.fatture_clienti",
+      "owner": "FATTURE_CLIENTI",
+      "implementationStatus": "ASSENTE",
+      "inputEvents": [
+        "invoice.customer_validated",
+        "obligation.opened_or_adjusted",
+        "projection.invalidation_requested"
+      ],
+      "inputEntities": [
+        "invoice_customer",
+        "invoice_customer_line",
+        "customer",
+        "open_item"
+      ],
+      "projection": {
+        "kind": "MATERIALIZED_VIEW",
+        "sourceEntities": [
+          "invoice_customer",
+          "invoice_customer_line",
+          "customer",
+          "open_item"
+        ],
+        "sourcePageDependencies": [
+          "documenti.acquisizione_inbox"
+        ],
+        "ownsCanonicalData": false,
+        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+      },
+      "allowedActions": [
+        "VIEW_PROJECTION",
+        "VALIDATE_TOTALS",
+        "RECORD_CREDIT_NOTE_AS_ADJUSTMENT",
+        "REQUEST_REVIEW"
+      ],
+      "commands": [
+        {
+          "id": "documenti.fatture_clienti.submit",
+          "commandOwner": "FATTURE_CLIENTI",
+          "writeEntities": [
+            "invoice_customer",
+            "invoice_customer_line",
+            "customer"
+          ],
+          "requiredEvidence": [
+            "authenticated actor or leased job",
+            "source entity version",
+            "provenance",
+            "expected current version"
+          ],
+          "autonomy": "B",
+          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
+          "emits": [
+            "invoice.customer_validated"
+          ],
+          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
+          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        }
+      ],
+      "outputEvents": [
+        "invoice.customer_validated"
+      ],
+      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
+      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true
     },
