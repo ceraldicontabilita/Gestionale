@@ -98,9 +98,14 @@ function normalizeDate(value) {
 }
 
 function normalizeAmount(value) {
-  const raw = String(value ?? '').replace(/\s/g, '').replace(/€/g, '');
-  if (!raw) return null;
-  const normalized = raw.includes(',') ? raw.replaceAll('.', '').replace(',', '.') : raw;
+  const original = String(value ?? '').replace(/€/g, '').trim();
+  if (!original) return null;
+  const separatedCents = original.match(/^([\\d .]+)\\s+(\\d{2})$/);
+  const raw = original.replace(/\\s/g, '');
+  let normalized;
+  if (raw.includes(',')) normalized = raw.replaceAll('.', '').replace(',', '.');
+  else if (separatedCents) normalized = `${separatedCents[1].replace(/[ .]/g, '')}.${separatedCents[2]}`;
+  else normalized = raw;
   const amount = Number(normalized);
   return Number.isFinite(amount) ? amount.toFixed(2) : null;
 }
