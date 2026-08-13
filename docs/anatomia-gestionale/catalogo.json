@@ -55,7 +55,7 @@
     { "id": "CONTABILITA", "authority": "Piano conti, giornale, mastro, IVA, bilancio e chiusura" },
     { "id": "CONTROLLO", "authority": "Anomalie, quadrature, approvazioni e audit" },
     { "id": "AMMINISTRAZIONE", "authority": "Anagrafiche condivise, materializzazione degli obblighi dalle fonti di dominio e configurazioni non specialistiche" },
-    { "id": "SICUREZZA", "authority": "Identità, sessioni, ruoli, MFA e autorizzazioni" },
+    { "id": "SICUREZZA", "authority": "Identità, sessioni, ruoli, PIN e autorizzazioni" },
     { "id": "ASSISTENTE", "authority": "Memoria derivata, proposte e spiegazioni non autoritative" }
   ],
   "sections": [
@@ -76,7 +76,7 @@
           "dependsOn": [],
           "currentEvidence": ["public/index.html", "src/core-router.js", "test/home-dashboard.test.js"],
           "notes": "Mostra saldi e indicatori senza fondere le fonti sottostanti.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "home.attivita_aperte",
@@ -88,7 +88,7 @@
           "dependsOn": ["home.quadro_operativo"],
           "currentEvidence": ["public/app.js", "src/core-router.js", "test/home-dashboard.test.js"],
           "notes": "I contatori aperti sono presenti; mancano ancora una coda canonica delle anomalie con contesto, assegnazione e azioni. Non corregge automaticamente i fatti.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "home.scadenze_priorita",
@@ -100,7 +100,7 @@
           "dependsOn": ["riconciliazione.partite_aperte"],
           "currentEvidence": [],
           "notes": "Va ricostruita su obblighi canonici, non su scadenze duplicate per modulo.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "home.assistente_memoria",
@@ -112,7 +112,7 @@
           "dependsOn": ["controllo.provenienza_relazioni"],
           "currentEvidence": [],
           "notes": "Può proporre e spiegare; non crea fatti economici né conferma riconciliazioni.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         }
       ]
     },
@@ -133,7 +133,7 @@
           "dependsOn": [],
           "currentEvidence": ["src/ledger.js", "src/core-router.js", "test/domain.test.js"],
           "notes": "Ordinamento deterministico, riporti annuali e segnalazione di riallineamento sono presenti; mancano ancora outbox, audit e storni idempotenti end-to-end.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "prima_nota.cassa",
@@ -145,7 +145,7 @@
           "dependsOn": ["prima_nota.registro_saldi"],
           "currentEvidence": ["src/domain.js", "src/ledger.js", "test/domain.test.js"],
           "notes": "La regola dell'attestazione manuale esplicita è presente; la catena comando, audit, evento e proiezione compensabile è ancora da completare.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "prima_nota.banca",
@@ -157,7 +157,7 @@
           "dependsOn": ["documenti.estratti_banca_carte"],
           "currentEvidence": ["src/domain.js", "src/reconciliation-router.js"],
           "notes": "Il conto esiste; manca l'importatore canonico degli estratti e la vista completa.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "prima_nota.carte_circuiti",
@@ -169,7 +169,7 @@
           "dependsOn": ["documenti.estratti_banca_carte"],
           "currentEvidence": ["src/domain.js", "docs/REGOLE_DOMINIO.md"],
           "notes": "Mastercard è distinta dalla banca, ma mancano ingestione e catena carta-addebito.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "prima_nota.salari",
@@ -181,7 +181,7 @@
           "dependsOn": ["documenti.cedolini_paghe", "riconciliazione.salari"],
           "currentEvidence": ["src/domain.js", "docs/REGOLE_DOMINIO.md"],
           "notes": "Esiste il conto, non il flusso cedolino-acconti-saldo-evidenze.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "prima_nota.finanziamenti_soci",
@@ -193,7 +193,7 @@
           "dependsOn": ["prima_nota.registro_saldi"],
           "currentEvidence": ["src/domain.js", "docs/REGOLE_DOMINIO.md"],
           "notes": "Il conto è separato da costi e ricavi; manca la scheda socio e la gestione restituzioni.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "prima_nota.provvisoria",
@@ -205,7 +205,7 @@
           "dependsOn": ["prima_nota.registro_saldi"],
           "currentEvidence": ["src/domain.js", "src/ledger.js", "test/domain.test.js"],
           "notes": "La regola fail-safe per dati incompleti o ambigui è presente; mancano ancora evento, audit e storno end-to-end della proiezione.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "prima_nota.corrispettivi_pos",
@@ -217,7 +217,7 @@
           "dependsOn": ["documenti.corrispettivi_xml"],
           "currentEvidence": ["src/corrispettivi.js", "src/corrispettivi-router.js", "test/corrispettivi.test.js"],
           "notes": "Separa fonte fiscale, chiusura operativa, POS reali e accredito; resta da implementare la supersessione idempotente della chiusura provvisoria con l'XML ufficiale e la rigenerazione IVA/scritture.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "prima_nota.libro_giornale_mastro",
@@ -229,7 +229,7 @@
           "dependsOn": ["controllo.piano_conti"],
           "currentEvidence": ["src/event-engine.js", "src/event-engine-router.js", "src/projection-engine.js", "test/event-engine.test.js", "test/event-engine-mongo.test.js"],
           "notes": "È presente il motore transazionale append-only con regole versionate approvate, scritture quadrate, competenza distinta dal regolamento, storni compensativi, saldi di mastro e consumer con lease/retry per le proiezioni. Il primo produttore reale collegato è la validazione delle fatture fornitori. Restano la schermata completa del giornale/mastro e gli altri produttori di dominio.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         }
       ]
     },
@@ -250,7 +250,7 @@
           "dependsOn": [],
           "currentEvidence": ["src/document-pipeline.js", "src/blob-store.js"],
           "notes": "Esistono pipeline e originali; manca un'unica inbox operativa per upload, email e Drive.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.archivio",
@@ -262,7 +262,7 @@
           "dependsOn": ["documenti.acquisizione_inbox"],
           "currentEvidence": ["public/index.html", "src/core-router.js", "src/drive-data-router.js"],
           "notes": "Consultazione Drive e documenti interni presenti; filtri, versioni e provenienze vanno unificati.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.viewer",
@@ -274,7 +274,7 @@
           "dependsOn": ["documenti.archivio"],
           "currentEvidence": ["public/app.js", "src/drive-index-router.js"],
           "notes": "Apre l'originale Drive; manca il pannello unico di metadati, relazioni ed estrazioni.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.indice_drive",
@@ -286,7 +286,7 @@
           "dependsOn": [],
           "currentEvidence": ["src/drive-document-index.js", "src/drive-index-router.js", "test/drive-document-index.test.js"],
           "notes": "Risoluzione di percorsi esatti e indice verificato in sola lettura.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": [], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": [], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.albero_drive",
@@ -298,7 +298,7 @@
           "dependsOn": ["documenti.indice_drive"],
           "currentEvidence": ["src/drive-data-import.js", "src/drive-data-router.js", "test/drive-data-import.test.js"],
           "notes": "Persistenza di file, cartelle, radice, scan e lease senza modifiche fisiche a Drive.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": [], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": [], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.manutenzione_drive",
@@ -309,8 +309,8 @@
           "entities": ["drive_node", "source_asset", "anomaly"],
           "dependsOn": ["documenti.albero_drive"],
           "currentEvidence": ["src/drive-maintenance-plan.js", "src/drive-plan-router.js", "test/drive-maintenance-plan.test.js"],
-          "notes": "La baseline censisce duplicati e genera anteprime/piani cartelle in sola lettura. Le future mutazioni Drive sono separate, riservate ad ADMIN, protette da MFA, auditabili e recuperabili.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN"], "mfaActions": ["APPLICA_PIANO_DRIVE", "SPOSTA_RINOMINA_ELEMENTO_DRIVE", "ELIMINA_DUPLICATO_DRIVE"] }
+          "notes": "La baseline censisce duplicati e genera anteprime/piani cartelle in sola lettura. Le future mutazioni Drive sono separate, riservate ad ADMIN, protette da PIN, auditabili e recuperabili.",
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN"], "pinConfirmationActions": ["APPLICA_PIANO_DRIVE", "SPOSTA_RINOMINA_ELEMENTO_DRIVE", "ELIMINA_DUPLICATO_DRIVE"] }
         },
         {
           "id": "documenti.email_pec",
@@ -322,7 +322,7 @@
           "dependsOn": ["documenti.acquisizione_inbox"],
           "currentEvidence": ["src/email-pec.js", "src/jobs.js", "test/pec.test.js"],
           "notes": "Acquisizione idempotente disponibile; mancano configurazione e coda operative unificate.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.fatture_fornitori",
@@ -332,9 +332,9 @@
           "status": "PARZIALE",
           "entities": ["invoice_supplier", "invoice_supplier_line", "supplier", "obligation", "open_item", "expectation", "expectation_process"],
           "dependsOn": ["documenti.acquisizione_inbox"],
-          "currentEvidence": ["public/index.html", "public/app.js", "src/drive-data-import.js", "src/document-pipeline.js", "src/supplier-invoice-xml.js", "src/supplier-invoice.js", "src/supplier-invoice-projection.js", "src/expectation-engine.js", "src/obligation-engine.js", "src/supplier-invoice-router.js", "test/supplier-invoice.test.js", "test/frontend-events.test.js", "test/event-engine-mongo.test.js"],
-          "notes": "Drive, PEC e upload convergono nello stesso staging FatturaPA con originale e SHA-256. La validazione canonica transazionale pubblica invoice.supplier_validated, crea l'albero delle attese, competenza, IVA esplicitamente detraibile, debito e partita aperta senza attendere il pagamento. UI di intake, validazione e albero presente. Restano supersessione/nota di credito e anagrafica estesa.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "currentEvidence": ["public/index.html", "public/app.js", "src/drive-data-import.js", "src/document-pipeline.js", "src/supplier-invoice-xml.js", "src/supplier-invoice-archive.js", "src/supplier-invoice.js", "src/supplier-invoice-projection.js", "src/expectation-engine.js", "src/obligation-engine.js", "src/supplier-invoice-router.js", "test/supplier-invoice.test.js", "test/supplier-invoice-archive.test.js", "test/frontend-events.test.js", "test/http-auth-integration.test.js", "test/event-engine-mongo.test.js"],
+          "notes": "Drive, PEC e upload singolo o multiplo di XML/ZIP convergono nello stesso staging FatturaPA con originale e SHA-256. Gli ZIP possono essere annidati entro limiti anti ZIP bomb; la coda persistita espone avanzamento e conserva le provenienze senza duplicare contenuti identici. L'intake richiede la sessione PIN, mentre validazione e fatti contabili richiedono la riconferma temporanea dello stesso PIN. La validazione canonica transazionale pubblica invoice.supplier_validated, crea l'albero delle attese, competenza, IVA esplicitamente detraibile, debito e partita aperta senza attendere il pagamento. Restano supersessione/nota di credito e anagrafica estesa.",
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": ["VALIDA_FATTURA_FORNITORE", "RICONCILIA_FATTURA_FORNITORE"] }
         },
         {
           "id": "documenti.fatture_clienti",
@@ -346,7 +346,7 @@
           "dependsOn": ["documenti.acquisizione_inbox"],
           "currentEvidence": [],
           "notes": "Da aggiungere senza duplicare ricavi già documentati dai corrispettivi.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.corrispettivi_xml",
@@ -358,7 +358,7 @@
           "dependsOn": ["documenti.acquisizione_inbox"],
           "currentEvidence": ["src/corrispettivi.js", "src/drive-data-import.js", "test/corrispettivi.test.js"],
           "notes": "Fonte fiscale distinta dai dati POS e dalla chiusura operativa. Import XML e quadrature base esistono; supersessione del provvisorio e invalidazione completa delle proiezioni sono ancora da realizzare.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": ["SOSTITUISCI_GIORNATA_CORRISPETTIVI"] }
         },
         {
           "id": "documenti.f24_quietanze_dichiarazioni",
@@ -370,7 +370,7 @@
           "dependsOn": ["documenti.indice_drive"],
           "currentEvidence": ["src/f24-import-service.js", "src/f24-extraction-policy.js", "src/drive-data-import.js", "test/f24.test.js"],
           "notes": "Testo nativo prioritario, OCR solo fallback; modello, quietanza e addebito restano distinti.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.cedolini_paghe",
@@ -382,7 +382,7 @@
           "dependsOn": ["documenti.acquisizione_inbox"],
           "currentEvidence": [],
           "notes": "Da realizzare con identità dipendente prima dell'importo e senza duplicare attese F24.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.estratti_banca_carte",
@@ -394,7 +394,7 @@
           "dependsOn": ["documenti.acquisizione_inbox"],
           "currentEvidence": [],
           "notes": "Serve un solo importatore per fonte, chiave stabile e deduplicazione cross-formato.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "documenti.riscossione_pagopa",
@@ -406,7 +406,7 @@
           "dependsOn": ["documenti.acquisizione_inbox"],
           "currentEvidence": ["src/riscossione.js", "src/riscossione-router.js", "test/riscossione.test.js"],
           "notes": "Atti e snapshot presenti; mancano ingestione ufficiale e flusso PagoPA completo.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         }
       ]
     },
@@ -427,7 +427,7 @@
           "dependsOn": ["documenti.estratti_banca_carte"],
           "currentEvidence": ["src/reconciliation-router.js", "public/index.html", "test/reconciliation-router.test.js"],
           "notes": "Selezione manuale sicura per cause supportate; non è ancora una coda multi-dominio completa.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "riconciliazione.partite_aperte",
@@ -439,7 +439,7 @@
           "dependsOn": ["riconciliazione.coda_generale"],
           "currentEvidence": [],
           "notes": "Un solo registro per residui, acconti, rate e compensazioni.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "riconciliazione.f24_banca",
@@ -450,8 +450,8 @@
           "entities": ["f24_model", "f24_receipt", "financial_movement", "reconciliation"],
           "dependsOn": ["documenti.f24_quietanze_dichiarazioni", "riconciliazione.coda_generale"],
           "currentEvidence": ["src/f24.js", "src/f24-router.js", "test/f24.test.js"],
-          "notes": "Richiede prova finanziaria, identità della causa, centesimi e MFA.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "notes": "Richiede prova finanziaria, identità della causa, centesimi e PIN.",
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": ["RICONCILIA_F24_CON_MOVIMENTO"] }
         },
         {
           "id": "riconciliazione.riscossione_banca",
@@ -463,7 +463,7 @@
           "dependsOn": ["documenti.riscossione_pagopa", "riconciliazione.coda_generale"],
           "currentEvidence": ["src/riscossione.js", "src/riscossione-router.js", "test/riscossione.test.js"],
           "notes": "Collegamento manuale protetto senza usare il solo importo.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": ["RICONCILIA_ATTO_CON_MOVIMENTO"] }
         },
         {
           "id": "riconciliazione.fatture_pagamenti",
@@ -475,7 +475,7 @@
           "dependsOn": ["documenti.fatture_fornitori", "riconciliazione.partite_aperte"],
           "currentEvidence": ["src/supplier-invoice-settlement.js", "src/obligation-engine.js", "src/ledger-event-projection.js", "src/event-engine.js", "src/supplier-invoice-router.js", "test/event-engine-mongo.test.js"],
           "notes": "Il verticale fatture supporta allocazioni parziali o integrali, identità fattura e riferimento movimento espliciti, prova bancaria/carta/cassa riferita, retry idempotente, scrittura finanziaria separata e chiusura della partita. Restano proposta automatica multi-candidato, UI dedicata di conferma e supersessione della riconciliazione.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": ["RICONCILIA_FATTURA_CON_MOVIMENTO"] }
         },
         {
           "id": "riconciliazione.salari",
@@ -487,7 +487,7 @@
           "dependsOn": ["documenti.cedolini_paghe", "riconciliazione.partite_aperte"],
           "currentEvidence": [],
           "notes": "Identità dipendente, acconti e saldo prima della quadratura finale.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "riconciliazione.carte_pos",
@@ -499,7 +499,7 @@
           "dependsOn": ["prima_nota.corrispettivi_pos", "documenti.estratti_banca_carte"],
           "currentEvidence": [],
           "notes": "Gestori separati, commissioni e slittamenti espliciti; niente nuovo ricavo dall'accredito.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "riconciliazione.assegni",
@@ -511,7 +511,7 @@
           "dependsOn": ["riconciliazione.partite_aperte"],
           "currentEvidence": [],
           "notes": "Un solo modello N:M a quote; emissione e addebito bancario restano eventi distinti.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "riconciliazione.paypal_pagopa",
@@ -523,7 +523,7 @@
           "dependsOn": ["riconciliazione.partite_aperte"],
           "currentEvidence": [],
           "notes": "Una sola pipeline per provider; email e ricevute sono evidenze, non movimenti reali.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "riconciliazione.verbali_audit",
@@ -535,7 +535,7 @@
           "dependsOn": ["riconciliazione.coda_generale"],
           "currentEvidence": [],
           "notes": "Riepiloga decisioni, prove, residui e motivi di conferma o rifiuto.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         }
       ]
     },
@@ -556,7 +556,7 @@
           "dependsOn": ["documenti.fatture_fornitori"],
           "currentEvidence": [],
           "notes": "Identità legale stabile; metodo di pagamento è una preferenza, non prova del pagamento reale.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "amministrazione.dizionario_prodotti",
@@ -568,7 +568,7 @@
           "dependsOn": ["documenti.fatture_fornitori"],
           "currentEvidence": [],
           "notes": "Normalizza descrizioni, codici fornitore, EAN e confezioni osservati nelle fatture. invoice_supplier_line è solo contesto di lettura: il comando della pagina può versionare esclusivamente product_dictionary_item e supplier_product_alias e non può rivalidare o modificare la fattura. Non gestisce giacenze, lotti, ricette o produzione e non fonde prodotti senza chiave esatta o conferma.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "amministrazione.dipendenti_contabili",
@@ -580,7 +580,7 @@
           "dependsOn": ["documenti.cedolini_paghe"],
           "currentEvidence": [],
           "notes": "Solo identità, paghe e riconciliazione; il fascicolo HR esteso resta fuori da questo gestionale.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "amministrazione.f24_codici",
@@ -592,7 +592,7 @@
           "dependsOn": ["documenti.f24_quietanze_dichiarazioni"],
           "currentEvidence": ["src/f24.js", "src/f24-router.js", "public/index.html", "test/f24.test.js"],
           "notes": "f24_model, f24_line e f24_receipt sono solo contesto di lettura. La gestione del registro può versionare esclusivamente tax_code_version e non può validare o modificare modelli, righe o quietanze; un codice ignoto resta da verificare.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "amministrazione.riscossione_rate",
@@ -604,7 +604,7 @@
           "dependsOn": ["documenti.riscossione_pagopa"],
           "currentEvidence": ["src/riscossione.js", "src/riscossione-router.js"],
           "notes": "Atti e snapshot presenti; rate e comunicazioni collegate sono da completare.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "amministrazione.iva_fiscalita",
@@ -616,7 +616,7 @@
           "dependsOn": ["documenti.fatture_fornitori", "documenti.fatture_clienti"],
           "currentEvidence": [],
           "notes": "Una sola liquidazione versionata, anti-doppia detrazione e competenza esplicita.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "amministrazione.cespiti_veicoli",
@@ -628,7 +628,7 @@
           "dependsOn": ["documenti.fatture_fornitori"],
           "currentEvidence": [],
           "notes": "Costi, ammortamenti, contratti e verbali collegati alle prove, senza app autonoma.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "amministrazione.finanziamenti_mutui",
@@ -640,7 +640,7 @@
           "dependsOn": ["prima_nota.finanziamenti_soci"],
           "currentEvidence": ["src/domain.js", "docs/REGOLE_DOMINIO.md"],
           "notes": "Conto soci presente; piani, quote capitale/interessi e mutui sono assenti.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "amministrazione.commercialista",
@@ -652,7 +652,7 @@
           "dependsOn": ["controllo.chiusura_mensile"],
           "currentEvidence": [],
           "notes": "Pacchetti riproducibili basati su dati verificati e manifest di consegna.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "amministrazione.integrazioni_scheduler",
@@ -664,19 +664,19 @@
           "dependsOn": ["documenti.acquisizione_inbox"],
           "currentEvidence": ["src/scheduler.js", "src/scheduler-runtime.js", "src/google-auth.js", "test/jobs.test.js"],
           "notes": "Scheduler, lease e connettori esistono; manca un pannello operativo unico.",
-          "access": { "level": "ADMIN", "viewRoles": ["ADMIN"], "writeRoles": ["ADMIN"], "mfaActions": ["GESTISCI_SEGRETI_INTEGRAZIONE", "MODIFICA_SCHEDULER", "AVVIA_JOB_MANUALE"] }
+          "access": { "level": "ADMIN", "viewRoles": ["ADMIN"], "writeRoles": ["ADMIN"], "pinConfirmationActions": ["GESTISCI_SEGRETI_INTEGRAZIONE", "MODIFICA_SCHEDULER", "AVVIA_JOB_MANUALE"] }
         },
         {
           "id": "amministrazione.utenti_sicurezza",
-          "label": "Utenti, ruoli e MFA",
+          "label": "Utenti, ruoli e PIN",
           "route": "/amministrazione/sicurezza",
           "owner": "SICUREZZA",
           "status": "PARZIALE",
           "entities": ["user_identity", "approval", "audit_event"],
           "dependsOn": [],
           "currentEvidence": ["src/auth.js", "test/auth.test.js", "test/http-auth-integration.test.js"],
-          "notes": "PIN, sessione, CSRF e MFA presenti; ruoli multipli e segregazione funzioni sono assenti.",
-          "access": { "level": "ADMIN", "viewRoles": ["ADMIN"], "writeRoles": ["ADMIN"], "mfaActions": ["CREA_MODIFICA_UTENTE", "ASSEGNA_RUOLI", "RESETTA_MFA", "REVOCA_SESSIONI"] }
+          "notes": "PIN scrypt, sessione HttpOnly, CSRF e riconferma temporanea del PIN presenti; ruoli multipli e segregazione funzioni sono assenti.",
+          "access": { "level": "ADMIN", "viewRoles": ["ADMIN"], "writeRoles": ["ADMIN"], "pinConfirmationActions": ["CREA_MODIFICA_UTENTE", "ASSEGNA_RUOLI", "RESETTA_PIN", "REVOCA_SESSIONI"] }
         },
         {
           "id": "amministrazione.configurazione_agenti",
@@ -688,7 +688,7 @@
           "dependsOn": ["home.assistente_memoria"],
           "currentEvidence": [],
           "notes": "Gli agenti rispettano proprietario, confidenza, deduplica e approvazioni del catalogo.",
-          "access": { "level": "ADMIN", "viewRoles": ["ADMIN"], "writeRoles": ["ADMIN"], "mfaActions": ["MODIFICA_CONFIGURAZIONE_AGENTE", "ABILITA_AUTOMAZIONE"] }
+          "access": { "level": "ADMIN", "viewRoles": ["ADMIN"], "writeRoles": ["ADMIN"], "pinConfirmationActions": ["MODIFICA_CONFIGURAZIONE_AGENTE", "ABILITA_AUTOMAZIONE"] }
         }
       ]
     },
@@ -709,7 +709,7 @@
           "dependsOn": ["home.attivita_aperte"],
           "currentEvidence": ["public/index.html", "public/app.js", "src/fiscal-controls.js", "src/projection-engine.js", "test/frontend-events.test.js", "test/event-engine-mongo.test.js"],
           "notes": "Il consumer contabile materializza valutazioni riproducibili di quadratura, identità fonte, regola e provenienza. Il motore trasversale resta parziale: deve ancora applicare l'intero registro versionato di completezza, unicità, integrità, temporalità e freschezza senza riscrivere i fatti autorevoli.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": [], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": [], "pinConfirmationActions": [] }
         },
         {
           "id": "controllo.provenienza_relazioni",
@@ -721,7 +721,7 @@
           "dependsOn": ["documenti.archivio", "riconciliazione.coda_generale"],
           "currentEvidence": ["docs/ARCHITETTURA_DATI.md", "src/document-pipeline.js", "src/reconciliation-router.js"],
           "notes": "Provenienza salvata in più flussi; manca una vista trasversale unica.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "controllo.affidabilita_fiscale",
@@ -733,7 +733,7 @@
           "dependsOn": ["documenti.f24_quietanze_dichiarazioni", "documenti.riscossione_pagopa"],
           "currentEvidence": ["src/fiscal-controls.js", "src/f24-extraction-policy.js", "test/f24-extraction-policy.test.js"],
           "notes": "Controlli deterministici e separazione delle prove sono presenti; registro versionato delle regole, valutazioni riproducibili e workflow completo di approvazione restano da implementare.",
-          "access": { "level": "ADMIN", "viewRoles": ["ADMIN"], "writeRoles": ["ADMIN"], "mfaActions": ["MODIFICA_REGOLA_FISCALE", "APPROVA_ESITO_FISCALE"] }
+          "access": { "level": "ADMIN", "viewRoles": ["ADMIN"], "writeRoles": ["ADMIN"], "pinConfirmationActions": ["MODIFICA_REGOLA_FISCALE", "APPROVA_ESITO_FISCALE"] }
         },
         {
           "id": "controllo.qualita_drive",
@@ -745,7 +745,7 @@
           "dependsOn": ["documenti.manutenzione_drive"],
           "currentEvidence": ["src/drive-plan-router.js", "docs/DRIVE_MANUTENZIONE.md", "test/drive-plan-router.test.js"],
           "notes": "Completezza, digest, collisioni, radice e topologia verificati in sola lettura.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": [], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": [], "pinConfirmationActions": [] }
         },
         {
           "id": "controllo.chiusura_mensile",
@@ -757,7 +757,7 @@
           "dependsOn": ["prima_nota.libro_giornale_mastro", "controllo.iva"],
           "currentEvidence": [],
           "notes": "Checklist riproducibile, periodo bloccabile e riapertura approvata.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "controllo.piano_conti",
@@ -769,7 +769,7 @@
           "dependsOn": [],
           "currentEvidence": [],
           "notes": "Prerequisito versionato di giornale e mastro; non dipende dal bilancio e non ammette piani concorrenti.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "controllo.bilancio",
@@ -781,7 +781,7 @@
           "dependsOn": ["prima_nota.libro_giornale_mastro", "controllo.iva"],
           "currentEvidence": [],
           "notes": "Proiezione di chiusura derivata da piano dei conti, scritture quadrate, IVA e periodo; non è una seconda pipeline contabile.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "controllo.iva",
@@ -793,7 +793,7 @@
           "dependsOn": ["amministrazione.iva_fiscalita"],
           "currentEvidence": [],
           "notes": "Liquidazioni versionate, competenza, anti-doppia detrazione e riconciliazione F24.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "controllo.budget_previsioni",
@@ -805,7 +805,7 @@
           "dependsOn": ["controllo.bilancio", "riconciliazione.partite_aperte"],
           "currentEvidence": [],
           "notes": "Dati previsionali sempre separati dai consuntivi.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "controllo.comparazione_prezzi_acquisto",
@@ -817,7 +817,7 @@
           "dependsOn": ["documenti.fatture_fornitori"],
           "currentEvidence": [],
           "notes": "Capacità futura di controllo sugli acquisti. Fonti, regole di comparabilità e integrazioni saranno decise in un’attività separata; oggi non esiste alcun automatismo.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
           "id": "controllo.audit_rollback",
@@ -829,7 +829,7 @@
           "dependsOn": ["amministrazione.utenti_sicurezza"],
           "currentEvidence": ["src/scheduler.js", "src/drive-data-import.js", "src/auth.js"],
           "notes": "Alcuni flussi registrano run e decisioni; manca un audit immutabile trasversale con rollback.",
-          "access": { "level": "ADMIN", "viewRoles": ["ADMIN", "SOLA_LETTURA"], "writeRoles": ["ADMIN"], "mfaActions": ["ESEGUI_ROLLBACK"] }
+          "access": { "level": "ADMIN", "viewRoles": ["ADMIN", "SOLA_LETTURA"], "writeRoles": ["ADMIN"], "pinConfirmationActions": ["ESEGUI_ROLLBACK"] }
         },
         {
           "id": "controllo.anatomia",
@@ -841,7 +841,7 @@
           "dependsOn": [],
           "currentEvidence": ["docs/anatomia-gestionale/catalogo.json", "scripts/validate-anatomia.js", "test/anatomia-catalog.test.js"],
           "notes": "Fonte autonoma per pagine, proprietari, entità, relazioni, flussi e stato reale.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         }
       ]
     }

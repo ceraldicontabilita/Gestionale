@@ -47,72 +47,15 @@ export function authConfigured(env = process.env) {
   return verifyAdminPin('__configuration_probe__', env) !== null;
 }
 
-function normalizeBase32(secret) {
-  return String(secret || '').toUpperCase().replace(/[\s-]+/g, '').replace(/=+$/g, '');
-}
-
-function decodeBase32(secret) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const normalized = normalizeBase32(secret);
-  if (normalized.length < 16 || !/^[A-Z2-7]+$/.test(normalized)) throw new Error('Segreto TOTP non valido');
-  let bits = '';
-  for (const character of normalized) bits += alphabet.indexOf(character).toString(2).padStart(5, '0');
-  const bytes = [];
-  for (let index = 0; index + 8 <= bits.length; index += 8) bytes.push(Number.parseInt(bits.slice(index, index + 8), 2));
-  return Buffer.from(bytes);
-}
-
-export function generateTotp(secret, at = new Date(), { stepSeconds = 30, digits = 6 } = {}) {
-  const date = at instanceof Date ? at : new Date(at);
-  if (Number.isNaN(date.getTime())) throw new Error('Istante TOTP non valido');
-  const counter = Math.floor(date.getTime() / 1000 / stepSeconds);
-  const counterBuffer = Buffer.alloc(8);
-  counterBuffer.writeBigUInt64BE(BigInt(counter));
-  const digest = crypto.createHmac('sha1', decodeBase32(secret)).update(counterBuffer).digest();
-  const offset = digest[digest.length - 1] & 0x0f;
-  const binary = ((digest[offset] & 0x7f) << 24)
-    | ((digest[offset + 1] & 0xff) << 16)
-    | ((digest[offset + 2] & 0xff) << 8)
-    | (digest[offset + 3] & 0xff);
-  return String(binary % (10 ** digits)).padStart(digits, '0');
-}
-
-export function verifyTotp(secret, code, at = new Date(), { window = 1, stepSeconds = 30 } = {}) {
-  const value = String(code || '').trim();
-  if (!/^\d{6}$/.test(value)) return false;
-  const date = at instanceof Date ? at : new Date(at);
-  if (Number.isNaN(date.getTime())) return false;
-  try {
-    for (let offset = -Math.max(0, window); offset <= Math.max(0, window); offset += 1) {
-      const candidate = generateTotp(secret, new Date(date.getTime() + offset * stepSeconds * 1000), { stepSeconds, digits: 6 });
-      if (safeEqualText(candidate, value)) return true;
-    }
-  } catch {
-    return false;
-  }
-  return false;
-}
-
-export function mfaConfigured(env = process.env) {
-  try {
-    decodeBase32(env.MFA_TOTP_SECRET);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function configFromEnv(env) {
   const sessionMinutes = Math.max(10, Math.min(24 * 60, Number(env.AUTH_SESSION_MINUTES || 60)));
-  const mfaMinutes = Math.max(2, Math.min(60, Number(env.MFA_STEPUP_MINUTES || 10)));
+  const pinConfirmationMinutes = Math.max(2, Math.min(60, Number(env.PIN_CONFIRMATION_MINUTES || 10)));
   return {
     configured: authConfigured(env),
-    mfaConfigured: mfaConfigured(env),
-    mfaSecret: String(env.MFA_TOTP_SECRET || ''),
     sessionMs: sessionMinutes * 60 * 1000,
-    mfaStepMs: mfaMinutes * 60 * 1000,
+    pinConfirmationMs: pinConfirmationMinutes * 60 * 1000,
     maxAttempts: Math.max(3, Math.min(20, Number(env.AUTH_MAX_ATTEMPTS || 5))),
-    maxMfaAttempts: Math.max(3, Math.min(10, Number(env.MFA_MAX_ATTEMPTS || 5))),
+    maxPinConfirmationAttempts: Math.max(3, Math.min(10, Number(env.PIN_CONFIRMATION_MAX_ATTEMPTS || 5))),
     attemptWindowMs: Math.max(60_000, Number(env.AUTH_ATTEMPT_WINDOW_MINUTES || 5) * 60_000),
     lockMs: Math.max(60_000, Number(env.AUTH_LOCK_MINUTES || 5) * 60_000),
     secureCookie: String(env.COOKIE_SECURE || (env.NODE_ENV === 'production' ? 'true' : 'false')).toLowerCase() !== 'false'
@@ -230,23 +173,32 @@ function csrfValid(req, auth) {
 function sensitiveOperation(req) {
   if (SAFE_METHODS.has(req.method)) return false;
   const path = req.originalUrl.split('?')[0];
+  const supplierInvoiceAccountingWrite = req.method === 'POST' && (
+    path === '/api/supplier-invoices/validate'
+    || /\/api\/supplier-invoices\/[^/]+\/reconcile$/.test(path)
+  );
+  const destructiveWrite = ['DELETE', 'PATCH', 'PUT'].includes(req.method)
+    || /\/(elimina|cancella|rimuovi)(\/|$)/i.test(path)
+    || req.body?.elimina === true
+    || req.body?.cancella === true;
   return Boolean(
-    req.body?.forza === true
+    destructiveWrite
+    || req.body?.forza === true
     || req.query?.forza === 'true'
-    || (req.method === 'PUT' && /^\/api\/riporti\//.test(path))
+    || (req.method === 'POST' && path === '/api/corrispettivi/giornata')
     || (req.method === 'POST' && path === '/api/tributi')
     || (req.method === 'POST' && path === '/api/drive-data/import')
     || (req.method === 'POST' && path.startsWith('/api/event-engine/'))
-    || (req.method === 'POST' && path.startsWith('/api/supplier-invoices/'))
+    || supplierInvoiceAccountingWrite
     || /\/riconcilia$/.test(path)
     || /\/collega-movimento$/.test(path)
     || /\/snapshot$/.test(path)
   );
 }
 
-function mfaVerified(session, cfg, now = new Date()) {
-  if (!session?.mfaVerifiedAt) return false;
-  return now.getTime() - new Date(session.mfaVerifiedAt).getTime() <= cfg.mfaStepMs;
+function pinConfirmationVerified(session, cfg, now = new Date()) {
+  if (!session?.pinConfirmedAt) return false;
+  return now.getTime() - new Date(session.pinConfirmedAt).getTime() <= cfg.pinConfirmationMs;
 }
 
 function logAudit(db, entry) {
@@ -258,17 +210,16 @@ export function registerAuthentication(app, { getDb, env = process.env }) {
 
   app.get('/api/auth/status', async (req, res) => {
     const db = getDb();
-    if (!db) return res.status(503).json({ error: 'MongoDB non configurato', configured: cfg.configured, authenticated: false, mfaConfigured: cfg.mfaConfigured });
+    if (!db) return res.status(503).json({ error: 'MongoDB non configurato', configured: cfg.configured, authenticated: false });
     await ensureIndexes(db);
     const auth = cfg.configured ? await resolveSession(db, req, cfg, { touch: true }) : null;
-    const verified = Boolean(auth && mfaVerified(auth.session, cfg));
+    const verified = Boolean(auth && pinConfirmationVerified(auth.session, cfg));
     res.json({
       configured: cfg.configured,
       authenticated: Boolean(auth),
       role: auth?.session?.role || null,
-      mfaConfigured: cfg.mfaConfigured,
-      mfaVerified: verified,
-      mfaVerifiedUntil: verified ? new Date(new Date(auth.session.mfaVerifiedAt).getTime() + cfg.mfaStepMs) : null
+      pinConfirmed: verified,
+      pinConfirmedUntil: verified ? new Date(new Date(auth.session.pinConfirmedAt).getTime() + cfg.pinConfirmationMs) : null
     });
   });
 
@@ -307,44 +258,44 @@ export function registerAuthentication(app, { getDb, env = process.env }) {
       lastSeenAt: now,
       expiresAt,
       revokedAt: null,
-      mfaVerifiedAt: null,
-      mfaFailures: 0
+      pinConfirmedAt: now,
+      pinConfirmationFailures: 0
     };
     const result = await db.collection('auth_sessions').insertOne(session);
     appendSessionCookies(res, token, csrf, cfg);
     logAudit(db, { tipo: 'LOGIN_OK', sessionId: result.insertedId, ipKey });
-    res.json({ ok: true, authenticated: true, role: 'ADMIN', expiresAt, mfaConfigured: cfg.mfaConfigured });
+    res.json({ ok: true, authenticated: true, role: 'ADMIN', expiresAt, pinConfirmedUntil: new Date(now.getTime() + cfg.pinConfirmationMs) });
   });
 
-  app.post('/api/auth/mfa', async (req, res) => {
+  app.post('/api/auth/pin-confirm', async (req, res) => {
     const db = getDb();
     if (!db) return res.status(503).json({ error: 'MongoDB non configurato' });
     await ensureIndexes(db);
-    if (!cfg.mfaConfigured) return res.status(503).json({ error: 'MFA TOTP non configurato', code: 'MFA_NOT_CONFIGURED' });
     const auth = await resolveSession(db, req, cfg, { touch: true });
     if (!auth) return res.status(401).json({ error: 'Autenticazione richiesta' });
     if (!csrfValid(req, auth)) return res.status(403).json({ error: 'Verifica CSRF non valida' });
     const now = new Date();
-    if (!verifyTotp(cfg.mfaSecret, req.body?.code, now)) {
-      const failures = Number(auth.session.mfaFailures || 0) + 1;
-      const revoke = failures >= cfg.maxMfaAttempts;
+    const pin = String(req.body?.pin || '').trim();
+    if (!/^\d{4,12}$/.test(pin) || verifyAdminPin(pin, env) !== true) {
+      const failures = Number(auth.session.pinConfirmationFailures || 0) + 1;
+      const revoke = failures >= cfg.maxPinConfirmationAttempts;
       await db.collection('auth_sessions').updateOne(
         { _id: auth.session._id },
-        { $set: { mfaFailures: failures, ...(revoke ? { revokedAt: now } : {}) } }
+        { $set: { pinConfirmationFailures: failures, ...(revoke ? { revokedAt: now } : {}) } }
       );
-      logAudit(db, { tipo: 'MFA_FALLITO', sessionId: auth.session._id, ipKey: auth.session.ipKey, failures });
+      logAudit(db, { tipo: 'CONFERMA_PIN_FALLITA', sessionId: auth.session._id, ipKey: auth.session.ipKey, failures });
       if (revoke) {
         clearSessionCookies(res, cfg);
-        return res.status(401).json({ error: 'Troppi codici MFA errati. Sessione revocata' });
+        return res.status(401).json({ error: 'Troppi PIN errati. Sessione revocata' });
       }
-      return res.status(401).json({ error: 'Codice MFA non valido' });
+      return res.status(403).json({ error: 'PIN non valido', code: 'PIN_CONFIRMATION_INVALID' });
     }
     await db.collection('auth_sessions').updateOne(
       { _id: auth.session._id, revokedAt: null },
-      { $set: { mfaVerifiedAt: now, mfaFailures: 0 } }
+      { $set: { pinConfirmedAt: now, pinConfirmationFailures: 0 } }
     );
-    logAudit(db, { tipo: 'MFA_OK', sessionId: auth.session._id, ipKey: auth.session.ipKey });
-    res.json({ ok: true, mfaVerifiedUntil: new Date(now.getTime() + cfg.mfaStepMs) });
+    logAudit(db, { tipo: 'CONFERMA_PIN_OK', sessionId: auth.session._id, ipKey: auth.session.ipKey });
+    res.json({ ok: true, pinConfirmedUntil: new Date(now.getTime() + cfg.pinConfirmationMs) });
   });
 
   app.post('/api/auth/logout', async (req, res) => {
@@ -373,10 +324,9 @@ export function registerAuthentication(app, { getDb, env = process.env }) {
       if (!auth) return res.status(401).json({ error: 'Autenticazione richiesta' });
       if (!csrfValid(req, auth)) return res.status(403).json({ error: 'Verifica CSRF non valida' });
       if (sensitiveOperation(req)) {
-        if (!cfg.mfaConfigured) return res.status(503).json({ error: 'MFA TOTP non configurato: operazione sensibile bloccata', code: 'MFA_NOT_CONFIGURED' });
-        if (!mfaVerified(auth.session, cfg)) return res.status(428).json({ error: 'Conferma MFA richiesta', code: 'MFA_REQUIRED' });
+        if (!pinConfirmationVerified(auth.session, cfg)) return res.status(428).json({ error: 'Reinserisci il PIN per confermare questa operazione', code: 'PIN_CONFIRMATION_REQUIRED' });
       }
-      req.auth = { sessionId: auth.session._id, role: auth.session.role, mfaVerifiedAt: auth.session.mfaVerifiedAt };
+      req.auth = { sessionId: auth.session._id, role: auth.session.role, pinConfirmedAt: auth.session.pinConfirmedAt };
       if (!SAFE_METHODS.has(req.method)) {
         res.on('finish', () => logAudit(db, {
           tipo: 'SCRITTURA_API',
@@ -385,7 +335,7 @@ export function registerAuthentication(app, { getDb, env = process.env }) {
           metodo: req.method,
           percorso: req.originalUrl.split('?')[0],
           esitoHttp: res.statusCode,
-          mfa: sensitiveOperation(req)
+          pinConfermato: sensitiveOperation(req)
         }));
       }
       next();

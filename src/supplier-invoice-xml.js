@@ -145,6 +145,7 @@ export async function stageSupplierInvoiceXml(db, {
         driveFileId: source?.driveFileId || null
       }
     };
+    record.sourceAssets = [record.sourceAsset];
     record.extractionFingerprint = stableFingerprint({
       sourceKey: record.sourceKey,
       documentSha256: record.documentSha256,
@@ -163,11 +164,21 @@ export async function stageSupplierInvoiceXml(db, {
       pagamenti: record.pagamenti,
       quadraturaEstrazione: record.quadraturaEstrazione
     });
-    const existing = await db.collection('fatture').findOne({ sourceKey: record.sourceKey });
+    const existing = await db.collection('fatture').findOne({
+      $or: [
+        { sourceKey: record.sourceKey },
+        { documentSha256: sha256, bodyIndex: index + 1 }
+      ]
+    });
     if (existing) {
-      if (existing.extractionFingerprint && existing.extractionFingerprint !== record.extractionFingerprint) throw new Error('SUPPLIER_INVOICE_STAGING_CONFLICT');
-      await db.collection('fatture').updateOne({ _id: existing._id }, { $set: { sourceAsset: record.sourceAsset, aggiornatoIl: now } });
-      records.push({ ...existing, sourceAsset: record.sourceAsset, aggiornatoIl: now });
+      const exactContentDuplicate = existing.documentSha256 === sha256 && Number(existing.bodyIndex) === index + 1;
+      if (!exactContentDuplicate && existing.extractionFingerprint && existing.extractionFingerprint !== record.extractionFingerprint) throw new Error('SUPPLIER_INVOICE_STAGING_CONFLICT');
+      const provenances = [existing.sourceAsset, ...(existing.sourceAssets || []), record.sourceAsset].filter(Boolean);
+      await db.collection('fatture').updateOne(
+        { _id: existing._id },
+        { $set: { aggiornatoIl: now }, $addToSet: { sourceAssets: { $each: provenances } } }
+      );
+      records.push({ ...existing, sourceAssets: provenances, aggiornatoIl: now });
       duplicates += 1;
       continue;
     }

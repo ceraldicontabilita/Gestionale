@@ -31,7 +31,7 @@ Leggere prima:
 - acquisizione Google Drive fiscale;
 - acquisizione PEC/IMAP, `daticert.xml` e `postacert.eml`;
 - scheduler con lease, heartbeat, retry, checkpoint e audit;
-- accesso PIN, sessione HttpOnly, CSRF e MFA TOTP per operazioni sensibili.
+- accesso PIN, sessione HttpOnly, CSRF e riconferma PIN per operazioni sensibili o distruttive.
 
 ## Indice documentale Google Drive
 
@@ -68,7 +68,7 @@ Il dettaglio operativo e il lock contro scansioni concorrenti sono documentati n
 
 - **Riconciliazione** mostra soltanto movimenti finanziari non già utilizzati e richiede una scelta
   manuale della causa. L'importo non produce mai un collegamento automatico; F24 e riscossione
-  applicano nuovamente le verifiche nel backend e richiedono MFA.
+  applicano nuovamente le verifiche nel backend e richiedono la riconferma del PIN.
 - **Controllo** raccoglie riporti da riallineare, movimenti senza prova, F24 da riscontrare, documenti
   interni da verificare e atti ADER privi di snapshot, senza correggere silenziosamente i dati.
 - **Riscossione** conserva separati atto originario, pagamenti collegati e ultimo snapshot ADER.
@@ -93,9 +93,9 @@ L'applicazione resta in modalità fail-safe quando il PIN non è configurato: le
 
 Preferire `PIN_SCRYPT_ADMIN`; `PIN_HASH_ADMIN` resta disponibile soltanto come formato SHA-256 compatibile.
 
-Le operazioni sensibili richiedono anche `MFA_TOTP_SECRET` in formato Base32. Il PIN apre la sessione; il codice TOTP autorizza temporaneamente riporti, classificazioni tributarie e riconciliazioni.
+Il PIN apre la sessione. Lo stesso PIN deve essere reinserito periodicamente per autorizzare riporti, classificazioni tributarie, riconciliazioni, modifiche forzate ed eliminazioni. La conferma resta valida per i minuti indicati da `PIN_CONFIRMATION_MINUTES`; i tentativi sono limitati da `PIN_CONFIRMATION_MAX_ATTEMPTS`.
 
-Nessuna credenziale, URI MongoDB, token Google, password PEC o segreto MFA deve essere committato.
+Nessuna credenziale, URI MongoDB, token Google, password PEC o PIN deve essere committato.
 
 ## Verifiche
 

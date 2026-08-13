@@ -36,12 +36,21 @@ test('la pagina fatture espone intake, validazione e albero delle attese', () =>
   const source = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
   for (const id of [
     'supplierInvoiceIntakeForm',
+    'supplierImportMonitor',
+    'supplierImportProgress',
     'supplierInvoiceStagingRows',
     'supplierInvoiceValidationForm',
     'supplierInvoiceCanonicalRows',
     'supplierInvoiceTree'
   ]) assert.match(html, new RegExp(`id=["']${id}["']`));
-  assert.match(source, /\/api\/supplier-invoices\/intake/);
+  assert.match(html, /name=["']invoiceFiles["'][^>]*multiple/);
+  assert.match(html, /accept=["'][^"']*\.zip/);
+  assert.match(source, /\/api\/supplier-invoices\/import-jobs/);
+  assert.match(source, /new XMLHttpRequest\(\)/);
+  assert.match(source, /localStorage\.setItem\(SUPPLIER_IMPORT_JOB_KEY/);
   assert.match(source, /\/api\/supplier-invoices\/validate/);
   assert.match(source, /supplier-invoices\/\$\{encodeURIComponent\(invoiceId\)\}\/tree/);
+  assert.match(source, /PIN_CONFIRMATION_REQUIRED/);
+  assert.match(source, /\/api\/auth\/pin-confirm/);
+  assert.doesNotMatch(`${html}\n${source}`, /MFA|TOTP|authenticator/i);
 });

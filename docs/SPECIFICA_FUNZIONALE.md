@@ -282,6 +282,6 @@ I PDF non devono essere duplicati inutilmente in MongoDB: MongoDB conserva metad
 
 - Nessuna azione finanziaria silenziosa.
 - Ambiguo = `DA_VERIFICARE`.
-- Le modifiche sensibili future richiedono MFA.
+- Le modifiche sensibili future richiedono riconferma PIN.
 - Ogni modifica deve essere auditabile.
 - Nessun parser può dichiarare un pagamento in assenza della prova prevista dal dominio.

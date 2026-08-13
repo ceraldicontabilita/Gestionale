@@ -12,7 +12,7 @@ domini: riceve soltanto eventi già validati dal proprietario funzionale.
 - il regolamento finanziario richiede una prova bancaria, carta o cassa
   esplicitamente riferita;
 - le scritture devono quadrare al centesimo e usare una regola contabile
-  versionata, approvata con MFA e limitata a conti e tipi ammessi;
+  versionata, approvata con riconferma del PIN e limitata a conti e tipi ammessi;
 - la data di registrazione deve appartenere a un periodo contabile aperto;
   apertura, chiusura e riapertura sono versionate, motivate e auditate;
   la chiusura è bloccata finché esistono eventi contabili non elaborati;
@@ -28,8 +28,8 @@ domini: riceve soltanto eventi già validati dal proprietario funzionale.
 
 ## API amministrative
 
-Le operazioni `POST /api/event-engine/*` sono sensibili e richiedono MFA quando
-l'autenticazione è configurata.
+Le operazioni `POST /api/event-engine/*` sono sensibili e richiedono la
+riconferma temporanea del PIN amministratore.
 
 - `POST /api/event-engine/posting-rules`: registra una versione approvata;
 - `POST /api/event-engine/accounting-periods`: apre, chiude o riapre un periodo;
@@ -45,8 +45,11 @@ l'autenticazione è configurata.
 ## Perimetro ancora aperto
 
 Il primo produttore reale collegato è quello delle fatture fornitori. Drive,
-PEC e `POST /api/supplier-invoices/intake` convergono nello stesso staging
-FatturaPA, preservando fonte, versione, originale e SHA-256. La successiva
+PEC, upload XML e job di upload multiplo XML/ZIP convergono nello stesso staging
+FatturaPA, preservando fonte, versione, originale e SHA-256. I job accettano più
+file e ZIP annidati, espongono avanzamento persistito e applicano limiti contro
+ZIP bomb e percorsi malevoli. L'intake richiede una sessione amministrativa
+autenticata tramite PIN, mentre la successiva
 `POST /api/supplier-invoices/validate` richiede una decisione esplicita
 sull'IVA detraibile e registra fattura canonica ed evento
 `invoice.supplier_validated` nella stessa transazione. Il consumer crea

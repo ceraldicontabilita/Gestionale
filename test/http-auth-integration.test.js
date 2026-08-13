@@ -3,10 +3,15 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import net from 'node:net';
 import { spawn } from 'node:child_process';
-import { generateTotp } from '../src/auth.js';
+import { strToU8, zipSync } from 'fflate';
+import { MongoClient } from 'mongodb';
 
 const mongoUri = process.env.TEST_MONGODB_URI;
-const totpSecret = 'JBSWY3DPEHPK3PXP';
+const supplierInvoiceXml = `<?xml version="1.0" encoding="UTF-8"?>
+<FatturaElettronica>
+  <FatturaElettronicaHeader><CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdCodice>00000000000</IdCodice></IdFiscaleIVA><Anagrafica><Denominazione>Fornitore HTTP test</Denominazione></Anagrafica></DatiAnagrafici></CedentePrestatore></FatturaElettronicaHeader>
+  <FatturaElettronicaBody><DatiGenerali><DatiGeneraliDocumento><TipoDocumento>TD01</TipoDocumento><Divisa>EUR</Divisa><Data>2026-08-01</Data><Numero>HTTP-1</Numero><ImportoTotaleDocumento>12.20</ImportoTotaleDocumento></DatiGeneraliDocumento></DatiGenerali><DatiBeniServizi><DettaglioLinee><NumeroLinea>1</NumeroLinea><Descrizione>Test</Descrizione><PrezzoUnitario>10</PrezzoUnitario><PrezzoTotale>10</PrezzoTotale><AliquotaIVA>22</AliquotaIVA></DettaglioLinee><DatiRiepilogo><AliquotaIVA>22</AliquotaIVA><ImponibileImporto>10</ImponibileImporto><Imposta>2.20</Imposta></DatiRiepilogo></DatiBeniServizi></FatturaElettronicaBody>
+</FatturaElettronica>`;
 
 async function freePort() {
   const server = net.createServer();
@@ -51,7 +56,7 @@ async function jsonRequest(url, { method = 'GET', cookie = '', csrf = '', body }
   return fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
 }
 
-test('HTTP reale: anonimato bloccato, PIN, CSRF e MFA step-up', {
+test('HTTP reale: anonimato, PIN, CSRF e riconferma PIN sulle operazioni sensibili', {
   skip: !mongoUri,
   timeout: 90_000
 }, async (t) => {
@@ -71,8 +76,7 @@ test('HTTP reale: anonimato bloccato, PIN, CSRF e MFA step-up', {
       SCHEDULER_ENABLED: 'false',
       PIN_HASH_ADMIN: crypto.createHash('sha256').update(pin).digest('hex'),
       PIN_SCRYPT_ADMIN: '',
-      MFA_TOTP_SECRET: totpSecret,
-      MFA_STEPUP_MINUTES: '10'
+      PIN_CONFIRMATION_MINUTES: '10'
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });
@@ -118,22 +122,94 @@ test('HTTP reale: anonimato bloccato, PIN, CSRF e MFA step-up', {
   });
   assert.equal(movement.status, 201);
 
+  const invoiceBytes = Buffer.from(supplierInvoiceXml);
+  const importJobResponse = await jsonRequest(`${baseUrl}/api/supplier-invoices/import-jobs`, {
+    method: 'POST', cookie, csrf,
+    body: { files: [{ name: 'fattura-http.xml', size: invoiceBytes.length }] }
+  });
+  assert.equal(importJobResponse.status, 201);
+  const importJob = await importJobResponse.json();
+  const invoiceUpload = await fetch(`${baseUrl}/api/supplier-invoices/import-jobs/${importJob.jobId}/files/0`, {
+    method: 'POST',
+    headers: {
+      Cookie: cookie,
+      'X-CSRF-Token': csrf,
+      'X-File-Name': encodeURIComponent('fattura-http.xml'),
+      'Content-Type': 'application/octet-stream'
+    },
+    body: invoiceBytes
+  });
+  assert.equal(invoiceUpload.status, 201);
+  const completedImport = await jsonRequest(`${baseUrl}/api/supplier-invoices/import-jobs/${importJob.jobId}`, { cookie });
+  assert.equal(completedImport.status, 200);
+  const completedJob = await completedImport.json();
+  assert.equal(completedJob.status, 'COMPLETED');
+  assert.equal(completedJob.totals.insertedInvoices, 1);
+
+  const nestedZip = zipSync({ 'seconda.xml': strToU8(supplierInvoiceXml) });
+  const duplicateArchive = Buffer.from(zipSync({ 'prima.xml': strToU8(supplierInvoiceXml), 'annidato.zip': nestedZip }));
+  const zipJobResponse = await jsonRequest(`${baseUrl}/api/supplier-invoices/import-jobs`, {
+    method: 'POST', cookie, csrf,
+    body: { files: [{ name: 'duplicati.zip', size: duplicateArchive.length }] }
+  });
+  assert.equal(zipJobResponse.status, 201);
+  const zipJob = await zipJobResponse.json();
+  const zipUpload = await fetch(`${baseUrl}/api/supplier-invoices/import-jobs/${zipJob.jobId}/files/0`, {
+    method: 'POST',
+    headers: {
+      Cookie: cookie,
+      'X-CSRF-Token': csrf,
+      'X-File-Name': encodeURIComponent('duplicati.zip'),
+      'Content-Type': 'application/octet-stream'
+    },
+    body: duplicateArchive
+  });
+  assert.equal(zipUpload.status, 201);
+  const completedZipJob = await (await jsonRequest(`${baseUrl}/api/supplier-invoices/import-jobs/${zipJob.jobId}`, { cookie })).json();
+  assert.equal(completedZipJob.status, 'COMPLETED');
+  assert.equal(completedZipJob.totals.insertedInvoices, 0);
+  assert.equal(completedZipJob.totals.duplicateInvoices, 2);
+
+  const testClient = new MongoClient(mongoUri);
+  await testClient.connect();
+  t.after(() => testClient.close());
+  await testClient.db(databaseName).collection('auth_sessions').updateMany({}, { $set: { pinConfirmedAt: new Date(0) } });
+
+  const accountingValidationWithoutPin = await jsonRequest(`${baseUrl}/api/supplier-invoices/validate`, {
+    method: 'POST', cookie, csrf, body: { sourceKey: 'not-relevant-before-auth-check' }
+  });
+  assert.equal(accountingValidationWithoutPin.status, 428);
+  assert.equal((await accountingValidationWithoutPin.json()).code, 'PIN_CONFIRMATION_REQUIRED');
+
   const sensitive = await jsonRequest(`${baseUrl}/api/tributi`, {
     method: 'POST', cookie, csrf,
     body: { namespace: 'CODICE_TRIBUTO_AE', codice: '1001', descrizione: 'Esempio', fonte: 'Fonte sintetica verificabile' }
   });
   assert.equal(sensitive.status, 428);
-  assert.equal((await sensitive.json()).code, 'MFA_REQUIRED');
+  assert.equal((await sensitive.json()).code, 'PIN_CONFIRMATION_REQUIRED');
 
-  const mfa = await jsonRequest(`${baseUrl}/api/auth/mfa`, {
+  const wrongPin = await jsonRequest(`${baseUrl}/api/auth/pin-confirm`, {
     method: 'POST', cookie, csrf,
-    body: { code: generateTotp(totpSecret, new Date()) }
+    body: { pin: '000000' }
   });
-  assert.equal(mfa.status, 200);
+  assert.equal(wrongPin.status, 403);
 
-  const afterMfa = await jsonRequest(`${baseUrl}/api/tributi`, {
+  const pinConfirmation = await jsonRequest(`${baseUrl}/api/auth/pin-confirm`, {
+    method: 'POST', cookie, csrf,
+    body: { pin }
+  });
+  assert.equal(pinConfirmation.status, 200);
+
+  const afterPinConfirmation = await jsonRequest(`${baseUrl}/api/tributi`, {
     method: 'POST', cookie, csrf,
     body: { namespace: 'CODICE_TRIBUTO_AE', codice: '1001', descrizione: 'Esempio', fonte: 'Fonte sintetica verificabile' }
   });
-  assert.equal(afterMfa.status, 201);
+  assert.equal(afterPinConfirmation.status, 201);
+
+  await testClient.db(databaseName).collection('auth_sessions').updateMany({}, { $set: { pinConfirmedAt: new Date(0) } });
+  const destructiveAttempt = await jsonRequest(`${baseUrl}/api/documenti/synthetic`, {
+    method: 'DELETE', cookie, csrf
+  });
+  assert.equal(destructiveAttempt.status, 428);
+  assert.equal((await destructiveAttempt.json()).code, 'PIN_CONFIRMATION_REQUIRED');
 });

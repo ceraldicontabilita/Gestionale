@@ -6,6 +6,10 @@ let appReady = false;
 let reconciliationData = null;
 let reconciliationSelection = { movementId: null, causeId: null, causeType: 'F24' };
 let supplierInvoiceStaging = [];
+let supplierImportPollTimer = null;
+let supplierImportRuntime = { jobId: null, active: false, networkPercent: null, displayPercent: 0 };
+let pinConfirmationRequest = null;
+const SUPPLIER_IMPORT_JOB_KEY = 'impresa_supplier_invoice_import_job';
 
 function currentYear() { return new Date().getFullYear(); }
 function years() { const now = currentYear(); return Array.from({ length: 9 }, (_, i) => now - i); }
@@ -15,15 +19,15 @@ function badge(status) { return `<span class="badge ${String(status).toLowerCase
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])); }
 function cookieValue(name) { return document.cookie.split(';').map((v) => v.trim()).find((v) => v.startsWith(`${name}=`))?.slice(name.length + 1) || ''; }
 
-function ensureMfaDialog() {
-  if ($('#mfaDialog')) return;
+function ensurePinConfirmationDialog() {
+  if ($('#pinConfirmationDialog')) return;
   document.body.insertAdjacentHTML('beforeend', `
-    <dialog id="mfaDialog" class="login-dialog">
-      <form id="mfaForm">
-        <div><p class="eyebrow">CONFERMA OPERAZIONE</p><h3>Codice MFA</h3><p class="muted">Inserisci il codice a sei cifre dell'autenticatore. La verifica resta valida solo per pochi minuti.</p></div>
-        <label>Codice<input name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" required></label>
-        <div class="two-cols"><button class="primary" type="submit">Verifica</button><button id="cancelMfa" type="button">Annulla</button></div>
-        <p id="mfaError" class="error"></p>
+    <dialog id="pinConfirmationDialog" class="login-dialog">
+      <form id="pinConfirmationForm">
+        <div><p class="eyebrow">CONFERMA OPERAZIONE</p><h3>Reinserisci il PIN</h3><p id="pinConfirmationMessage" class="muted">Il PIN protegge modifiche sensibili ed eliminazioni.</p></div>
+        <label>PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,12}" minlength="4" maxlength="12" autocomplete="current-password" required></label>
+        <div class="two-cols"><button class="primary" type="submit">Conferma</button><button id="cancelPinConfirmation" type="button">Annulla</button></div>
+        <p id="pinConfirmationError" class="error"></p>
       </form>
     </dialog>`);
 }
@@ -31,7 +35,7 @@ function ensureMfaDialog() {
 function showLogin(message = '') {
   $('#loginError').textContent = message;
   $('#logoutButton').classList.add('hidden');
-  if ($('#mfaDialog')?.open) $('#mfaDialog').close();
+  if ($('#pinConfirmationDialog')?.open) $('#pinConfirmationDialog').close();
   if (!$('#loginDialog').open) $('#loginDialog').showModal();
 }
 
@@ -40,28 +44,44 @@ function hideLogin() {
   $('#logoutButton').classList.remove('hidden');
 }
 
-function showMfa(message = 'Conferma MFA richiesta.') {
-  ensureMfaDialog();
-  $('#mfaError').textContent = message;
-  if (!$('#mfaDialog').open) $('#mfaDialog').showModal();
-  $('#mfaForm [name=code]').focus();
+function requestPinConfirmation(message = 'Reinserisci il PIN per confermare questa operazione.') {
+  if (pinConfirmationRequest) return pinConfirmationRequest.promise;
+  ensurePinConfirmationDialog();
+  $('#pinConfirmationMessage').textContent = message;
+  $('#pinConfirmationError').textContent = '';
+  if (!$('#pinConfirmationDialog').open) $('#pinConfirmationDialog').showModal();
+  $('#pinConfirmationForm [name=pin]').focus();
+  let resolveRequest;
+  let rejectRequest;
+  const promise = new Promise((resolve, reject) => { resolveRequest = resolve; rejectRequest = reject; });
+  pinConfirmationRequest = { promise, resolve: resolveRequest, reject: rejectRequest };
+  return promise;
 }
 
-function hideMfa() {
-  if ($('#mfaDialog')?.open) $('#mfaDialog').close();
-  $('#mfaForm')?.reset();
-  if ($('#mfaError')) $('#mfaError').textContent = '';
+function hidePinConfirmation() {
+  if ($('#pinConfirmationDialog')?.open) $('#pinConfirmationDialog').close();
+  $('#pinConfirmationForm')?.reset();
+  if ($('#pinConfirmationError')) $('#pinConfirmationError').textContent = '';
 }
 
-async function api(url, options = {}) {
+function cancelPinConfirmation() {
+  const pending = pinConfirmationRequest;
+  pinConfirmationRequest = null;
+  hidePinConfirmation();
+  pending?.reject(new Error('Conferma PIN annullata'));
+}
+
+async function api(url, options = {}, { allowPinPrompt = true } = {}) {
   const method = String(options.method || 'GET').toUpperCase();
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) headers['X-CSRF-Token'] = decodeURIComponent(cookieValue('impresa_csrf'));
   const response = await fetch(url, { credentials: 'same-origin', ...options, method, headers });
   const data = await response.json().catch(() => ({}));
-  if (response.status === 401 && url !== '/api/auth/mfa') showLogin('Sessione scaduta. Inserisci nuovamente il PIN.');
-  if (response.status === 428 && data.code === 'MFA_REQUIRED') showMfa(data.error);
-  if (response.status === 503 && data.code === 'MFA_NOT_CONFIGURED') showMfa(data.error);
+  if (response.status === 401 && url !== '/api/auth/pin-confirm') showLogin('Sessione scaduta. Inserisci nuovamente il PIN.');
+  if (response.status === 428 && data.code === 'PIN_CONFIRMATION_REQUIRED' && allowPinPrompt) {
+    await requestPinConfirmation(data.error);
+    return api(url, options, { allowPinPrompt: false });
+  }
   if (!response.ok) throw new Error(data.error || `Errore ${response.status}`);
   return data;
 }
@@ -205,7 +225,7 @@ async function confirmReconciliation() {
     $('#reconciliationResult').textContent = 'Collegamento verificato e registrato.';
     await Promise.all([loadReconciliation(), loadDashboard()]);
   } catch (error) {
-    $('#reconciliationResult').textContent = error.message.includes('MFA') ? 'Conferma il codice MFA, poi premi nuovamente Conferma collegamento.' : error.message;
+    $('#reconciliationResult').textContent = error.message;
   }
 }
 
@@ -255,6 +275,91 @@ async function openDriveDocument(id) {
 
 function invoiceDateValue(value) { return value ? new Date(value).toISOString().slice(0, 10) : ''; }
 
+function storeSupplierImportJob(jobId) {
+  try {
+    if (jobId) localStorage.setItem(SUPPLIER_IMPORT_JOB_KEY, jobId);
+    else localStorage.removeItem(SUPPLIER_IMPORT_JOB_KEY);
+  } catch {}
+}
+
+function savedSupplierImportJob() {
+  try { return localStorage.getItem(SUPPLIER_IMPORT_JOB_KEY); } catch { return null; }
+}
+
+function renderSupplierImport(job, { networkPercent = null, networkFile = null } = {}) {
+  const monitor = $('#supplierImportMonitor');
+  if (!monitor || !job) return;
+  monitor.classList.remove('hidden');
+  const terminal = ['COMPLETED', 'COMPLETED_WITH_ERRORS'].includes(job.status);
+  const percent = terminal ? 100 : Math.max(Number(job.progressPercent || 0), Number(networkPercent || 0), Number(supplierImportRuntime.displayPercent || 0));
+  supplierImportRuntime.displayPercent = percent;
+  $('#supplierImportProgress').value = percent;
+  $('#supplierImportProgress').textContent = `${percent}%`;
+  $('#supplierImportPercent').textContent = `${percent}%`;
+  const totals = job.totals || {};
+  $('#supplierImportSummary').textContent = `${totals.completedFiles || 0}/${totals.totalFiles || 0} file · ${totals.insertedInvoices || 0} fatture nuove · ${totals.duplicateInvoices || 0} duplicate · ${totals.rejectedXml || 0} da controllare`;
+  const activeFile = job.files?.find((file) => !['COMPLETED', 'COMPLETED_WITH_ERRORS', 'FAILED'].includes(file.status));
+  $('#supplierImportCurrent').textContent = terminal
+    ? (job.status === 'COMPLETED' ? 'Importazione completata. Puoi continuare a lavorare.' : 'Importazione completata con elementi da controllare.')
+    : networkFile
+      ? `Caricamento ${networkFile}. Puoi cambiare pagina nel gestionale.`
+      : activeFile?.currentEntry || activeFile?.name || 'Elaborazione in corso. Puoi cambiare pagina nel gestionale.';
+  const button = $('#supplierInvoiceIntakeForm button[type=submit]');
+  if (button) button.disabled = !terminal && supplierImportRuntime.active;
+}
+
+async function pollSupplierImportJob(jobId) {
+  const job = await api(`/api/supplier-invoices/import-jobs/${encodeURIComponent(jobId)}`);
+  renderSupplierImport(job, { networkPercent: supplierImportRuntime.networkPercent });
+  if (['COMPLETED', 'COMPLETED_WITH_ERRORS'].includes(job.status)) {
+    supplierImportRuntime = { jobId: null, active: false, networkPercent: null, displayPercent: 100 };
+    storeSupplierImportJob(null);
+    if (supplierImportPollTimer) clearInterval(supplierImportPollTimer);
+    supplierImportPollTimer = null;
+    const button = $('#supplierInvoiceIntakeForm button[type=submit]');
+    if (button) button.disabled = false;
+    await loadSupplierInvoices().catch(() => {});
+  }
+  return job;
+}
+
+function startSupplierImportPolling(jobId) {
+  if (supplierImportPollTimer) clearInterval(supplierImportPollTimer);
+  supplierImportPollTimer = setInterval(() => pollSupplierImportJob(jobId).catch(() => {}), 800);
+  pollSupplierImportJob(jobId).catch(() => {});
+}
+
+function uploadSupplierImportFile(jobId, index, file, totalFiles) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/api/supplier-invoices/import-jobs/${encodeURIComponent(jobId)}/files/${index}`);
+    xhr.responseType = 'json';
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    xhr.setRequestHeader('X-CSRF-Token', decodeURIComponent(cookieValue('impresa_csrf')));
+    xhr.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
+    xhr.upload.addEventListener('progress', (event) => {
+      if (!event.lengthComputable) return;
+      supplierImportRuntime.networkPercent = Math.round(((index + 0.2 * event.loaded / event.total) / totalFiles) * 100);
+      supplierImportRuntime.displayPercent = Math.max(supplierImportRuntime.displayPercent || 0, supplierImportRuntime.networkPercent);
+      $('#supplierImportProgress').value = supplierImportRuntime.networkPercent;
+      $('#supplierImportProgress').textContent = `${supplierImportRuntime.networkPercent}%`;
+      $('#supplierImportPercent').textContent = `${supplierImportRuntime.networkPercent}%`;
+      $('#supplierImportCurrent').textContent = `Caricamento ${file.name}. Puoi cambiare pagina nel gestionale.`;
+    });
+    xhr.upload.addEventListener('load', () => { supplierImportRuntime.networkPercent = null; });
+    xhr.addEventListener('load', () => {
+      const data = xhr.response || {};
+      if (xhr.status === 401) showLogin('Sessione scaduta. Inserisci nuovamente il PIN.');
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+      else reject(new Error(data.error || `Errore ${xhr.status} durante ${file.name}`));
+    });
+    xhr.addEventListener('error', () => reject(new Error(`Connessione interrotta durante ${file.name}`)));
+    xhr.addEventListener('abort', () => reject(new Error(`Caricamento annullato: ${file.name}`)));
+    xhr.send(file);
+  });
+}
+
 async function loadSupplierInvoices() {
   const [staging, canonical] = await Promise.all([
     api('/api/supplier-invoices/staging?limit=200'),
@@ -297,17 +402,37 @@ function selectSupplierInvoiceForValidation(sourceKey) {
 async function submitSupplierInvoiceIntake(event) {
   event.preventDefault();
   const form = event.currentTarget;
-  const file = form.elements.invoiceXml.files?.[0];
-  if (!file) return;
-  $('#supplierInvoiceResult').textContent = 'Importazione XML in corso…';
+  const files = [...(form.elements.invoiceFiles.files || [])];
+  if (!files.length || supplierImportRuntime.active) return;
+  const unsupported = files.find((file) => !/\.(xml|zip)$/i.test(file.name));
+  if (unsupported) {
+    $('#supplierInvoiceResult').innerHTML = `<span class="error">Formato non supportato: ${escapeHtml(unsupported.name)}</span>`;
+    return;
+  }
+  $('#supplierInvoiceResult').textContent = `Preparazione di ${files.length} file…`;
   try {
-    const result = await api('/api/supplier-invoices/intake', {
+    const job = await api('/api/supplier-invoices/import-jobs', {
       method: 'POST',
-      body: JSON.stringify({ xml: await file.text(), filename: file.name })
+      body: JSON.stringify({ files: files.map((file) => ({ name: file.name, size: file.size, type: file.type, lastModified: file.lastModified })) })
     });
-    $('#supplierInvoiceResult').textContent = result.duplicate ? 'XML già presente: nessun duplicato creato.' : `${result.counts.inserted} fattura XML importata in staging.`;
+    supplierImportRuntime = { jobId: job.jobId, active: true, networkPercent: 0, displayPercent: 0 };
+    storeSupplierImportJob(job.jobId);
+    renderSupplierImport(job);
+    startSupplierImportPolling(job.jobId);
     form.reset();
-    await loadSupplierInvoices();
+    const errors = [];
+    for (let index = 0; index < files.length; index += 1) {
+      try {
+        await uploadSupplierImportFile(job.jobId, index, files[index], files.length);
+      } catch (error) {
+        errors.push(error.message);
+      }
+      await pollSupplierImportJob(job.jobId).catch(() => {});
+    }
+    const finalJob = await pollSupplierImportJob(job.jobId);
+    $('#supplierInvoiceResult').innerHTML = errors.length
+      ? `<span class="error">${escapeHtml(errors.join(' · '))}</span>`
+      : `${finalJob.totals.insertedInvoices} fatture nuove, ${finalJob.totals.duplicateInvoices} duplicate esatte, ${finalJob.totals.rejectedXml} da controllare.`;
   } catch (error) { $('#supplierInvoiceResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
 }
 
@@ -392,19 +517,22 @@ async function submitLogin(event) {
   } catch (error) { $('#loginError').textContent = error.message; }
 }
 
-async function submitMfa(event) {
+async function submitPinConfirmation(event) {
   event.preventDefault();
-  const code = new FormData(event.currentTarget).get('code');
-  $('#mfaError').textContent = '';
+  const pin = new FormData(event.currentTarget).get('pin');
+  $('#pinConfirmationError').textContent = '';
   try {
-    await api('/api/auth/mfa', { method: 'POST', body: JSON.stringify({ code }) });
-    hideMfa();
-  } catch (error) { $('#mfaError').textContent = error.message; }
+    await api('/api/auth/pin-confirm', { method: 'POST', body: JSON.stringify({ pin }) }, { allowPinPrompt: false });
+    const pending = pinConfirmationRequest;
+    pinConfirmationRequest = null;
+    hidePinConfirmation();
+    pending?.resolve();
+  } catch (error) { $('#pinConfirmationError').textContent = error.message; }
 }
 
 async function logout() {
   try { await api('/api/auth/logout', { method: 'POST', body: '{}' }); } catch {}
-  appReady = false; hideMfa(); showLogin('Sessione terminata.');
+  appReady = false; cancelPinConfirmation(); showLogin('Sessione terminata.');
 }
 
 async function submitMovement(event) {
@@ -451,7 +579,7 @@ function bindEvents() {
   document.addEventListener('click', (event) => { const button = event.target.closest('.supplier-invoice-tree'); if (button) showSupplierInvoiceTree(button.dataset.invoiceId).catch((e) => { $('#supplierInvoiceTree').textContent = e.message; }); });
   $('#newMovement').addEventListener('click', () => $('#movementDialog').showModal()); $('#closeDialog').addEventListener('click', () => $('#movementDialog').close());
   $('#movementForm').addEventListener('submit', submitMovement); $('#receiptsForm').addEventListener('submit', submitReceipts); $('#tributoForm').addEventListener('submit', submitTributo); $('#riscossioneForm').addEventListener('submit', submitRiscossione);
-  $('#loginForm').addEventListener('submit', submitLogin); $('#mfaForm').addEventListener('submit', submitMfa); $('#cancelMfa').addEventListener('click', hideMfa); $('#logoutButton').addEventListener('click', logout);
+  $('#loginForm').addEventListener('submit', submitLogin); $('#pinConfirmationForm').addEventListener('submit', submitPinConfirmation); $('#cancelPinConfirmation').addEventListener('click', cancelPinConfirmation); $('#logoutButton').addEventListener('click', logout);
 }
 
 async function initializeApplication() {
@@ -460,8 +588,17 @@ async function initializeApplication() {
 }
 
 async function boot() {
-  ensureMfaDialog(); $('#movementForm [name=data]').valueAsDate = new Date(); $('#receiptsForm [name=data]').valueAsDate = new Date(); fillSelect($('#driveDocumentYear'), ['', ...years()]); $('#driveDocumentYear option:first-child').textContent = 'Tutti gli anni'; bindEvents(); await loadHealth();
-  try { if (await checkAuth()) await initializeApplication(); } catch (error) { showLogin(error.message); }
+  ensurePinConfirmationDialog(); $('#movementForm [name=data]').valueAsDate = new Date(); $('#receiptsForm [name=data]').valueAsDate = new Date(); fillSelect($('#driveDocumentYear'), ['', ...years()]); $('#driveDocumentYear option:first-child').textContent = 'Tutti gli anni'; bindEvents(); await loadHealth();
+  try {
+    if (await checkAuth()) {
+      await initializeApplication();
+      const jobId = savedSupplierImportJob();
+      if (jobId) {
+        supplierImportRuntime = { jobId, active: true, networkPercent: null, displayPercent: 0 };
+        startSupplierImportPolling(jobId);
+      }
+    }
+  } catch (error) { showLogin(error.message); }
 }
 
 boot();

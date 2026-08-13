@@ -253,7 +253,7 @@ function validatePageAccess(page, roles) {
     errors.push(`Pagina ${page.id}: livello accesso sconosciuto ${access.level}.`);
   }
 
-  for (const field of ['viewRoles', 'writeRoles', 'mfaActions']) {
+  for (const field of ['viewRoles', 'writeRoles', 'pinConfirmationActions']) {
     if (!Array.isArray(access[field])) {
       errors.push(`Pagina ${page.id}: access.${field} deve essere un array.`);
       continue;
@@ -269,8 +269,8 @@ function validatePageAccess(page, roles) {
   for (const role of [...(access.viewRoles || []), ...(access.writeRoles || [])]) {
     if (!roles.has(role)) errors.push(`Pagina ${page.id}: ruolo accesso sconosciuto ${role}.`);
   }
-  for (const action of access.mfaActions || []) {
-    if (!isNonEmptyString(action)) errors.push(`Pagina ${page.id}: azione MFA non valida.`);
+  for (const action of access.pinConfirmationActions || []) {
+    if (!isNonEmptyString(action)) errors.push(`Pagina ${page.id}: azione con riconferma PIN non valida.`);
   }
   for (const role of access.writeRoles || []) {
     if (!(access.viewRoles || []).includes(role)) {
@@ -909,9 +909,9 @@ export function validateTopology(catalog, topology) {
     !hasExactValues(periodClosedEvent.producerPages, ['controllo.chiusura_mensile']) ||
     closingCommand?.autonomy !== 'C' ||
     !/HUMAN_APPROVAL_REQUIRED/.test(closingCommand?.approval || '') ||
-    !/MFA/.test(closingCommand?.approval || '')
+    !/PIN_CONFIRMATION/.test(closingCommand?.approval || '')
   ) {
-    errors.push('Topologia chiusura: soltanto la chiusura mensile approvata da una persona con MFA può chiudere il periodo.');
+    errors.push('Topologia chiusura: soltanto la chiusura mensile approvata da una persona con riconferma PIN può chiudere il periodo.');
   }
 
   const approvalEvent = events.find((event) => event.id === 'approval.recorded');

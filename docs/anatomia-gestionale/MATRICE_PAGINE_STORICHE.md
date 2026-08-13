@@ -8,7 +8,7 @@ Stato dell'audit storico: `V` verificata, `R` in revisione, `U` non verificata. 
 
 | # | Pagina/route storica | Audit | Destinazione canonica | Decisione |
 |---:|---|:---:|---|---|
-| 1 | Login `/login` | U | `amministrazione.utenti_sicurezza` | Ridisegnare su identità, ruoli, sessione e MFA nuovi. |
+| 1 | Login `/login` | U | `amministrazione.utenti_sicurezza` | Ridisegnare su identità, ruoli, sessione e riconferma PIN nuovi. |
 | 2 | Gestione riservata `/gestione-riservata` | U | Nessuna | Non trasferire movimenti extracontabili o volumi non documentati. |
 | 3 | Dashboard `/` | U | `home.quadro_operativo` | Consolidare KPI soltanto da entità canoniche. |
 | 4 | Inserimento rapido `/rapido` | U | `documenti.acquisizione_inbox` | Unificare con intake e Provvisoria; niente writer diretto parallelo. |
@@ -76,7 +76,7 @@ La pagina amministrativa `situazione-fiscale`, montata ma assente dal vecchio ca
 |---:|---|:---:|---|---|
 | 32 | Dashboard riconciliazione `/riconciliazione` | U | `riconciliazione.coda_generale` | Una sola coda multi-dominio. |
 | 33 | Banca `/riconciliazione/banca` | U | `riconciliazione.coda_generale` | Alimentata dal solo importatore estratti canonico. |
-| 34 | F24 `/riconciliazione/f24` | U | `riconciliazione.f24_banca` | Superata dalla riconciliazione nuova con MFA e prove. |
+| 34 | F24 `/riconciliazione/f24` | U | `riconciliazione.f24_banca` | Superata dalla riconciliazione nuova con riconferma PIN e prove. |
 | 35 | Stipendi `/riconciliazione/stipendi` | U | `riconciliazione.salari` | Acconti e saldo con identità dipendente. |
 | 36 | Documenti `/riconciliazione/documenti` | U | `riconciliazione.coda_generale` | La causa deve essere un'entità, non un file generico. |
 | 37 | Archivio bonifici `/riconciliazione/archivio-bonifici` | U | `documenti.estratti_banca_carte` | Disposizione distinta dall'addebito reale. |
@@ -107,7 +107,7 @@ Lo snapshot presentava due livelli di tab per la riconciliazione: otto voci nell
 | # | Pagina/route storica | Audit | Destinazione canonica | Decisione |
 |---:|---|:---:|---|---|
 | 54 | Admin sistema `/admin` | U | `amministrazione.integrazioni_scheduler` | Dividere configurazione, sicurezza e audit per proprietario. |
-| 55 | Admin MFA `/admin/mfa` | U | `amministrazione.utenti_sicurezza` | Superata dallo step-up MFA nuovo. |
+| 55 | Admin secondo fattore legacy | U | `amministrazione.utenti_sicurezza` | Superata dalla riconferma PIN corrente. |
 | 56 | Elaborazioni `/admin/elaborazioni` | R | `amministrazione.integrazioni_scheduler` | Un solo registro job con lease e checkpoint. |
 | 57 | Elaborazioni legacy `/admin/batch-processor` | R | `controllo.audit_rollback` | Non ricreare; migrare azioni utili una alla volta. |
 | 58 | Utenti `/utenti` | U | `amministrazione.utenti_sicurezza` | Ruoli admin, operatore e sola lettura. |

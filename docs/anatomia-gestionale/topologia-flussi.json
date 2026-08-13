@@ -196,7 +196,7 @@
         "authenticated user_identity reference",
         "decision",
         "reason",
-        "MFA when required"
+        "PIN_CONFIRMATION when required"
       ],
       "automationAndApproval": "HUMAN_DECISION",
       "failure": {
@@ -1009,7 +1009,7 @@
         "checkpoint",
         "input/output fingerprints"
       ],
-      "automationAndApproval": "SCHEDULED_OR_ADMIN_MFA_MANUAL_RUN",
+      "automationAndApproval": "SCHEDULED_OR_ADMIN_PIN_CONFIRMATION_MANUAL_RUN",
       "failure": {
         "state": "JOB_FAILED",
         "retry": "EXPONENTIAL_BACKOFF_FOR_TRANSIENT_FAILURES; IDEMPOTENT_REPLAY_WITH_SAME_KEY",
@@ -1880,10 +1880,10 @@
       "idempotencyKey": "subjectId + securityVersion",
       "provenanceAndEvidence": [
         "ADMIN actor",
-        "MFA",
+        "PIN_CONFIRMATION",
         "before/after audit"
       ],
-      "automationAndApproval": "HUMAN_ADMIN_MFA_ONLY",
+      "automationAndApproval": "HUMAN_ADMIN_PIN_CONFIRMATION_ONLY",
       "failure": {
         "state": "SECURITY_CHANGE_REJECTED",
         "retry": "EXPONENTIAL_BACKOFF_FOR_TRANSIENT_FAILURES; IDEMPOTENT_REPLAY_WITH_SAME_KEY",
@@ -2990,13 +2990,13 @@
         "balanced debit and credit exact to cents",
         "document entry does not require payment evidence",
         "settlement entry requires confirmed financial evidence or explicit audited cash attestation",
-        "period open or explicitly reopened with human approval and MFA"
+        "period open or explicitly reopened with human approval and PIN_CONFIRMATION"
       ],
       "emits": [
         "accounting.entry_projected"
       ],
       "idempotencyKey": "sourceEventId + entryKind + approvedPostingRuleVersion + sourceVersion",
-      "approval": "AUTONOMY_B_ONLY_BALANCED_APPROVED_RULE_IN_OPEN_PERIOD; HUMAN_APPROVAL_AND_MFA_FOR_CLOSED_PERIOD",
+      "approval": "AUTONOMY_B_ONLY_BALANCED_APPROVED_RULE_IN_OPEN_PERIOD; HUMAN_APPROVAL_AND_PIN_CONFIRMATION_FOR_CLOSED_PERIOD",
       "failure": "KEEP_LAST_VERIFIED_ACCOUNTING_ENTRY_AND_OPEN_ANOMALY; NEVER_DELAY_DOCUMENT_COMPETENCE_FOR_MISSING_PAYMENT",
       "correctionAndInvalidation": "Append superseding or compensating accounting entry and rebuild affected views idempotently",
       "autonomy": "B",
@@ -3054,7 +3054,7 @@
         "document_source"
       ],
       "dedupKey": "rootFolderId + driveFileId + observedVersion; document sha256",
-      "approval": "None for observation; ADMIN+MFA for move, rename or delete"
+      "approval": "None for observation; ADMIN+PIN_CONFIRMATION for move, rename or delete"
     },
     {
       "id": "central_upload",
@@ -3333,7 +3333,7 @@
         {
           "order": 1,
           "owner": "INTAKE_DOCUMENTALE",
-          "action": "Preserva bytes, fonte e sha256; deduplica il documento senza perdere le fonti multiple",
+          "action": "Preserva bytes, fonte e sha256; per upload multipli espande XML e ZIP annidati entro limiti di sicurezza, persiste l'avanzamento e deduplica il documento senza perdere le fonti multiple",
           "produces": [
             "source_asset",
             "document",
@@ -4883,7 +4883,7 @@
       "allowedActions": [
         "VIEW_PLAN",
         "PREVIEW_MUTATION",
-        "REQUEST_ADMIN_MFA_APPROVAL"
+        "REQUEST_ADMIN_PIN_CONFIRMATION_APPROVAL"
       ],
       "commands": [
         {
@@ -4900,7 +4900,7 @@
             "expected current version"
           ],
           "autonomy": "C",
-          "approval": "ADMIN_MFA:APPLICA_PIANO_DRIVE,SPOSTA_RINOMINA_ELEMENTO_DRIVE,ELIMINA_DUPLICATO_DRIVE",
+          "approval": "ADMIN_PIN_CONFIRMATION:APPLICA_PIANO_DRIVE,SPOSTA_RINOMINA_ELEMENTO_DRIVE,ELIMINA_DUPLICATO_DRIVE",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
             "drive.inventory_observed",
@@ -4916,7 +4916,7 @@
       ],
       "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
-      "approvalPolicy": "HUMAN_ADMIN_MFA_FOR:APPLICA_PIANO_DRIVE,SPOSTA_RINOMINA_ELEMENTO_DRIVE,ELIMINA_DUPLICATO_DRIVE",
+      "approvalPolicy": "HUMAN_ADMIN_PIN_CONFIRMATION_FOR:APPLICA_PIANO_DRIVE,SPOSTA_RINOMINA_ELEMENTO_DRIVE,ELIMINA_DUPLICATO_DRIVE",
       "statusDoesNotImplyOwnership": true
     },
     {
@@ -5546,7 +5546,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -5657,7 +5657,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -5772,7 +5772,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -5885,7 +5885,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -6010,7 +6010,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -6124,7 +6124,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -6240,7 +6240,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -6354,7 +6354,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -6465,7 +6465,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -6580,7 +6580,7 @@
             "authenticated operator"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_MFA_WHEN_ROLLBACK_POLICY_REQUIRES",
+          "approval": "HUMAN_CONFIRMATION_REQUIRED; ADMIN_PIN_CONFIRMATION_WHEN_ROLLBACK_POLICY_REQUIRES",
           "emits": [
             "reconciliation.allocations_invalidated"
           ],
@@ -7203,7 +7203,7 @@
       },
       "allowedActions": [
         "VIEW_PROJECTION",
-        "REQUEST_ADMIN_MFA_CHANGE",
+        "REQUEST_ADMIN_PIN_CONFIRMATION_CHANGE",
         "RUN_IDEMPOTENT_JOB"
       ],
       "commands": [
@@ -7221,7 +7221,7 @@
             "expected current version"
           ],
           "autonomy": "C",
-          "approval": "ADMIN_MFA:GESTISCI_SEGRETI_INTEGRAZIONE,MODIFICA_SCHEDULER,AVVIA_JOB_MANUALE",
+          "approval": "ADMIN_PIN_CONFIRMATION:GESTISCI_SEGRETI_INTEGRAZIONE,MODIFICA_SCHEDULER,AVVIA_JOB_MANUALE",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
             "job.completed"
@@ -7235,7 +7235,7 @@
       ],
       "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
-      "approvalPolicy": "HUMAN_ADMIN_MFA_FOR:GESTISCI_SEGRETI_INTEGRAZIONE,MODIFICA_SCHEDULER,AVVIA_JOB_MANUALE",
+      "approvalPolicy": "HUMAN_ADMIN_PIN_CONFIRMATION_FOR:GESTISCI_SEGRETI_INTEGRAZIONE,MODIFICA_SCHEDULER,AVVIA_JOB_MANUALE",
       "statusDoesNotImplyOwnership": true
     },
     {
@@ -7264,7 +7264,7 @@
       },
       "allowedActions": [
         "VIEW_PROJECTION",
-        "REQUEST_ADMIN_MFA_CHANGE"
+        "REQUEST_ADMIN_PIN_CONFIRMATION_CHANGE"
       ],
       "commands": [
         {
@@ -7280,7 +7280,7 @@
             "expected current version"
           ],
           "autonomy": "C",
-          "approval": "ADMIN_MFA:CREA_MODIFICA_UTENTE,ASSEGNA_RUOLI,RESETTA_MFA,REVOCA_SESSIONI",
+          "approval": "ADMIN_PIN_CONFIRMATION:CREA_MODIFICA_UTENTE,ASSEGNA_RUOLI,RESETTA_PIN_CONFIRMATION,REVOCA_SESSIONI",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
             "security.identity_changed"
@@ -7294,7 +7294,7 @@
       ],
       "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
-      "approvalPolicy": "HUMAN_ADMIN_MFA_FOR:CREA_MODIFICA_UTENTE,ASSEGNA_RUOLI,RESETTA_MFA,REVOCA_SESSIONI",
+      "approvalPolicy": "HUMAN_ADMIN_PIN_CONFIRMATION_FOR:CREA_MODIFICA_UTENTE,ASSEGNA_RUOLI,RESETTA_PIN_CONFIRMATION,REVOCA_SESSIONI",
       "statusDoesNotImplyOwnership": true
     },
     {
@@ -7325,7 +7325,7 @@
       },
       "allowedActions": [
         "VIEW_PROJECTION",
-        "REQUEST_ADMIN_MFA_CHANGE"
+        "REQUEST_ADMIN_PIN_CONFIRMATION_CHANGE"
       ],
       "commands": [
         {
@@ -7341,7 +7341,7 @@
             "expected current version"
           ],
           "autonomy": "C",
-          "approval": "ADMIN_MFA:MODIFICA_CONFIGURAZIONE_AGENTE,ABILITA_AUTOMAZIONE",
+          "approval": "ADMIN_PIN_CONFIRMATION:MODIFICA_CONFIGURAZIONE_AGENTE,ABILITA_AUTOMAZIONE",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
             "assistant.memory_changed"
@@ -7355,7 +7355,7 @@
       ],
       "failureState": "CAPABILITY_NOT_IMPLEMENTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
-      "approvalPolicy": "HUMAN_ADMIN_MFA_FOR:MODIFICA_CONFIGURAZIONE_AGENTE,ABILITA_AUTOMAZIONE",
+      "approvalPolicy": "HUMAN_ADMIN_PIN_CONFIRMATION_FOR:MODIFICA_CONFIGURAZIONE_AGENTE,ABILITA_AUTOMAZIONE",
       "statusDoesNotImplyOwnership": true
     },
     {
@@ -7494,7 +7494,7 @@
       "allowedActions": [
         "VIEW_PROJECTION",
         "RUN_DETERMINISTIC_CHECKS",
-        "REQUEST_ADMIN_MFA_APPROVAL"
+        "REQUEST_ADMIN_PIN_CONFIRMATION_APPROVAL"
       ],
       "commands": [
         {
@@ -7510,7 +7510,7 @@
             "expected current version"
           ],
           "autonomy": "C",
-          "approval": "ADMIN_MFA:MODIFICA_REGOLA_FISCALE,APPROVA_ESITO_FISCALE",
+          "approval": "ADMIN_PIN_CONFIRMATION:MODIFICA_REGOLA_FISCALE,APPROVA_ESITO_FISCALE",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
             "domain.correction_recorded"
@@ -7524,7 +7524,7 @@
       ],
       "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
-      "approvalPolicy": "HUMAN_ADMIN_MFA_FOR:MODIFICA_REGOLA_FISCALE,APPROVA_ESITO_FISCALE",
+      "approvalPolicy": "HUMAN_ADMIN_PIN_CONFIRMATION_FOR:MODIFICA_REGOLA_FISCALE,APPROVA_ESITO_FISCALE",
       "statusDoesNotImplyOwnership": true
     },
     {
@@ -7617,7 +7617,7 @@
             "expected current version"
           ],
           "autonomy": "C",
-          "approval": "HUMAN_APPROVAL_REQUIRED_WITH_ADMIN_MFA_AFTER_ALL_CLOSING_CHECKS_PASS",
+          "approval": "HUMAN_APPROVAL_REQUIRED_WITH_ADMIN_PIN_CONFIRMATION_AFTER_ALL_CLOSING_CHECKS_PASS",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
             "accounting.period_closed"
@@ -7917,7 +7917,7 @@
       },
       "allowedActions": [
         "VIEW_AUDIT",
-        "REQUEST_ADMIN_MFA_ROLLBACK",
+        "REQUEST_ADMIN_PIN_CONFIRMATION_ROLLBACK",
         "CREATE_COMPENSATING_EVENT"
       ],
       "commands": [
@@ -7934,7 +7934,7 @@
             "expected current version"
           ],
           "autonomy": "C",
-          "approval": "ADMIN_MFA:ESEGUI_ROLLBACK",
+          "approval": "ADMIN_PIN_CONFIRMATION:ESEGUI_ROLLBACK",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
             "domain.correction_recorded"
@@ -7950,13 +7950,13 @@
           ],
           "requiredEvidence": [
             "authenticated approving actor",
-            "MFA assertion when required by target action",
+            "PIN_CONFIRMATION assertion when required by target action",
             "target command and expected version",
             "approval reason and correlation id"
           ],
           "autonomy": "C",
-          "approval": "EXPLICIT_HUMAN_DECISION; MFA_REQUIRED_WHEN_TARGET_POLICY_REQUIRES",
-          "audit": "REQUIRED_WITH_ACTOR_TARGET_REASON_TIMESTAMP_MFA_LEVEL_AND_CORRELATION_ID",
+          "approval": "EXPLICIT_HUMAN_DECISION; PIN_CONFIRMATION_REQUIRED_WHEN_TARGET_POLICY_REQUIRES",
+          "audit": "REQUIRED_WITH_ACTOR_TARGET_REASON_TIMESTAMP_PIN_CONFIRMATION_LEVEL_AND_CORRELATION_ID",
           "emits": [
             "approval.recorded"
           ],
@@ -7970,7 +7970,7 @@
       ],
       "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
-      "approvalPolicy": "HUMAN_ADMIN_MFA_FOR:ESEGUI_ROLLBACK",
+      "approvalPolicy": "HUMAN_ADMIN_PIN_CONFIRMATION_FOR:ESEGUI_ROLLBACK",
       "statusDoesNotImplyOwnership": true
     },
     {

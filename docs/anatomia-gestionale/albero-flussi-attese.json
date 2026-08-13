@@ -10,7 +10,7 @@
     "Prima Nota": ["Cassa", "Banca", "Carte e circuiti", "Salari", "Finanziamenti soci", "Provvisoria", "Corrispettivi e POS", "Libro giornale e mastro"],
     "Documenti": ["Acquisizione e inbox", "Archivio e viewer", "Indice e albero Drive", "Duplicati e piano cartelle", "Fatture fornitori e clienti", "Corrispettivi XML RT", "F24, quietanze e dichiarazioni", "Cedolini e riepiloghi paghe", "Estratti banca e carte", "Riscossione, PagoPA e altri atti"],
     "Riconciliazione": ["Coda generale e partite aperte", "Fatture e pagamenti", "F24 e riscossione", "Salari", "Carte, POS e accrediti", "Assegni", "PayPal e PagoPA", "Verbali e audit di chiusura"],
-    "Amministrazione": ["Fornitori e soggetti", "Dizionario prodotti acquistati", "Dipendenti contabili minimi", "Fisco, IVA e codici tributo", "Riscossione e rateizzazioni", "Cespiti, finanziamenti e veicoli", "Commercialista e consulente", "Integrazioni e scheduler", "Utenti, ruoli e MFA", "Configurazione agenti"],
+    "Amministrazione": ["Fornitori e soggetti", "Dizionario prodotti acquistati", "Dipendenti contabili minimi", "Fisco, IVA e codici tributo", "Riscossione e rateizzazioni", "Cespiti, finanziamenti e veicoli", "Commercialista e consulente", "Integrazioni e scheduler", "Utenti, ruoli e PIN", "Configurazione agenti"],
     "Controllo": ["Coerenza e anomalie operative", "Provenienza e grafo delle relazioni", "Comparazione prezzi di acquisto", "Controllo mensile e chiusura esercizio", "Piano dei conti", "Bilancio e IVA", "Budget, previsioni e scadenze fiscali", "Registro audit e rollback", "Stato importazioni e manutenzione Drive"]
   },
   "flussi": {
