@@ -53,6 +53,50 @@ test('la topologia copre ogni pagina esattamente una volta e registra ogni event
   assert.ok(topology.processors.length >= 20);
 });
 
+test('separa la competenza della fattura dal regolamento finanziario', () => {
+  const topology = loadTopology();
+  const flow = topology.canonicalFlows.find((item) => item.id === 'supplier_invoice_drive_to_ledger');
+  const competence = flow.steps.find((step) => step.relations?.includes('supplier_invoice_projects_accounting'));
+  const evidence = flow.steps.find((step) => step.produces?.includes('financial_evidence'));
+  const settlement = flow.steps.find((step) => step.relations?.includes('ledger_projects_accounting'));
+
+  assert.ok(competence.order < evidence.order);
+  assert.ok(settlement.order > evidence.order);
+  assert.equal(flow.branches.competence.requiresPayment, false);
+  assert.equal(flow.branches.settlement.requiresConfirmedFinancialEvidence, true);
+  assert.match(competence.action, /senza attendere il pagamento/);
+  assert.match(settlement.action, /non ricrea costo o IVA/);
+});
+
+test('centralizza le proiezioni contabili e riserva la chiusura a persona con MFA', () => {
+  const topology = loadTopology();
+  const accountingEvent = topology.events.find((event) => event.id === 'accounting.entry_projected');
+  const periodEvent = topology.events.find((event) => event.id === 'accounting.period_closed');
+  const closingPage = topology.pageProjections.find((page) => page.pageId === 'controllo.chiusura_mensile');
+  const closingCommand = closingPage.commands.find((command) => command.id === 'controllo.chiusura_mensile.submit');
+
+  assert.deepEqual(accountingEvent.producerPages, []);
+  assert.deepEqual(accountingEvent.producerProcessors, ['project_accounting_entries']);
+  assert.deepEqual(periodEvent.producerPages, ['controllo.chiusura_mensile']);
+  assert.equal(closingCommand.autonomy, 'C');
+  assert.match(closingCommand.approval, /HUMAN_APPROVAL_REQUIRED/);
+  assert.match(closingCommand.approval, /MFA/);
+});
+
+test('rifiuta la regressione che subordina la competenza al pagamento', () => {
+  const catalog = loadCatalog();
+  const topology = copy(loadTopology());
+  const flow = topology.canonicalFlows.find((item) => item.id === 'supplier_invoice_drive_to_ledger');
+  const competence = flow.steps.find((step) => step.relations?.includes('supplier_invoice_projects_accounting'));
+  const evidence = flow.steps.find((step) => step.produces?.includes('financial_evidence'));
+  competence.order = evidence.order + 1;
+
+  assert.match(
+    validateTopology(catalog, topology).join('\n'),
+    /la competenza deve precedere ed essere indipendente dalla prova finanziaria/
+  );
+});
+
 test('le viste Home sono query on-demand e mai copie autorevoli', () => {
   const catalog = loadCatalog();
   const topology = loadTopology();

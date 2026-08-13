@@ -12,7 +12,10 @@
     "ambiguousLink": "PROPOSE_AND_REQUIRE_HUMAN_REVIEW",
     "accountingGate": "NO_DEFINITIVE_FINANCIAL_LEDGER_PROJECTION_WITHOUT_CONFIRMED_FINANCIAL_EVIDENCE; MANUAL_CASH_ATTESTATION_IS_EXPLICIT_EVIDENCE",
     "productBoundary": "PURCHASE_DICTIONARY_ONLY; NO_STOCK_LOTS_RECIPES_OR_PRODUCTION",
-    "futurePriceComparison": "CAPABILITY_ABSENT; NO_PROVIDER_API_OR_AUTOMATION_SELECTED"
+    "futurePriceComparison": "CAPABILITY_ABSENT; NO_PROVIDER_API_OR_AUTOMATION_SELECTED",
+    "accountingCompetence": "VALIDATED_DOCUMENT_PROJECTS_COMPETENCE_VAT_DEBT_OR_CREDIT_AND_OPEN_ITEM_WITHOUT_WAITING_FOR_PAYMENT",
+    "financialSettlement": "ONLY_CONFIRMED_FINANCIAL_EVIDENCE_PROJECTS_THE_DISTINCT_SETTLEMENT_ENTRY; PAYMENT_NEVER_CREATES_THE_DOCUMENT_ENTRY",
+    "accountingDates": "DOCUMENT_DATE_RECEIPT_DATE_COMPETENCE_DATE_REGISTRATION_DATE_VAT_DATE_DUE_DATE_AND_VALUE_DATE_REMAIN_DISTINCT"
   },
   "eventContract": {
     "requiredFields": [
@@ -43,16 +46,10 @@
       "id": "accounting.entry_projected",
       "type": "accounting.entry_projected",
       "owner": "CONTABILITA",
-      "producerPages": [
-        "amministrazione.iva_fiscalita",
-        "amministrazione.cespiti_veicoli",
-        "controllo.chiusura_mensile",
-        "controllo.piano_conti",
-        "controllo.bilancio",
-        "controllo.iva",
-        "controllo.budget_previsioni"
+      "producerPages": [],
+      "producerProcessors": [
+        "project_accounting_entries"
       ],
-      "producerProcessors": [],
       "producerDomains": [
         "CONTABILITA"
       ],
@@ -98,9 +95,7 @@
       "type": "accounting.period_closed",
       "owner": "CONTABILITA",
       "producerPages": [
-        "controllo.chiusura_mensile",
-        "controllo.bilancio",
-        "controllo.iva"
+        "controllo.chiusura_mensile"
       ],
       "producerProcessors": [],
       "producerDomains": [
@@ -169,7 +164,9 @@
       "id": "approval.recorded",
       "type": "approval.recorded",
       "owner": "CONTROLLO",
-      "producerPages": [],
+      "producerPages": [
+        "controllo.audit_rollback"
+      ],
       "producerProcessors": [],
       "producerDomains": [],
       "consumerPages": [
@@ -455,7 +452,10 @@
       "type": "domain.correction_recorded",
       "owner": "CONTROLLO",
       "producerPages": [
+        "amministrazione.cespiti_veicoli",
         "controllo.affidabilita_fiscale",
+        "controllo.piano_conti",
+        "controllo.budget_previsioni",
         "controllo.audit_rollback"
       ],
       "producerProcessors": [],
@@ -574,7 +574,8 @@
       "consumerProcessors": [
         "project_f24_residual_obligation",
         "dispatch_projection_invalidation",
-        "evaluate_coherence"
+        "evaluate_coherence",
+        "project_accounting_entries"
       ],
       "consumerDomains": [
         "CONTROLLO",
@@ -845,7 +846,8 @@
         "project_customer_receivable",
         "project_invoice_vat",
         "dispatch_projection_invalidation",
-        "evaluate_coherence"
+        "evaluate_coherence",
+        "project_accounting_entries"
       ],
       "consumerDomains": [
         "FATTURE_CLIENTI",
@@ -896,7 +898,8 @@
         "project_supplier_obligation",
         "project_invoice_vat",
         "dispatch_projection_invalidation",
-        "evaluate_coherence"
+        "evaluate_coherence",
+        "project_accounting_entries"
       ],
       "consumerDomains": [
         "FATTURE_FORNITORI",
@@ -1027,6 +1030,7 @@
       "consumerPages": [],
       "consumerProcessors": [
         "dispatch_projection_invalidation",
+        "project_accounting_entries",
         "rebuild_accounting_after_ledger_reversal"
       ],
       "consumerDomains": [
@@ -1089,7 +1093,8 @@
         "controllo.anomalie"
       ],
       "consumerProcessors": [
-        "evaluate_coherence"
+        "evaluate_coherence",
+        "project_accounting_entries"
       ],
       "consumerDomains": [
         "CONTROLLO",
@@ -1404,7 +1409,8 @@
       "consumerProcessors": [
         "project_payroll_obligations",
         "dispatch_projection_invalidation",
-        "evaluate_coherence"
+        "evaluate_coherence",
+        "project_accounting_entries"
       ],
       "consumerDomains": [
         "PAGHE",
@@ -1583,7 +1589,8 @@
       "consumerProcessors": [
         "project_receipt_vat",
         "dispatch_projection_invalidation",
-        "evaluate_coherence"
+        "evaluate_coherence",
+        "project_accounting_entries"
       ],
       "consumerDomains": [
         "CORRISPETTIVI_POS",
@@ -2005,7 +2012,10 @@
       "id": "vat.entries_projected",
       "type": "vat.entries_projected",
       "owner": "CONTABILITA",
-      "producerPages": [],
+      "producerPages": [
+        "amministrazione.iva_fiscalita",
+        "controllo.iva"
+      ],
       "producerProcessors": [
         "project_invoice_vat",
         "project_receipt_vat"
@@ -2020,7 +2030,8 @@
         "controllo.iva"
       ],
       "consumerProcessors": [
-        "evaluate_coherence"
+        "evaluate_coherence",
+        "project_accounting_entries"
       ],
       "consumerDomains": [
         "CORRISPETTIVI_POS",
@@ -2910,6 +2921,52 @@
       "retry": "EXPONENTIAL_BACKOFF_FOR_TRANSIENT_FAILURES; SAME_IDEMPOTENCY_KEY; DEAD_LETTER_AFTER_BUDGET"
     },
     {
+      "id": "project_accounting_entries",
+      "owner": "CONTABILITA",
+      "consumesEvents": [
+        "invoice.supplier_validated",
+        "invoice.customer_validated",
+        "receipt.day_validated",
+        "payroll.validated",
+        "f24.model_validated",
+        "vat.entries_projected",
+        "ledger.entry_projected",
+        "ledger.compensating_entry_projected"
+      ],
+      "readEntities": [
+        "invoice_supplier",
+        "invoice_customer",
+        "receipt_day",
+        "payroll",
+        "f24_model",
+        "vat_entry",
+        "ledger_entry",
+        "chart_account",
+        "accounting_period"
+      ],
+      "writeEntities": [
+        "accounting_entry"
+      ],
+      "gates": [
+        "source domain event validated and current",
+        "entry kind is DOCUMENT_COMPETENCE or FINANCIAL_SETTLEMENT and never both",
+        "approved posting rule version",
+        "balanced debit and credit exact to cents",
+        "document entry does not require payment evidence",
+        "settlement entry requires confirmed financial evidence or explicit audited cash attestation",
+        "period open or explicitly reopened with human approval and MFA"
+      ],
+      "emits": [
+        "accounting.entry_projected"
+      ],
+      "idempotencyKey": "sourceEventId + entryKind + approvedPostingRuleVersion + sourceVersion",
+      "approval": "AUTONOMY_B_ONLY_BALANCED_APPROVED_RULE_IN_OPEN_PERIOD; HUMAN_APPROVAL_AND_MFA_FOR_CLOSED_PERIOD",
+      "failure": "KEEP_LAST_VERIFIED_ACCOUNTING_ENTRY_AND_OPEN_ANOMALY; NEVER_DELAY_DOCUMENT_COMPETENCE_FOR_MISSING_PAYMENT",
+      "correctionAndInvalidation": "Append superseding or compensating accounting entry and rebuild affected views idempotently",
+      "autonomy": "B",
+      "retry": "EXPONENTIAL_BACKOFF_FOR_TRANSIENT_FAILURES; SAME_IDEMPOTENCY_KEY; DEAD_LETTER_AFTER_BUDGET"
+    },
+    {
       "id": "rebuild_accounting_after_ledger_reversal",
       "owner": "CONTABILITA",
       "consumesEvents": [
@@ -3229,7 +3286,7 @@
     {
       "id": "supplier_invoice_drive_to_ledger",
       "kind": "DETAILED_FLOW",
-      "label": "Fattura passiva da Drive o upload centralizzato a riconciliazione e Prima Nota",
+      "label": "Fattura passiva: competenza e regolamento finanziario separati",
       "triggerEvents": [
         "drive.inventory_observed",
         "upload.asset_received",
@@ -3299,6 +3356,20 @@
         },
         {
           "order": 5,
+          "owner": "CONTABILITA",
+          "action": "Proietta la scrittura documento per competenza, costo e IVA dalla fattura validata senza attendere il pagamento",
+          "produces": [
+            "accounting_entry"
+          ],
+          "relations": [
+            "supplier_invoice_projects_accounting",
+            "accounting_entry_uses_chart"
+          ],
+          "auto": "ONLY_APPROVED_BALANCED_POSTING_RULE_IN_OPEN_PERIOD",
+          "failure": "ACCOUNTING_DOCUMENT_ENTRY_BLOCKED; DEBT_AND_OPEN_ITEM_REMAIN_TRACEABLE; NEVER_MARK_PAID"
+        },
+        {
+          "order": 6,
           "owner": "FATTURE_FORNITORI",
           "action": "Osserva descrizione, codice, EAN e confezione; crea candidato alias. Risolve il prodotto soltanto per EAN verificato o mapping confermato",
           "produces": [
@@ -3311,10 +3382,10 @@
           ],
           "auto": "ONLY_VERIFIED_GTIN_OR_EXACT_CONFIRMED_ALIAS",
           "failure": "PRODUCT_MAPPING_REVIEW",
-      "boundary": "invoice_supplier_line is read-only provenance; mapping never mutates or revalidates the invoice; no stock, lots, recipes or production"
+          "boundary": "invoice_supplier_line is read-only provenance; mapping never mutates or revalidates the invoice; no stock, lots, recipes or production"
         },
         {
-          "order": 6,
+          "order": 7,
           "owner": "AMMINISTRAZIONE",
           "action": "Crea o rettifica il debito dalla fattura validata; una nota di credito genera una versione compensativa",
           "produces": [
@@ -3328,7 +3399,7 @@
           "failure": "OBLIGATION_REVIEW"
         },
         {
-          "order": 7,
+          "order": 8,
           "owner": "RICONCILIAZIONE",
           "action": "Calcola la partita aperta dal debito e dalle sole allocazioni attive",
           "produces": [
@@ -3341,7 +3412,7 @@
           "failure": "OPEN_ITEM_REVIEW"
         },
         {
-          "order": 8,
+          "order": 9,
           "owner": "TESORERIA",
           "action": "Importa il movimento reale e conserva la prova finanziaria separata",
           "produces": [
@@ -3356,7 +3427,7 @@
           "failure": "MOVEMENT_DUPLICATE_OR_MISSING_EVIDENCE"
         },
         {
-          "order": 9,
+          "order": 10,
           "owner": "RICONCILIAZIONE",
           "action": "Propone il legame fra movimento e debito; conferma soltanto con chiavi compatibili, centesimi quadrati e causa univoca",
           "produces": [
@@ -3373,7 +3444,7 @@
           "failure": "DA_VERIFICARE"
         },
         {
-          "order": 10,
+          "order": 11,
           "owner": "PRIMA_NOTA",
           "action": "Proietta la scrittura definitiva soltanto dalla riconciliazione confermata e idempotente",
           "produces": [
@@ -3387,9 +3458,9 @@
           "failure": "PROVISIONAL_ONLY_NO_DEFINITIVE_FINANCIAL_ENTRY"
         },
         {
-          "order": 11,
+          "order": 12,
           "owner": "CONTABILITA",
-          "action": "Proietta scrittura contabile bilanciata e piano dei conti approvato",
+          "action": "Proietta la distinta scrittura di regolamento dalla Prima Nota del pagamento confermato; non ricrea costo o IVA",
           "produces": [
             "accounting_entry"
           ],
@@ -3397,11 +3468,11 @@
             "ledger_projects_accounting",
             "accounting_entry_uses_chart"
           ],
-          "auto": "ONLY_APPROVED_BALANCED_POSTING_RULE",
-          "failure": "ACCOUNTING_PROJECTION_BLOCKED"
+          "auto": "ONLY_APPROVED_BALANCED_SETTLEMENT_RULE_WITH_CONFIRMED_FINANCIAL_EVIDENCE",
+          "failure": "SETTLEMENT_ACCOUNTING_PROJECTION_BLOCKED; DOCUMENT_ENTRY_REMAINS_VALID"
         },
         {
-          "order": 12,
+          "order": 13,
           "owner": "CONTROLLO",
           "action": "Controlla completezza, unicità, riferimenti, quadrature, tempi, provenienza e freshness senza riscrivere fonti",
           "produces": [
@@ -3419,16 +3490,29 @@
         }
       ],
       "corrections": {
-        "invoiceCreditNote": "supplier_invoice_adjusts_invoice plus obligation adjustment; invalidate downstream projections",
-        "reconciliationCorrection": "reconciliation_supersedes_reconciliation; never overwrite confirmed history",
+        "invoiceCreditNote": "supplier_invoice_adjusts_invoice; append compensating document entry; adjust obligation/open item; do not invent bank movement",
+        "reconciliationCorrection": "supersede reconciliation and append settlement reversal only; never reverse the valid document competence entry",
         "ledgerCorrection": "ledger_entry_reverses_entry; create compensating entry",
         "projectionRefresh": "Emit projection.invalidation_requested and rebuild materialized views idempotently"
       },
-      "failure": "KEEP_LAST_VERIFIED_FACT; OPEN_OR_UPDATE_ANOMALY_AT_FAILED_STEP; RETRY_IDEMPOTENTLY_OR_ROUTE_TO_HUMAN_REVIEW"
+      "failure": "KEEP_LAST_VERIFIED_FACT; OPEN_OR_UPDATE_ANOMALY_AT_FAILED_STEP; RETRY_IDEMPOTENTLY_OR_ROUTE_TO_HUMAN_REVIEW",
+      "branches": {
+        "competence": {
+          "startsAt": "invoice.supplier_validated",
+          "endsAt": "accounting.entry_projected DOCUMENT_COMPETENCE plus obligation and open_item",
+          "requiresPayment": false
+        },
+        "settlement": {
+          "startsAt": "financial.movement_observed",
+          "endsAt": "accounting.entry_projected FINANCIAL_SETTLEMENT",
+          "requiresConfirmedFinancialEvidence": true
+        }
+      }
     },
     {
       "id": "f24_receipt_bank_ledger",
       "kind": "FLOW_SUMMARY",
+      "label": "F24 a debito: modello, quietanza, banca e scrittura di regolamento",
       "triggerEvents": [
         "fiscal.document_received",
         "treasury.statement_received",
@@ -3471,6 +3555,7 @@
     {
       "id": "f24_zero_balance_compensation",
       "kind": "FLOW_SUMMARY",
+      "label": "F24 a saldo zero: compensazione fiscale senza movimento bancario",
       "triggerEvents": [
         "fiscal.document_received"
       ],
@@ -3506,6 +3591,7 @@
     {
       "id": "payroll_payment_f24",
       "kind": "FLOW_SUMMARY",
+      "label": "Cedolini: competenza, pagamenti e attese fiscali F24",
       "triggerEvents": [
         "payroll.document_received",
         "treasury.statement_received",
@@ -3553,6 +3639,7 @@
     {
       "id": "receipts_pos_payout_bank",
       "kind": "FLOW_SUMMARY",
+      "label": "Corrispettivi, POS, payout e accredito bancario",
       "triggerEvents": [
         "receipt.xml_received",
         "treasury.statement_received"
@@ -3594,6 +3681,7 @@
     {
       "id": "collection_plan_pagopa_bank",
       "kind": "FLOW_SUMMARY",
+      "label": "Riscossione: atti, piano, PagoPA e prova bancaria senza duplicare importi",
       "triggerEvents": [
         "collection.document_received",
         "treasury.statement_received"
@@ -3642,6 +3730,7 @@
     {
       "id": "fine_vehicle_payroll_recovery",
       "kind": "FLOW_SUMMARY",
+      "label": "Verbali: veicolo, conducente, pagamento e recupero in cedolino",
       "triggerEvents": [
         "collection.document_received",
         "payroll.document_received"
@@ -3692,6 +3781,7 @@
     {
       "id": "generic_reversal_end_to_end",
       "kind": "FLOW_SUMMARY",
+      "label": "Storno end-to-end con riapertura delle partite e ricostruzione delle viste",
       "triggerEvents": [
         "domain.correction_recorded",
         "projection.invalidation_requested"
@@ -6828,14 +6918,14 @@
           "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
-            "accounting.entry_projected"
+            "vat.entries_projected"
           ],
           "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
           "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
         }
       ],
       "outputEvents": [
-        "accounting.entry_projected"
+        "vat.entries_projected"
       ],
       "failureState": "CAPABILITY_NOT_IMPLEMENTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
@@ -6899,14 +6989,14 @@
           "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
-            "accounting.entry_projected"
+            "domain.correction_recorded"
           ],
           "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
           "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
         }
       ],
       "outputEvents": [
-        "accounting.entry_projected"
+        "domain.correction_recorded"
       ],
       "failureState": "CAPABILITY_NOT_IMPLEMENTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
@@ -7276,6 +7366,7 @@
       ],
       "inputEntities": [
         "document_source",
+        "domain_document_link",
         "reconciliation",
         "audit_event"
       ],
@@ -7283,6 +7374,7 @@
         "kind": "MATERIALIZED_VIEW",
         "sourceEntities": [
           "document_source",
+          "domain_document_link",
           "reconciliation",
           "audit_event"
         ],
@@ -7464,8 +7556,7 @@
           "id": "controllo.chiusura_mensile.submit",
           "commandOwner": "CONTABILITA",
           "writeEntities": [
-            "accounting_period",
-            "accounting_entry"
+            "accounting_period"
           ],
           "requiredEvidence": [
             "authenticated actor or leased job",
@@ -7473,20 +7564,18 @@
             "provenance",
             "expected current version"
           ],
-          "autonomy": "B",
-          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+          "autonomy": "C",
+          "approval": "HUMAN_APPROVAL_REQUIRED_WITH_ADMIN_MFA_AFTER_ALL_CLOSING_CHECKS_PASS",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
-            "accounting.period_closed",
-            "accounting.entry_projected"
+            "accounting.period_closed"
           ],
           "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
           "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
         }
       ],
       "outputEvents": [
-        "accounting.period_closed",
-        "accounting.entry_projected"
+        "accounting.period_closed"
       ],
       "failureState": "CAPABILITY_NOT_IMPLEMENTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
@@ -7534,14 +7623,14 @@
           "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
-            "accounting.entry_projected"
+            "domain.correction_recorded"
           ],
           "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
           "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
         }
       ],
       "outputEvents": [
-        "accounting.entry_projected"
+        "domain.correction_recorded"
       ],
       "failureState": "CAPABILITY_NOT_IMPLEMENTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
@@ -7580,36 +7669,8 @@
         "ACKNOWLEDGE_ANOMALY",
         "REQUEST_REVIEW"
       ],
-      "commands": [
-        {
-          "id": "controllo.bilancio.submit",
-          "commandOwner": "CONTABILITA",
-          "writeEntities": [
-            "chart_account",
-            "accounting_entry",
-            "accounting_period"
-          ],
-          "requiredEvidence": [
-            "authenticated actor or leased job",
-            "source entity version",
-            "provenance",
-            "expected current version"
-          ],
-          "autonomy": "B",
-          "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
-          "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
-          "emits": [
-            "accounting.entry_projected",
-            "accounting.period_closed"
-          ],
-          "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
-          "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
-        }
-      ],
-      "outputEvents": [
-        "accounting.entry_projected",
-        "accounting.period_closed"
-      ],
+      "commands": [],
+      "outputEvents": [],
       "failureState": "CAPABILITY_NOT_IMPLEMENTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
@@ -7652,8 +7713,7 @@
           "id": "controllo.iva.submit",
           "commandOwner": "CONTABILITA",
           "writeEntities": [
-            "vat_entry",
-            "accounting_period"
+            "vat_entry"
           ],
           "requiredEvidence": [
             "authenticated actor or leased job",
@@ -7665,16 +7725,14 @@
           "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
-            "accounting.entry_projected",
-            "accounting.period_closed"
+            "vat.entries_projected"
           ],
           "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
           "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
         }
       ],
       "outputEvents": [
-        "accounting.entry_projected",
-        "accounting.period_closed"
+        "vat.entries_projected"
       ],
       "failureState": "CAPABILITY_NOT_IMPLEMENTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
@@ -7732,14 +7790,14 @@
           "approval": "AUTO_ONLY_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
           "audit": "REQUIRED_WITH_BEFORE_AFTER_REASON_ACTOR_AND_CORRELATION_ID",
           "emits": [
-            "accounting.entry_projected"
+            "domain.correction_recorded"
           ],
           "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
           "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
         }
       ],
       "outputEvents": [
-        "accounting.entry_projected"
+        "domain.correction_recorded"
       ],
       "failureState": "CAPABILITY_NOT_IMPLEMENTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
@@ -7831,10 +7889,32 @@
           ],
           "idempotencyKey": "pageId + commandId + targetNaturalKey + expectedVersion + payloadFingerprint",
           "failure": "COMMAND_REJECTED_OR_REVIEW_REQUIRED; KEEP_LAST_VERIFIED_FACT_AND_OPEN_ANOMALY"
+        },
+        {
+          "id": "controllo.audit_rollback.record_approval",
+          "commandOwner": "CONTROLLO",
+          "writeEntities": [
+            "audit_event"
+          ],
+          "requiredEvidence": [
+            "authenticated approving actor",
+            "MFA assertion when required by target action",
+            "target command and expected version",
+            "approval reason and correlation id"
+          ],
+          "autonomy": "C",
+          "approval": "EXPLICIT_HUMAN_DECISION; MFA_REQUIRED_WHEN_TARGET_POLICY_REQUIRES",
+          "audit": "REQUIRED_WITH_ACTOR_TARGET_REASON_TIMESTAMP_MFA_LEVEL_AND_CORRELATION_ID",
+          "emits": [
+            "approval.recorded"
+          ],
+          "idempotencyKey": "actorId + targetCommandId + targetVersion + decision + correlationId",
+          "failure": "APPROVAL_NOT_RECORDED; TARGET_COMMAND_REMAINS_BLOCKED"
         }
       ],
       "outputEvents": [
-        "domain.correction_recorded"
+        "domain.correction_recorded",
+        "approval.recorded"
       ],
       "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",

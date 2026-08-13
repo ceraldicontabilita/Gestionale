@@ -811,8 +811,8 @@ export function validateTopology(catalog, topology) {
 
   for (const flow of topology.canonicalFlows || []) {
     const context = `Topologia flusso ${flow.id}`;
-    if (!isNonEmptyString(flow.id) || !new Set(['DETAILED_FLOW', 'FLOW_SUMMARY']).has(flow.kind)) {
-      errors.push(`${context}: id o kind non validi.`);
+    if (!isNonEmptyString(flow.id) || !isNonEmptyString(flow.label) || !new Set(['DETAILED_FLOW', 'FLOW_SUMMARY']).has(flow.kind)) {
+      errors.push(`${context}: id, label o kind non validi.`);
     }
     validateReferenceArray(errors, context, flow.triggerEvents, eventIds, 'triggerEvent');
     if (!isNonEmptyString(flow.failure) || !flow.corrections) errors.push(`${context}: failure/corrections mancanti.`);
@@ -830,6 +830,53 @@ export function validateTopology(catalog, topology) {
   }
   for (const duplicate of duplicateValues((topology.canonicalFlows || []).map((flow) => flow.id))) {
     errors.push(`Topologia: canonical flow duplicato ${duplicate}.`);
+  }
+
+  const accountingEvent = events.find((event) => event.id === 'accounting.entry_projected');
+  const accountingProcessor = processors.find((processor) => processor.id === 'project_accounting_entries');
+  if (
+    !accountingEvent ||
+    accountingEvent.producerPages.length !== 0 ||
+    !hasExactValues(accountingEvent.producerProcessors, ['project_accounting_entries']) ||
+    !accountingProcessor ||
+    !accountingProcessor.gates.includes('document entry does not require payment evidence') ||
+    !accountingProcessor.gates.includes('settlement entry requires confirmed financial evidence or explicit audited cash attestation')
+  ) {
+    errors.push('Topologia contabile: competenza documento e regolamento finanziario devono essere proiettati dal processor canonico come scritture distinte.');
+  }
+
+  const supplierInvoiceFlow = topology.canonicalFlows.find((flow) => flow.id === 'supplier_invoice_drive_to_ledger');
+  const competenceStep = supplierInvoiceFlow?.steps?.find((step) => step.relations?.includes('supplier_invoice_projects_accounting'));
+  const financialEvidenceStep = supplierInvoiceFlow?.steps?.find((step) => step.produces?.includes('financial_evidence'));
+  const settlementStep = supplierInvoiceFlow?.steps?.find((step) => step.relations?.includes('ledger_projects_accounting'));
+  if (
+    !competenceStep ||
+    !financialEvidenceStep ||
+    !settlementStep ||
+    competenceStep.order >= financialEvidenceStep.order ||
+    settlementStep.order <= financialEvidenceStep.order ||
+    supplierInvoiceFlow?.branches?.competence?.requiresPayment !== false ||
+    supplierInvoiceFlow?.branches?.settlement?.requiresConfirmedFinancialEvidence !== true
+  ) {
+    errors.push('Topologia fattura passiva: la competenza deve precedere ed essere indipendente dalla prova finanziaria; il regolamento deve seguirla.');
+  }
+
+  const periodClosedEvent = events.find((event) => event.id === 'accounting.period_closed');
+  const closingPage = projections.find((projection) => projection.pageId === 'controllo.chiusura_mensile');
+  const closingCommand = closingPage?.commands?.find((command) => command.id === 'controllo.chiusura_mensile.submit');
+  if (
+    !periodClosedEvent ||
+    !hasExactValues(periodClosedEvent.producerPages, ['controllo.chiusura_mensile']) ||
+    closingCommand?.autonomy !== 'C' ||
+    !/HUMAN_APPROVAL_REQUIRED/.test(closingCommand?.approval || '') ||
+    !/MFA/.test(closingCommand?.approval || '')
+  ) {
+    errors.push('Topologia chiusura: soltanto la chiusura mensile approvata da una persona con MFA può chiudere il periodo.');
+  }
+
+  const approvalEvent = events.find((event) => event.id === 'approval.recorded');
+  if (!approvalEvent || approvalEvent.producerPages.length === 0) {
+    errors.push('Topologia approvazioni: approval.recorded deve avere un produttore auditabile esplicito.');
   }
 
   const coherence = topology.coherenceEngine;
