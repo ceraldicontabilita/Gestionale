@@ -98,3 +98,50 @@ F24 letto correttamente != F24 pagato
 F24 quietanzato != movimento bancario riconciliato
 Riconciliazione completa = modello + prova valida + riscontro finanziario coerente
 ```
+
+
+## Politica di estrazione per documenti ufficiali digitali
+
+I documenti trattati sono PDF ufficiali prodotti da Agenzia delle Entrate, INPS e altri enti. Non è previsto il riconoscimento di manoscritti. Il testo nativo incorporato nel PDF è la fonte primaria perché, quando presente, è più affidabile di una rilettura ottica.
+
+Ordine obbligatorio:
+
+1. testo nativo del PDF;
+2. struttura, pagina e coordinate;
+3. validazione formale dei campi;
+4. quadrature matematiche;
+5. OCR mirato soltanto per verifica o recupero;
+6. controllo umano in caso di conflitto.
+
+La funzione `evaluateF24ExtractionPolicy` applica queste modalità:
+
+- `NATIVE_ONLY`: testo sufficiente, campi essenziali presenti e quadrature confermate; nessun OCR;
+- `NATIVE_PLUS_TARGETED_OCR`: testo presente ma campo essenziale mancante, marcatore assente o quadratura fallita; OCR limitato alle zone interessate;
+- `OCR_FULL`: testo nativo assente o insufficiente; OCR dell'intero documento, senza conferma automatica dei valori recuperati;
+- `MANUAL_REVIEW`: testo presente ma affidabilità non dimostrabile.
+
+Campi essenziali minimi: codice fiscale del contribuente, data modello quando presente, righe tributo/contributive, totale debiti, totale crediti e saldo finale.
+
+### Divieti
+
+- L'OCR non può sovrascrivere il testo nativo.
+- Una confidenza OCR elevata non supera una quadratura fallita.
+- Un valore presente soltanto nell'OCR richiede verifica.
+- Una discordanza testo/OCR produce `CONTESTATO` e valore accettato `null`.
+- L'OCR non determina mai pagamento, riconciliazione o prima nota.
+- Timestamp del file, nome file e metadati di consultazione non sostituiscono date fiscali mancanti.
+
+### Confronto dei campi
+
+`compareNativeAndOcrField` usa confronto esatto dopo normalizzazione specifica:
+
+- codice fiscale e codici: spazi rimossi e maiuscole;
+- date: formato canonico senza confondere periodo e data modello;
+- importi: due decimali e separatori italiani/OCR normalizzati;
+- testo: normalizzazione Unicode e spazi, conservando sempre il valore originale.
+
+Esiti: `MATCH`, `NATIVE_ONLY`, `CONFLICT`, `OCR_RECOVERY_REQUIRES_REVIEW`, `NOT_DETERMINABLE`.
+
+### Piano OCR mirato
+
+`buildTargetedOcrPlan` genera soltanto le zone da rileggere. Se fallisce la quadratura, limita la rilettura a colonne importi, totali di sezione e saldo finale. Se manca un campo, tenta soltanto la sua area. Le immagini temporanee non diventano fonte contabile e possono essere eliminate dopo l'elaborazione; originale, testo, coordinate, versione del motore e risultati devono restare nell'audit.
