@@ -1,0 +1,151 @@
+{
+  "versione": "2026-08-13",
+  "principio": "Il ramo nasce quando nasce l'obbligo; l'evidenza futura lo soddisfa, non lo crea.",
+  "chiusura": {
+    "terminali_positivi": ["SODDISFATTO", "NON_APPLICABILE", "SUPERATO"],
+    "bloccanti": ["ATTESO", "IN_ELABORAZIONE", "DA_VERIFICARE", "ERRORE"]
+  },
+  "pagine": {
+    "Home": ["Quadro operativo", "Attività da completare", "Scadenze e priorità", "Assistente e memoria operativa"],
+    "Prima Nota": ["Cassa", "Banca", "Carte e circuiti", "Salari", "Finanziamenti soci", "Provvisoria", "Corrispettivi e POS", "Libro giornale e mastro"],
+    "Documenti": ["Acquisizione e inbox", "Archivio e viewer", "Indice e albero Drive", "Duplicati e piano cartelle", "Fatture fornitori e clienti", "Corrispettivi XML RT", "F24, quietanze e dichiarazioni", "Cedolini e riepiloghi paghe", "Estratti banca e carte", "Riscossione, PagoPA e altri atti"],
+    "Riconciliazione": ["Coda generale e partite aperte", "Fatture e pagamenti", "F24 e riscossione", "Salari", "Carte, POS e accrediti", "Assegni", "PayPal e PagoPA", "Verbali e audit di chiusura"],
+    "Amministrazione": ["Fornitori e soggetti", "Dizionario prodotti acquistati", "Dipendenti contabili minimi", "Fisco, IVA e codici tributo", "Riscossione e rateizzazioni", "Cespiti, finanziamenti e veicoli", "Commercialista e consulente", "Integrazioni e scheduler", "Utenti, ruoli e MFA", "Configurazione agenti"],
+    "Controllo": ["Coerenza e anomalie operative", "Provenienza e grafo delle relazioni", "Comparazione prezzi di acquisto", "Controllo mensile e chiusura esercizio", "Piano dei conti", "Bilancio e IVA", "Budget, previsioni e scadenze fiscali", "Registro audit e rollback", "Stato importazioni e manutenzione Drive"]
+  },
+  "flussi": {
+    "Fattura fornitore": [
+      ["Documento originale", "SODDISFATTO", "Archivio e viewer"],
+      ["Fornitore / fattura / righe", "SODDISFATTO", "Fatture fornitori e clienti"],
+      ["IVA", "SODDISFATTO", "Bilancio e IVA"],
+      ["Costo + debito + partita aperta", "SODDISFATTO", "Piano dei conti / Coda generale"],
+      ["Scadenza", "SODDISFATTO", "Scadenze e priorità"],
+      ["Pagamento", "ATTESO", "Fatture e pagamenti"],
+      ["Movimento banca/cassa", "ATTESO", "Banca / Cassa"],
+      ["Prima Nota finanziaria", "ATTESO", "Prima Nota"],
+      ["Chiusura debito", "ATTESO", "Riconciliazione"],
+      ["Bilancio / budget / controllo", "SODDISFATTO", "Controllo / Home"]
+    ],
+    "Fattura cliente": [
+      ["Documento / cliente / fattura", "SODDISFATTO", "Documenti"],
+      ["IVA vendite", "SODDISFATTO", "Bilancio e IVA"],
+      ["Credito cliente", "SODDISFATTO", "Coda generale"],
+      ["Incasso", "ATTESO", "Fatture e pagamenti"],
+      ["Movimento banca/cassa", "ATTESO", "Prima Nota"],
+      ["Chiusura credito", "ATTESO", "Riconciliazione"]
+    ],
+    "Corrispettivo RT / POS": [
+      ["XML RT", "SODDISFATTO", "Corrispettivi XML RT"],
+      ["Ricavo + IVA", "SODDISFATTO", "Cassa / Bilancio e IVA"],
+      ["Chiusura NUMIA", "ATTESO", "Carte, POS e accrediti"],
+      ["Chiusura SUMUP", "ATTESO", "Carte, POS e accrediti"],
+      ["Credito gestore", "ATTESO", "Carte e circuiti"],
+      ["Payout", "ATTESO", "Riconciliazione"],
+      ["Accredito bancario", "ATTESO", "Banca"],
+      ["Commissioni", "ATTESO", "Prima Nota / Controllo"],
+      ["Quadratura RT↔POS↔Banca", "ATTESO", "Coerenza e anomalie operative"]
+    ],
+    "Banca / carte": [
+      ["Estratto originale", "SODDISFATTO", "Estratti banca e carte"],
+      ["Movimenti normalizzati", "SODDISFATTO", "Banca / Carte e circuiti"],
+      ["Prove finanziarie", "SODDISFATTO", "Riconciliazione"],
+      ["Candidati", "SODDISFATTO", "Coda generale"],
+      ["Allocazione", "DA_VERIFICARE", "Riconciliazione specifica"],
+      ["Prima Nota", "ATTESO", "Prima Nota"],
+      ["Quadratura saldo", "ATTESO", "Controllo"]
+    ],
+    "F24": [
+      ["Modello e righe", "SODDISFATTO", "F24, quietanze e dichiarazioni"],
+      ["Codici tributo", "SODDISFATTO", "Fisco, IVA e codici tributo"],
+      ["Debiti / crediti / compensazioni", "SODDISFATTO", "F24 / Bilancio e IVA"],
+      ["Quietanza", "ATTESO", "F24, quietanze e dichiarazioni"],
+      ["Movimento bancario se saldo > 0", "ATTESO", "F24 e riscossione"],
+      ["Chiusura finanziaria", "ATTESO", "Banca / Prima Nota"],
+      ["Collegamenti dichiarazioni/paghe", "DA_VERIFICARE", "Documenti / Paghe"]
+    ],
+    "Cedolino": [
+      ["PDF / dipendente / periodo", "SODDISFATTO", "Cedolini e riepiloghi paghe"],
+      ["Componenti / netto dovuto", "SODDISFATTO", "Salari"],
+      ["TFR", "SODDISFATTO", "Controllo / Amministrazione"],
+      ["Acconti", "ATTESO", "Riconciliazione Salari"],
+      ["Saldo", "ATTESO", "Riconciliazione Salari"],
+      ["Movimenti finanziari", "ATTESO", "Banca / Cassa"],
+      ["Attese F24", "ATTESO", "F24"],
+      ["Chiusura mese dipendente", "ATTESO", "Controllo"]
+    ],
+    "ADER / PagoPA / atti": [
+      ["Atto originale", "SODDISFATTO", "Riscossione, PagoPA e altri atti"],
+      ["Identificativi pratica", "SODDISFATTO", "Riscossione e rateizzazioni"],
+      ["Snapshot debito", "ATTESO", "Riscossione e rateizzazioni"],
+      ["Piano rate / RAV / PagoPA", "ATTESO", "Amministrazione / Documenti"],
+      ["Scadenze", "ATTESO", "Scadenze e priorità"],
+      ["Quietanza", "ATTESO", "Documenti"],
+      ["Movimento finanziario", "ATTESO", "F24 e riscossione"],
+      ["Nuovo snapshot ufficiale", "ATTESO", "Amministrazione"],
+      ["Chiusura fascicolo", "ATTESO", "Controllo"]
+    ],
+    "Assegno": [
+      ["Assegno / carnet", "SODDISFATTO", "Assegni"],
+      ["Allocazioni N:M", "DA_VERIFICARE", "Assegni"],
+      ["Addebito bancario", "ATTESO", "Banca"],
+      ["Chiusura allocazioni", "ATTESO", "Riconciliazione"]
+    ],
+    "PayPal": [
+      ["Transazioni", "SODDISFATTO", "PayPal e PagoPA"],
+      ["Fornitore / fattura", "DA_VERIFICARE", "Fatture / Fornitori"],
+      ["Commissioni", "SODDISFATTO", "Prima Nota"],
+      ["Payout", "ATTESO", "Riconciliazione"],
+      ["Accredito banca", "ATTESO", "Banca"]
+    ],
+    "Mutuo": [
+      ["Contratto / estratto", "SODDISFATTO", "Cespiti, finanziamenti e veicoli"],
+      ["Piano rate", "SODDISFATTO", "Scadenze"],
+      ["Capitale / interessi", "SODDISFATTO", "Piano dei conti"],
+      ["Rata bancaria", "ATTESO", "Banca"],
+      ["Residuo aggiornato", "ATTESO", "Controllo"]
+    ],
+    "Verbale auto": [
+      ["Verbale originale", "SODDISFATTO", "Riscossione, PagoPA e altri atti"],
+      ["Veicolo / targa", "SODDISFATTO", "Cespiti, finanziamenti e veicoli"],
+      ["Conducente", "DA_VERIFICARE", "Dipendenti"],
+      ["Scadenza", "SODDISFATTO", "Scadenze"],
+      ["Pagamento", "ATTESO", "Verbali e audit di chiusura"],
+      ["Movimento finanziario", "ATTESO", "Prima Nota"],
+      ["Chiusura pratica", "ATTESO", "Controllo"]
+    ]
+  },
+  "relazioni_bidirezionali": [
+    "documento ↔ fonti Drive / upload / PEC",
+    "fattura ↔ soggetto ↔ righe",
+    "riga fattura ↔ alias fornitore ↔ prodotto canonico",
+    "fattura ↔ IVA",
+    "fattura ↔ obbligo ↔ partita aperta",
+    "obbligo ↔ riconciliazione ↔ movimento finanziario",
+    "riconciliazione ↔ Prima Nota ↔ contabilità",
+    "XML RT ↔ giorno fiscale ↔ IVA ↔ ricavo",
+    "giorno RT ↔ chiusure POS ↔ credito gestore ↔ payout ↔ accredito",
+    "F24 ↔ righe tributo ↔ versione codice ↔ crediti/compensazioni ↔ quietanza ↔ banca",
+    "cedolino ↔ dipendente ↔ componenti ↔ netto ↔ acconti/saldo ↔ banca",
+    "cedolino ↔ attese F24 ↔ contributi/ritenute",
+    "atto ADER ↔ snapshot ↔ rateizzazione ↔ PagoPA/RAV ↔ pagamento ↔ nuovo snapshot",
+    "assegno ↔ carnet ↔ allocazioni ↔ fatture ↔ addebito banca",
+    "PayPal ↔ fattura/fornitore ↔ commissioni ↔ payout ↔ banca",
+    "mutuo ↔ rate ↔ capitale/interessi ↔ banca ↔ residuo",
+    "verbale ↔ veicolo ↔ conducente ↔ pagamento",
+    "anomalia ↔ entità ↔ regola ↔ decisione operatore"
+  ],
+  "routing_import_drive": [
+    ["Import Documenti", "classifica + deduplica + valida", "SUCCESSO → dominio/Elaborate", "ERRORE tecnico → Errori", "AMBIGUO → Da elaborare + DA_VERIFICARE"],
+    ["Drive / Da elaborare", "watcher rileva nuovo Drive ID/versione", "SUCCESSO → Elaborate", "ERRORE → Errori", "AMBIGUO → resta Da elaborare senza loop"],
+    ["PEC / email", "allegato → source_asset + provenienza", "SUCCESSO → dominio/Elaborate", "ERRORE → Errori", "AMBIGUO → coda verifica"]
+  ],
+  "definition_of_done": [
+    "test automatici",
+    "audit",
+    "commit",
+    "push",
+    "merge su main",
+    "deploy Render",
+    "smoke test applicazione pubblicata"
+  ]
+}
