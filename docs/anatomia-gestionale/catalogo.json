@@ -224,11 +224,11 @@
           "label": "Libro giornale e mastro",
           "route": "/prima-nota/giornale",
           "owner": "CONTABILITA",
-          "status": "ASSENTE",
+          "status": "PARZIALE",
           "entities": ["accounting_entry", "chart_account", "ledger_entry"],
           "dependsOn": ["controllo.piano_conti"],
-          "currentEvidence": [],
-          "notes": "Da realizzare su un solo piano dei conti e con scritture bilanciate versionate.",
+          "currentEvidence": ["src/event-engine.js", "src/event-engine-router.js", "test/event-engine.test.js", "test/event-engine-mongo.test.js"],
+          "notes": "È presente il motore transazionale append-only con regole versionate approvate, scritture quadrate, competenza distinta dal regolamento, storni compensativi, saldi di mastro e outbox delle proiezioni. Restano da collegare i produttori di dominio reali e da costruire la schermata completa del giornale/mastro.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "mfaActions": [] }
         }
       ]

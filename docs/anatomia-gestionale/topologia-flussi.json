@@ -4502,7 +4502,7 @@
     {
       "pageId": "prima_nota.libro_giornale_mastro",
       "owner": "CONTABILITA",
-      "implementationStatus": "ASSENTE",
+      "implementationStatus": "PARZIALE",
       "inputEvents": [
         "accounting.entry_projected",
         "ledger.entry_projected"
@@ -4556,7 +4556,7 @@
       "outputEvents": [
         "ledger.entry_projected"
       ],
-      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
+      "failureState": "DOMAIN_PRODUCERS_AND_COMPLETE_UI_NOT_YET_CONNECTED",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true
