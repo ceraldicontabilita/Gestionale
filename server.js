@@ -68,7 +68,7 @@ const driveDataRegistration = registerDriveDataRoutes(app, {
 registerDrivePlanRoutes(app, { getDb: () => db });
 registerReconciliationRoutes(app, { getDb: () => db });
 registerEventEngineRoutes(app, { getDb: () => db, getClient: () => client });
-registerSupplierInvoiceRoutes(app, { getDb: () => db, getClient: () => client });
+const supplierInvoiceRegistration = registerSupplierInvoiceRoutes(app, { getDb: () => db, getClient: () => client });
 
 const eventEngineRuntime = createEventEngineRuntime({ getDb: () => db, getClient: () => client });
 const projectionEngineRuntime = createProjectionEngineRuntime({ getDb: () => db, getClient: () => client });
@@ -77,6 +77,7 @@ projectionEngineRuntime.start();
 
 const server = app.listen(port, () => console.log(`Impresa Semplice v${version} in ascolto sulla porta ${port}`));
 driveDataRegistration.start();
+supplierInvoiceRegistration.start();
 
 async function shutdown(signal) {
   console.info(`[server] chiusura ${signal}`);

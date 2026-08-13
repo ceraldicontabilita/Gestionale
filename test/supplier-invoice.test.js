@@ -73,6 +73,22 @@ test('IVA esposta e IVA detraibile restano decisioni distinte', () => {
   assert.equal(event.accounting.lines.some((row) => row.accountCode === 'IVA_CREDITO'), false);
 });
 
+test('l intake automatico usa conti tecnici senza inventare la detraibilità IVA', () => {
+  const automaticInput = input({
+    ivaDetraibile: undefined,
+    vatClassificationPending: true,
+    costAccountCode: 'COSTI_DA_CLASSIFICARE',
+    vatAccountCode: 'IVA_DA_CLASSIFICARE',
+    postingRule: { id: 'FATTURA_PASSIVA_AUTO_DA_CLASSIFICARE', version: '1' }
+  });
+  const { invoice, event } = buildSupplierInvoiceValidation(source(), automaticInput, { actor: 'SYSTEM_EXACT_INTAKE' });
+  assert.equal(invoice.validation.status, 'AUTO_VALIDATED_PENDING_CLASSIFICATION');
+  assert.equal(invoice.amounts.deductibleVatCents, 0);
+  assert.equal(invoice.amounts.pendingVatCents, 2200);
+  assert.equal(invoice.amounts.costCents, 10000);
+  assert.deepEqual(event.accounting.lines.map((row) => row.accountCode), ['COSTI_DA_CLASSIFICARE', 'IVA_DA_CLASSIFICARE', 'DEBITI_FORNITORI']);
+});
+
 test('la ritenuta crea una passività distinta e mantiene la quadratura', () => {
   const { invoice, event } = buildSupplierInvoiceValidation(
     source({ totaleDocumento: 122, ritenuta: 20 }),

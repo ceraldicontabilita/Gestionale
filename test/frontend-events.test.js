@@ -31,7 +31,7 @@ test('le pagine operative espongono i controlli di riconciliazione e verifica', 
   assert.match(source, /\/api\/f24-quietanze/);
 });
 
-test('la pagina fatture espone intake, validazione e albero delle attese', () => {
+test('la pagina fatture espone intake automatico, fornitori e albero delle attese', () => {
   const html = fs.readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
   const source = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
   for (const id of [
@@ -39,16 +39,23 @@ test('la pagina fatture espone intake, validazione e albero delle attese', () =>
     'supplierImportMonitor',
     'supplierImportProgress',
     'supplierInvoiceStagingRows',
-    'supplierInvoiceValidationForm',
     'supplierInvoiceCanonicalRows',
-    'supplierInvoiceTree'
+    'supplierInvoiceTree',
+    'view-fornitori',
+    'supplierDirectoryRows',
+    'view-archivi',
+    'archiveVerbaliRows',
+    'sourcePackageRows'
   ]) assert.match(html, new RegExp(`id=["']${id}["']`));
   assert.match(html, /name=["']invoiceFiles["'][^>]*multiple/);
   assert.match(html, /accept=["'][^"']*\.zip/);
   assert.match(source, /\/api\/supplier-invoices\/import-jobs/);
   assert.match(source, /new XMLHttpRequest\(\)/);
   assert.match(source, /localStorage\.setItem\(SUPPLIER_IMPORT_JOB_KEY/);
-  assert.match(source, /\/api\/supplier-invoices\/validate/);
+  assert.match(source, /\/api\/supplier-invoices\/suppliers\/directory/);
+  assert.match(source, /target\.protocol !== 'https:'/);
+  assert.doesNotMatch(source, /\/api\/supplier-invoices\/validate/);
+  assert.doesNotMatch(html, /id=["']supplierInvoiceValidationForm["']/);
   assert.match(source, /supplier-invoices\/\$\{encodeURIComponent\(invoiceId\)\}\/tree/);
   assert.match(source, /PIN_CONFIRMATION_REQUIRED/);
   assert.match(source, /\/api\/auth\/pin-confirm/);

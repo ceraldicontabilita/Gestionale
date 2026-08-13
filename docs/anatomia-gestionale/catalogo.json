@@ -260,8 +260,8 @@
           "status": "PARZIALE",
           "entities": ["document", "document_source", "source_asset"],
           "dependsOn": ["documenti.acquisizione_inbox"],
-          "currentEvidence": ["public/index.html", "src/core-router.js", "src/drive-data-router.js"],
-          "notes": "Consultazione Drive e documenti interni presenti; filtri, versioni e provenienze vanno unificati.",
+          "currentEvidence": ["public/index.html", "public/app.js", "src/core-router.js", "src/drive-data-router.js", "src/source-package-index.js", "test/drive-data-router.test.js", "test/source-package-index.test.js", "test/frontend-events.test.js"],
+          "notes": "La proiezione Archivio espone i domini Drive per categoria e anno, una sezione dedicata ai verbali e gli indici originali dei pacchetti fiscali/PEC con tutti i campi sorgente e la provenienza riga-per-riga. I file tecnici PEC sono separati dai documenti operativi. Restano da unificare il viewer canonico, le versioni e la ricerca profonda fra originali e fatti strutturati.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
@@ -332,9 +332,9 @@
           "status": "PARZIALE",
           "entities": ["invoice_supplier", "invoice_supplier_line", "supplier", "obligation", "open_item", "expectation", "expectation_process"],
           "dependsOn": ["documenti.acquisizione_inbox"],
-          "currentEvidence": ["public/index.html", "public/app.js", "src/drive-data-import.js", "src/document-pipeline.js", "src/supplier-invoice-xml.js", "src/supplier-invoice-archive.js", "src/supplier-invoice.js", "src/supplier-invoice-projection.js", "src/expectation-engine.js", "src/obligation-engine.js", "src/supplier-invoice-router.js", "test/supplier-invoice.test.js", "test/supplier-invoice-archive.test.js", "test/frontend-events.test.js", "test/http-auth-integration.test.js", "test/event-engine-mongo.test.js"],
-          "notes": "Drive, PEC e upload singolo o multiplo di XML/ZIP convergono nello stesso staging FatturaPA con originale e SHA-256. Gli ZIP possono essere annidati entro limiti anti ZIP bomb; la coda persistita espone avanzamento e conserva le provenienze senza duplicare contenuti identici. L'intake richiede la sessione PIN, mentre validazione e fatti contabili richiedono la riconferma temporanea dello stesso PIN. La validazione canonica transazionale pubblica invoice.supplier_validated, crea l'albero delle attese, competenza, IVA esplicitamente detraibile, debito e partita aperta senza attendere il pagamento. Restano supersessione/nota di credito e anagrafica estesa.",
-          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": ["VALIDA_FATTURA_FORNITORE", "RICONCILIA_FATTURA_FORNITORE"] }
+          "currentEvidence": ["public/index.html", "public/app.js", "src/drive-data-import.js", "src/document-pipeline.js", "src/supplier-invoice-xml.js", "src/supplier-invoice-archive.js", "src/supplier-invoice.js", "src/supplier-invoice-projection.js", "src/supplier-directory-projection.js", "src/expectation-engine.js", "src/obligation-engine.js", "src/supplier-invoice-router.js", "test/supplier-invoice.test.js", "test/supplier-invoice-archive.test.js", "test/supplier-directory-projection.test.js", "test/frontend-events.test.js", "test/http-auth-integration.test.js", "test/event-engine-mongo.test.js"],
+          "notes": "Drive, PEC e upload singolo o multiplo di XML/ZIP convergono nello stesso staging FatturaPA con originale, provenienza e SHA-256. Gli ZIP possono essere annidati entro limiti anti ZIP bomb; la coda persistita espone avanzamento anche durante la navigazione. Un XML FatturaPA con identità e quadratura esatte viene canonizzato automaticamente e pubblica invoice.supplier_validated: crea fornitore, competenza, debito, partita aperta e albero delle attese senza attendere il pagamento. Costo e IVA esposta restano su conti tecnici da classificare, senza dichiarare IVA detraibile; i casi non esatti restano in revisione. La pagina Fornitori raggruppa solo per identificativo fiscale esatto. Riconciliazione e regolamento restano separati e richiedono prova finanziaria riferita. Restano supersessione/nota di credito e anagrafica estesa.",
+          "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": ["RICONCILIA_FATTURA_FORNITORE"] }
         },
         {
           "id": "documenti.fatture_clienti",
@@ -368,8 +368,8 @@
           "status": "PRESENTE",
           "entities": ["f24_model", "f24_line", "f24_receipt", "tax_declaration"],
           "dependsOn": ["documenti.indice_drive"],
-          "currentEvidence": ["src/f24-import-service.js", "src/f24-extraction-policy.js", "src/drive-data-import.js", "test/f24.test.js"],
-          "notes": "Testo nativo prioritario, OCR solo fallback; modello, quietanza e addebito restano distinti.",
+          "currentEvidence": ["src/f24-import-service.js", "src/f24-extraction-policy.js", "src/drive-data-import.js", "src/drive-index-router.js", "src/f24-router.js", "src/source-package-index.js", "public/app.js", "test/f24.test.js", "test/source-package-index.test.js", "test/document-index-metadata.test.js"],
+          "notes": "Testo nativo prioritario, OCR solo fallback; modello, quietanza e addebito restano distinti. La UI usa anche gli indici Drive/ZIP come fallback documentale, raggruppa le dichiarazioni per modello, anno dichiarazione e anno d'imposta e conserva protocollo e campi sorgente. Il registro codici mostra separatamente le versioni verificate e i codici soltanto osservati, che restano da classificare.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         },
         {
@@ -404,8 +404,8 @@
           "status": "PARZIALE",
           "entities": ["collection_act", "collection_snapshot", "pagopa_receipt", "document"],
           "dependsOn": ["documenti.acquisizione_inbox"],
-          "currentEvidence": ["src/riscossione.js", "src/riscossione-router.js", "test/riscossione.test.js"],
-          "notes": "Atti e snapshot presenti; mancano ingestione ufficiale e flusso PagoPA completo.",
+          "currentEvidence": ["src/riscossione.js", "src/riscossione-router.js", "src/drive-data-router.js", "src/source-package-index.js", "public/app.js", "test/riscossione.test.js", "test/source-package-index.test.js", "test/frontend-events.test.js"],
+          "notes": "Atti e snapshot canonici restano separati dalle evidenze osservate. La UI espone anche documenti ADER, cartelle, PagoPA e verbali provenienti da Drive/ZIP con categoria, anno e percorso, senza promuoverli automaticamente a fatti canonici. Mancano ancora estrazione/validazione completa degli atti e il flusso PagoPA finanziario end-to-end.",
           "access": { "level": "AUTHENTICATED", "viewRoles": ["ADMIN", "OPERATORE", "SOLA_LETTURA"], "writeRoles": ["ADMIN", "OPERATORE"], "pinConfirmationActions": [] }
         }
       ]

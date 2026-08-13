@@ -3,6 +3,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { calculateF24Totals, normalizeF24Row } from './f24.js';
 import { relationKey } from './domain.js';
 import { stageSupplierInvoiceXml } from './supplier-invoice-xml.js';
+import { importSourcePackageIndexes } from './source-package-index.js';
 
 export { parseInvoiceXml } from './supplier-invoice-xml.js';
 
@@ -184,7 +185,10 @@ async function ensureIndexes(db) {
     db.collection('fatture').createIndex({ sourceKey: 1 }, { unique: true }),
     db.collection('corrispettivi_rt').createIndex({ sourceKey: 1 }, { unique: true }),
     db.collection('drive_import_runs').createIndex({ iniziatoIl: -1 }),
-    db.collection('drive_import_locks').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+    db.collection('drive_import_locks').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    db.collection('source_package_records').createIndex({ sourceRecordKey: 1 }, { unique: true }),
+    db.collection('source_package_records').createIndex({ recordType: 1, category: 1, year: -1, attivo: 1 }),
+    db.collection('source_package_imports').createIndex({ importKey: 1 }, { unique: true })
   ]);
 }
 
@@ -596,12 +600,21 @@ export function createDriveDataImportService({ getDb, getIndex, driveClient, roo
             adoptUnscoped: rootState.adoptUnscoped,
             assertLease: lease.assertOwned
           });
+          const sourcePackageResult = await importSourcePackageIndexes(db, driveClient, scan.files, now);
+          await lease.assertOwned();
           const xmlResult = await importStructuredXml(db, driveClient, scan.files, now);
           await lease.assertOwned();
-          const counts = { ...indexResult.counts, driveFiles: scan.files.length, driveFolders: scan.folders, driveErrors: scan.errors.length, ...xmlResult.counts };
-          await db.collection('drive_import_runs').updateOne({ _id: inserted.insertedId }, { $set: { stato: scan.errors.length ? 'COMPLETATO_CON_AVVISI' : 'COMPLETATO', counts, erroriDrive: scan.errors.slice(0, 100), completatoIl: new Date() } });
+          const counts = { ...indexResult.counts, driveFiles: scan.files.length, driveFolders: scan.folders, driveErrors: scan.errors.length, ...sourcePackageResult.counts, ...xmlResult.counts };
+          const completedWithWarnings = scan.errors.length > 0 || sourcePackageResult.errors.length > 0;
+          await db.collection('drive_import_runs').updateOne({ _id: inserted.insertedId }, { $set: {
+            stato: completedWithWarnings ? 'COMPLETATO_CON_AVVISI' : 'COMPLETATO',
+            counts,
+            erroriDrive: scan.errors.slice(0, 100),
+            avvisiPacchettiSorgente: sourcePackageResult.errors.slice(0, 100),
+            completatoIl: new Date()
+          } });
           logger.info?.(`[drive-data] documenti=${counts.documents} file=${counts.driveFiles} F24=${counts.f24Canonical} quietanze=${counts.quietanze} righe=${counts.f24Rows} fatture=${counts.fatture} corrispettivi=${counts.corrispettivi}`);
-          return { scanId, counts, indexResult: indexResult.writes, metadataResult, xmlResult };
+          return { scanId, counts, indexResult: indexResult.writes, metadataResult, sourcePackageResult, xmlResult };
         } catch (error) {
           await db.collection('drive_import_runs').updateOne({ _id: inserted.insertedId }, { $set: { stato: 'ERRORE', errore: { code: error.code || 'IMPORT_FAILED', message: error.message }, completatoIl: new Date() } });
           throw error;
@@ -615,10 +628,10 @@ export function createDriveDataImportService({ getDb, getIndex, driveClient, roo
   async function status() { const db = getDb(); if (!db) throw new Error('MongoDB non configurato'); return db.collection('drive_import_runs').findOne({ rootFolderId }, { sort: { iniziatoIl: -1 } }); }
   async function summary() {
     const db = getDb(); if (!db) throw new Error('MongoDB non configurato');
-    const [documents, driveFiles, driveFolders, f24, quietanze, rows, declarations, invoices, receipts, byDomain, lastRun] = await Promise.all([
-      db.collection('documenti').countDocuments({ recordKind: { $ne: 'DRIVE_SOURCE' }, sourceActive: { $ne: false } }), db.collection('drive_files').countDocuments({ attivo: true, rootFolderId }), db.collection('drive_folders').countDocuments({ attivo: true, rootFolderId }), db.collection('f24_operazioni').countDocuments({}), db.collection('quietanze_f24').countDocuments({}), db.collection('f24_righe_indice').countDocuments({ attivo: true }), db.collection('dichiarazioni_fiscali').countDocuments({ attivo: true }), db.collection('fatture').countDocuments({}), db.collection('corrispettivi_rt').countDocuments({}), db.collection('drive_files').aggregate([{ $match: { attivo: true, rootFolderId } }, { $group: { _id: '$topFolder', count: { $sum: 1 } } }, { $sort: { count: -1 } }]).toArray(), status()
+    const [documents, driveFiles, driveFolders, f24, quietanze, rows, declarations, invoices, receipts, packageRecords, byDomain, lastRun] = await Promise.all([
+      db.collection('documenti').countDocuments({ recordKind: { $ne: 'DRIVE_SOURCE' }, sourceActive: { $ne: false } }), db.collection('drive_files').countDocuments({ attivo: true, rootFolderId }), db.collection('drive_folders').countDocuments({ attivo: true, rootFolderId }), db.collection('f24_operazioni').countDocuments({}), db.collection('quietanze_f24').countDocuments({}), db.collection('f24_righe_indice').countDocuments({ attivo: true }), db.collection('dichiarazioni_fiscali').countDocuments({ attivo: true }), db.collection('fatture').countDocuments({}), db.collection('corrispettivi_rt').countDocuments({}), db.collection('source_package_records').countDocuments({ attivo: true }), db.collection('drive_files').aggregate([{ $match: { attivo: true, rootFolderId } }, { $group: { _id: '$topFolder', count: { $sum: 1 } } }, { $sort: { count: -1 } }]).toArray(), status()
     ]);
-    return { counts: { documents, driveFiles, driveFolders, f24, quietanze, f24Rows: rows, declarations, invoices, corrispettivi: receipts }, byDomain, lastRun };
+    return { counts: { documents, driveFiles, driveFolders, f24, quietanze, f24Rows: rows, declarations, invoices, corrispettivi: receipts, sourcePackageRecords: packageRecords }, byDomain, lastRun };
   }
   return { run, status, summary, isRunning: () => Boolean(running) };
 }

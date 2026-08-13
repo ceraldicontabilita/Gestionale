@@ -6,6 +6,8 @@ let appReady = false;
 let reconciliationData = null;
 let reconciliationSelection = { movementId: null, causeId: null, causeType: 'F24' };
 let supplierInvoiceStaging = [];
+let supplierDirectoryData = { counts: {}, rows: [] };
+let driveDeclarations = [];
 let supplierImportPollTimer = null;
 let supplierImportRuntime = { jobId: null, active: false, networkPercent: null, displayPercent: 0 };
 let pinConfirmationRequest = null;
@@ -15,7 +17,12 @@ function currentYear() { return new Date().getFullYear(); }
 function years() { const now = currentYear(); return Array.from({ length: 9 }, (_, i) => now - i); }
 function fillSelect(select, values) { select.innerHTML = values.map((v) => `<option value="${v}">${String(v).replaceAll('_', ' ')}</option>`).join(''); }
 function fmtDate(value) { return value ? new Date(value).toLocaleDateString('it-IT') : '—'; }
-function badge(status) { return `<span class="badge ${String(status).toLowerCase()}">${String(status).replaceAll('_', ' ')}</span>`; }
+function fmtSourceDate(value) { return /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(String(value || '')) ? String(value) : fmtDate(value); }
+function badge(status) {
+  const label = String(status || 'SCONOSCIUTO');
+  const className = label.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+  return `<span class="badge ${className}">${escapeHtml(label.replaceAll('_', ' '))}</span>`;
+}
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])); }
 function cookieValue(name) { return document.cookie.split(';').map((v) => v.trim()).find((v) => v.startsWith(`${name}=`))?.slice(name.length + 1) || ''; }
 
@@ -142,19 +149,35 @@ async function loadLedger() {
 
 async function loadF24() {
   const year = $('#f24Year').value || currentYear();
-  const [rows, receipts] = await Promise.all([api(`/api/f24?anno=${year}`), api(`/api/f24-quietanze?anno=${year}`)]);
-  $('#f24Rows').innerHTML = rows.length ? rows.map((row) => {
+  const [rows, receipts, indexed] = await Promise.all([
+    api(`/api/f24?anno=${year}`),
+    api(`/api/f24-quietanze?anno=${year}`),
+    api(`/api/drive-index/f24-documents?year=${year}`).catch(() => ({ models: [], receipts: [] }))
+  ]);
+  const modelIds = new Set(rows.map((row) => row.documentIndexId || String(row.sourceKey || '').split(':').at(-1)).filter(Boolean));
+  const receiptIds = new Set(receipts.map((row) => row.documentIndexId || String(row.sourceKey || '').split(':').at(-1)).filter(Boolean));
+  const modelRows = [...rows, ...indexed.models.filter((row) => !modelIds.has(row.documentId)).map((row) => ({
+    sourceOnly: true, documentIndexId: row.documentId, dataVersamento: row.date, protocollo: row.protocol,
+    file: row.documentName, tipoDocumento: row.documentType, codiciDaVerificare: row.rowCount,
+    stato: row.state, saldoModello: row.totals.balance
+  }))];
+  const receiptRows = [...receipts, ...indexed.receipts.filter((row) => !receiptIds.has(row.documentId)).map((row) => ({
+    sourceOnly: true, documentIndexId: row.documentId, dataVersamento: row.date, protocollo: row.protocol,
+    percorsoDrive: row.path, stato: row.state, totaliRighe: { saldo: row.totals.balance }
+  }))];
+  $('#f24Rows').innerHTML = modelRows.length ? modelRows.map((row) => {
     const protocollo = row.protocollo || row.protocolloLettoNelPdf || 'senza protocollo';
     const saldo = row.saldoModello ?? row.saldoOperazione ?? 0;
-    const check = row.controlloSaldo ? `${row.controlloSaldo.stato}${row.codiciDaVerificare ? ` · ${row.codiciDaVerificare} da verificare` : ''}` : (row.codiciDaVerificare ? `${row.codiciDaVerificare} da verificare` : 'righe non ancora analizzate');
-    return `<tr><td>${fmtDate(row.dataVersamento)}</td><td><strong>${escapeHtml(protocollo)}</strong><small>${escapeHtml(row.file || '')}</small></td><td>${escapeHtml(String(row.tipoDocumento || '').replaceAll('_', ' '))}</td><td>${escapeHtml(check)}</td><td>${badge(row.stato)}</td><td class="num balance">${euro.format(saldo)}</td></tr>`;
-  }).join('') : '<tr><td colspan="6" class="muted">Nessun F24 importato per questo anno.</td></tr>';
-  $('#f24ReceiptRows').innerHTML = receipts.length ? receipts.map((row) => `<tr><td>${fmtDate(row.dataVersamento)}</td><td><strong>${escapeHtml(row.protocollo || 'senza protocollo')}</strong></td><td><small>${escapeHtml(row.percorsoDrive || '')}</small></td><td>${badge(row.stato)}</td><td class="num balance">${euro.format(row.totaliRighe?.saldo || 0)}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">Nessuna quietanza importata per questo anno.</td></tr>';
+    const check = row.controlloSaldo ? `${row.controlloSaldo.stato}${row.codiciDaVerificare ? ` · ${row.codiciDaVerificare} da verificare` : ''}` : (row.codiciDaVerificare ? `${row.codiciDaVerificare} righe dall'indice` : 'righe non ancora analizzate');
+    const sourceButton = row.documentIndexId ? `<button type="button" class="drive-open" data-document-id="${escapeHtml(row.documentIndexId)}">Apri documento</button>` : '';
+    return `<tr><td>${fmtSourceDate(row.dataVersamento)}</td><td><strong>${escapeHtml(protocollo)}</strong><small>${escapeHtml(row.file || '')}</small>${sourceButton}</td><td>${escapeHtml(String(row.tipoDocumento || '').replaceAll('_', ' '))}</td><td>${escapeHtml(check)}</td><td>${badge(row.stato)}</td><td class="num balance">${euro.format(saldo)}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="muted">Nessun F24 indicizzato per questo anno.</td></tr>';
+  $('#f24ReceiptRows').innerHTML = receiptRows.length ? receiptRows.map((row) => `<tr><td>${fmtSourceDate(row.dataVersamento)}</td><td><strong>${escapeHtml(row.protocollo || 'senza protocollo')}</strong></td><td>${row.documentIndexId ? `<button type="button" class="drive-open" data-document-id="${escapeHtml(row.documentIndexId)}">Apri quietanza</button>` : ''}<small>${escapeHtml(row.percorsoDrive || '')}</small></td><td>${badge(row.stato)}</td><td class="num balance">${euro.format(row.totaliRighe?.saldo || 0)}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">Nessuna quietanza indicizzata per questo anno.</td></tr>';
 }
 
 async function loadTributi() {
   const rows = await api('/api/tributi');
-  $('#tributiRows').innerHTML = rows.length ? rows.slice(0, 200).map((row) => `<tr><td>${escapeHtml(row.namespace)}</td><td><strong>${escapeHtml(row.codice)}</strong></td><td>${escapeHtml(row.descrizione)}</td><td>${escapeHtml(row.natura || '—')}</td><td>${escapeHtml(row.fonte)}</td><td>${fmtDate(row.verificatoIl)}</td></tr>`).join('') : '<tr><td colspan="6" class="muted">Registro vuoto.</td></tr>';
+  $('#tributiRows').innerHTML = rows.length ? rows.slice(0, 500).map((row) => `<tr><td>${escapeHtml(row.namespace)}</td><td><strong>${escapeHtml(row.codice)}</strong><small>${row.occurrences || 0} righe F24 osservate</small></td><td>${escapeHtml(row.descrizione)}<small>${escapeHtml((row.observedSections || []).join(', '))}</small></td><td>${escapeHtml(row.natura || '—')}</td><td>${escapeHtml(row.fonte)}<small>${badge(row.registryStatus || 'CLASSIFICATO')}</small></td><td>${row.verificatoIl ? fmtDate(row.verificatoIl) : '<span class="mini-warning">Da classificare</span>'}</td></tr>`).join('') : '<tr><td colspan="6" class="muted">Nessun codice osservato negli F24.</td></tr>';
 }
 
 function selectedMovement() {
@@ -230,11 +253,65 @@ async function confirmReconciliation() {
 }
 
 async function loadRiscossione() {
-  const rows = await api('/api/riscossione/atti');
+  const [rows, sources, packageSources] = await Promise.all([
+    api('/api/riscossione/atti'),
+    api('/api/drive-data/domains/riscossione/files?limit=500').catch(() => ({ total: 0, rows: [] })),
+    api('/api/drive-data/source-packages/records?packageKind=ESTRAZIONE_5_MITTENTI&recordType=ALLEGATO_EMAIL&category=agenzia_riscossione&limit=500').catch(() => ({ total: 0, rows: [] }))
+  ]);
   $('#riscossioneRows').innerHTML = rows.length ? rows.map((row) => {
     const snapshot = row.ultimoSnapshot || null; const dateParts = [row.dataAtto ? `Atto ${fmtDate(row.dataAtto)}` : null, row.dataNotifica ? `Notifica ${fmtDate(row.dataNotifica)}` : null, row.scadenza ? `Scade ${fmtDate(row.scadenza)}` : null].filter(Boolean);
     return `<tr><td><strong>${escapeHtml(row.numeroAtto || 'senza numero')}</strong><small>${escapeHtml(String(row.tipo || '').replaceAll('_', ' '))}</small></td><td>${dateParts.join('<br>') || '—'}</td><td>${escapeHtml((row.entiCreditori || []).join(', ') || '—')}</td><td>${badge(row.stato)}</td><td class="num">${row.importoOriginario == null ? '—' : euro.format(row.importoOriginario)}</td><td class="num balance">${snapshot?.importoResiduo == null ? '—' : euro.format(snapshot.importoResiduo)}</td><td>${snapshot ? `${fmtDate(snapshot.acquisitoIl)}<small>${escapeHtml(snapshot.statoAder || '')}</small>` : '<span class="mini-warning">Manca snapshot</span>'}</td></tr>`;
   }).join('') : '<tr><td colspan="7" class="muted">Nessun atto registrato.</td></tr>';
+  const sourceRows = [
+    ...sources.rows.map((row) => ({ name: row.nome, year: row.anno, type: row.tipoProposto, status: 'OSSERVATO_SU_DRIVE', location: row.percorso, url: row.webViewLink })),
+    ...packageSources.rows.map((row) => ({ name: row.fileName, year: row.year, type: row.recordType, status: row.status || 'INDICIZZATO_DA_EMAIL', location: `${row.drivePackageName} · ${row.sourceEntry} riga ${row.sourceRow}`, url: row.sourceUrl || row.drivePackageWebViewLink }))
+  ];
+  $('#riscossioneSourceMessage').textContent = `${sourceRows.length} documenti ADER/cartelle osservati da Drive e dagli indici ZIP; la classificazione canonica resta separata.`;
+  $('#riscossioneSourceRows').innerHTML = sourceRows.length ? sourceRows.map((row) => `<tr><td><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.type || '')}</small></td><td>${escapeHtml(row.year || '—')}</td><td>${badge(row.status)}</td><td><small>${escapeHtml(row.location || '')}</small></td><td><button type="button" class="drive-open-url" data-url="${escapeHtml(row.url || '')}">Apri fonte</button></td></tr>`).join('') : '<tr><td colspan="5" class="muted">Nessun documento ADER o cartella trovato nelle fonti indicizzate.</td></tr>';
+}
+
+async function loadArchives() {
+  const currentDomain = $('#archiveDomain').value;
+  const currentYearValue = $('#archiveYear').value;
+  const summary = await api('/api/drive-data/domains');
+  if ($('#archiveDomain').options.length <= 1) {
+    $('#archiveDomain').innerHTML = '<option value="">Tutte le categorie</option>' + summary.domains.map((row) => `<option value="${escapeHtml(row.key)}">${escapeHtml(row.label)}</option>`).join('');
+  }
+  const availableYears = [...new Set(summary.topFolders.flatMap((row) => row.years || []).filter((value) => Number(value)).map(Number))].sort((left, right) => right - left);
+  if ($('#archiveYear').options.length <= 1) $('#archiveYear').innerHTML = '<option value="">Tutti gli anni</option>' + availableYears.map((year) => `<option value="${year}">${year}</option>`).join('');
+  if (currentDomain) $('#archiveDomain').value = currentDomain;
+  if (currentYearValue) $('#archiveYear').value = currentYearValue;
+  $('#archiveDomainCards').innerHTML = summary.domains.map((row) => `<article class="card"><small>${escapeHtml(row.label)}</small><strong>${row.count}</strong></article>`).join('');
+  const params = new URLSearchParams({ limit: '500' });
+  if ($('#archiveDomain').value) params.set('domain', $('#archiveDomain').value);
+  if ($('#archiveYear').value) params.set('year', $('#archiveYear').value);
+  if ($('#archiveQuery').value.trim()) params.set('q', $('#archiveQuery').value.trim());
+  const packageParams = new URLSearchParams({ limit: '500' });
+  if ($('#sourcePackageKind').value) packageParams.set('packageKind', $('#sourcePackageKind').value);
+  if ($('#sourcePackageRecordType').value) packageParams.set('recordType', $('#sourcePackageRecordType').value);
+  const [documents, verbali, packageVerbali, packageSummary, packageRecords] = await Promise.all([
+    api(`/api/drive-data/files?${params}`),
+    api('/api/drive-data/domains/verbali/files?limit=500'),
+    api('/api/drive-data/source-packages/records?packageKind=ESTRAZIONE_5_MITTENTI&recordType=ALLEGATO_EMAIL&category=notifica_polizia_locale&limit=500').catch(() => ({ rows: [] })),
+    api('/api/drive-data/source-packages/summary').catch(() => ({ total: 0, rows: [] })),
+    api(`/api/drive-data/source-packages/records?${packageParams}`).catch(() => ({ total: 0, rows: [] }))
+  ]);
+  $('#archiveMessage').textContent = `${documents.total} documenti trovati · ${documents.rows.length} visualizzati · originali conservati su Drive`;
+  $('#archiveRows').innerHTML = documents.rows.length ? documents.rows.map((row) => `<tr><td><strong>${escapeHtml(row.nome)}</strong><small>${escapeHtml(row.percorso || '')}</small></td><td>${escapeHtml(row.topFolder || '—')}</td><td>${escapeHtml(String(row.tipoProposto || 'DOCUMENTO_DRIVE').replaceAll('_', ' '))}</td><td>${escapeHtml(row.anno || '—')}</td><td><button type="button" class="drive-open-url" data-url="${escapeHtml(row.webViewLink || '')}">Apri su Drive</button></td></tr>`).join('') : '<tr><td colspan="5" class="muted">Nessun documento corrisponde ai filtri.</td></tr>';
+  const verbaliRows = [
+    ...verbali.rows.map((row) => ({ name: row.nome, type: row.tipoProposto, year: row.anno, location: row.percorso, url: row.webViewLink })),
+    ...packageVerbali.rows.map((row) => ({ name: row.fileName, type: row.status || row.recordType, year: row.year, location: `${row.drivePackageName} · ${row.sourceEntry} riga ${row.sourceRow}`, url: row.sourceUrl || row.drivePackageWebViewLink }))
+  ];
+  $('#archiveVerbaliRows').innerHTML = verbaliRows.length ? verbaliRows.map((row) => `<tr><td><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.type || '')}</small></td><td>${escapeHtml(row.year || '—')}</td><td><small>${escapeHtml(row.location || '')}</small></td><td><button type="button" class="drive-open-url" data-url="${escapeHtml(row.url || '')}">Apri fonte</button></td></tr>`).join('') : '<tr><td colspan="4" class="muted">Nessun verbale trovato nelle fonti indicizzate.</td></tr>';
+  $('#sourcePackageMessage').textContent = packageSummary.total
+    ? `${packageRecords.total} righe visualizzabili su ${packageSummary.total} righe indicizzate dagli ZIP; i campi originali sono conservati integralmente.`
+    : 'Gli ZIP non sono ancora stati indicizzati dal processo Drive oppure non sono presenti nella radice configurata.';
+  $('#sourcePackageRows').innerHTML = packageRecords.rows.length ? packageRecords.rows.map((row) => {
+    const sourceButton = row.sourceUrl
+      ? `<button type="button" class="drive-open-url" data-url="${escapeHtml(row.sourceUrl)}">Apri fonte</button>`
+      : `<button type="button" class="drive-open-url" data-url="${escapeHtml(row.drivePackageWebViewLink || '')}">Apri pacchetto</button>`;
+    return `<tr><td><strong>${escapeHtml(String(row.recordType || '').replaceAll('_', ' '))}</strong><small>${escapeHtml(row.packageKind)}</small></td><td>${escapeHtml(row.category || '—')}</td><td>${escapeHtml(row.date || row.year || '—')}</td><td><strong>${escapeHtml(row.fileName || row.subject || 'Riga indice')}</strong><small>${escapeHtml(row.relativePath || '')}</small></td><td>${sourceButton}<small>${escapeHtml(row.sourceEntry)} · riga ${row.sourceRow} · ${(row.packageSources || []).length || 1} provenienze</small></td><td><details><summary>Mostra</summary><pre class="source-fields">${escapeHtml(JSON.stringify(row.fields, null, 2))}</pre></details></td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="muted">Nessuna riga indice corrisponde ai filtri.</td></tr>';
 }
 
 async function submitRiscossione(event) {
@@ -270,7 +347,13 @@ async function loadControls() {
 
 async function openDriveDocument(id) {
   const document = await api(`/api/drive-index/documents/${encodeURIComponent(id)}`);
-  window.open(document.drive.webViewLink, '_blank', 'noopener,noreferrer');
+  openExternalUrl(document.drive.webViewLink);
+}
+
+function openExternalUrl(value) {
+  const target = new URL(String(value || ''));
+  if (target.protocol !== 'https:') throw new Error('Collegamento esterno non sicuro');
+  window.open(target.href, '_blank', 'noopener,noreferrer');
 }
 
 function invoiceDateValue(value) { return value ? new Date(value).toISOString().slice(0, 10) : ''; }
@@ -297,15 +380,16 @@ function renderSupplierImport(job, { networkPercent = null, networkFile = null }
   $('#supplierImportProgress').textContent = `${percent}%`;
   $('#supplierImportPercent').textContent = `${percent}%`;
   const totals = job.totals || {};
-  $('#supplierImportSummary').textContent = `${totals.completedFiles || 0}/${totals.totalFiles || 0} file · ${totals.insertedInvoices || 0} fatture nuove · ${totals.duplicateInvoices || 0} duplicate · ${totals.rejectedXml || 0} da controllare`;
+  $('#supplierImportSummary').textContent = `${totals.completedFiles || 0}/${totals.totalFiles || 0} file · ${totals.canonicalInvoices || 0} fatture registrate · ${totals.duplicateInvoices || 0} duplicate · ${(totals.reviewInvoices || 0) + (totals.rejectedXml || 0)} da controllare`;
   const activeFile = job.files?.find((file) => !['COMPLETED', 'COMPLETED_WITH_ERRORS', 'FAILED'].includes(file.status));
   $('#supplierImportCurrent').textContent = terminal
-    ? (job.status === 'COMPLETED' ? 'Importazione completata. Puoi continuare a lavorare.' : 'Importazione completata con elementi da controllare.')
+    ? (job.status === 'COMPLETED' ? 'Importazione completata: fatture disponibili in Fornitori.' : 'Importazione completata con elementi da controllare.')
     : networkFile
       ? `Caricamento ${networkFile}. Puoi cambiare pagina nel gestionale.`
       : activeFile?.currentEntry || activeFile?.name || 'Elaborazione in corso. Puoi cambiare pagina nel gestionale.';
   const button = $('#supplierInvoiceIntakeForm button[type=submit]');
   if (button) button.disabled = !terminal && supplierImportRuntime.active;
+  $('#supplierImportOpenInvoices')?.classList.toggle('hidden', !terminal);
 }
 
 async function pollSupplierImportJob(jobId) {
@@ -318,7 +402,11 @@ async function pollSupplierImportJob(jobId) {
     supplierImportPollTimer = null;
     const button = $('#supplierInvoiceIntakeForm button[type=submit]');
     if (button) button.disabled = false;
-    await loadSupplierInvoices().catch(() => {});
+    try {
+      await Promise.all([loadSupplierInvoices(), loadSupplierDirectory()]);
+    } catch (error) {
+      $('#supplierInvoiceResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`;
+    }
   }
   return job;
 }
@@ -366,37 +454,24 @@ async function loadSupplierInvoices() {
     api('/api/supplier-invoices?limit=200')
   ]);
   supplierInvoiceStaging = staging;
+  $('#supplierNavBadge').textContent = String(staging.length || canonical.length);
+  $('#supplierNavBadge').classList.toggle('hidden', staging.length + canonical.length === 0);
+  $('#supplierInvoiceCounts').textContent = `${staging.length} in elaborazione o da controllare · ${canonical.length} fatture canoniche`;
   $('#supplierInvoiceStagingRows').innerHTML = staging.length ? staging.map((row) => `<tr>
     <td><strong>${escapeHtml(row.numero || 'Senza numero')}</strong><small>${escapeHtml(row.tipoDocumento || '')} · ${escapeHtml(row.sourceType || 'DRIVE')}</small></td>
     <td>${escapeHtml(row.fornitore?.denominazione || 'Da verificare')}<small>${escapeHtml(row.fornitore?.partitaIva || row.fornitore?.codiceFiscale || '')}</small></td>
     <td>${fmtDate(row.data)}</td><td class="num">${euro.format(Number(row.totaleDocumento || 0))}</td>
     <td>${badge(row.quadraturaEstrazione?.status || 'REVIEW')}</td>
-    <td><button type="button" class="supplier-invoice-select" data-source-key="${escapeHtml(row.sourceKey)}">Valida</button></td>
-  </tr>`).join('') : '<tr><td colspan="6" class="muted">Nessuna fattura XML in staging.</td></tr>';
+    <td>${badge(row.stato || 'IN_ELABORAZIONE')}</td>
+  </tr>`).join('') : '<tr><td colspan="6" class="muted">Nessuna fattura in attesa: gli XML esatti sono stati registrati automaticamente.</td></tr>';
   $('#supplierInvoiceCanonicalRows').innerHTML = canonical.length ? canonical.map((row) => `<tr>
     <td><strong>${escapeHtml(row.number)}</strong><small>${fmtDate(row.dates?.documentDate)}</small></td>
     <td>${escapeHtml(row.supplier?.name || '')}<small>${escapeHtml(row.naturalKey)}</small></td>
-    <td>${badge(row.validation?.status || 'VALIDATED')}</td>
+    <td>${badge(row.validation?.status || 'VALIDATED')}<small>${row.amounts?.pendingVatCents ? 'IVA e costo su conti da classificare' : 'Classificazione completa'}</small></td>
     <td class="num">${euro.format(Number(row.openItem?.residualCents || 0) / 100)}</td>
     <td>${badge(row.expectationProcess?.status || 'APERTO')}<small>${row.expectationProcess?.openRequiredExpectations ?? '—'} attese aperte</small></td>
     <td><button type="button" class="supplier-invoice-tree" data-invoice-id="${escapeHtml(row.invoiceId)}">Albero</button></td>
   </tr>`).join('') : '<tr><td colspan="6" class="muted">Nessuna fattura canonica validata.</td></tr>';
-}
-
-function selectSupplierInvoiceForValidation(sourceKey) {
-  const row = supplierInvoiceStaging.find((item) => item.sourceKey === sourceKey);
-  if (!row) return;
-  const form = $('#supplierInvoiceValidationForm');
-  form.classList.remove('hidden');
-  form.elements.sourceKey.value = row.sourceKey;
-  form.elements.ivaDetraibile.value = '';
-  form.elements.ivaDetraibile.max = Number(row.ivaEsposta || 0).toFixed(2);
-  form.elements.receiptDate.value = '';
-  form.elements.competenceDate.value = invoiceDateValue(row.data);
-  form.elements.registrationDate.value = invoiceDateValue(new Date());
-  form.elements.vatDate.value = '';
-  form.elements.dueDate.value = invoiceDateValue(row.pagamenti?.find((item) => item?.scadenza)?.scadenza);
-  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function submitSupplierInvoiceIntake(event) {
@@ -432,35 +507,49 @@ async function submitSupplierInvoiceIntake(event) {
     const finalJob = await pollSupplierImportJob(job.jobId);
     $('#supplierInvoiceResult').innerHTML = errors.length
       ? `<span class="error">${escapeHtml(errors.join(' · '))}</span>`
-      : `${finalJob.totals.insertedInvoices} fatture nuove, ${finalJob.totals.duplicateInvoices} duplicate esatte, ${finalJob.totals.rejectedXml} da controllare.`;
+      : `${finalJob.totals.canonicalInvoices || 0} fatture registrate automaticamente, ${finalJob.totals.duplicateInvoices} duplicate esatte, ${(finalJob.totals.reviewInvoices || 0) + finalJob.totals.rejectedXml} da controllare.`;
   } catch (error) { $('#supplierInvoiceResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
 }
 
-async function submitSupplierInvoiceValidation(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const values = Object.fromEntries(new FormData(form).entries());
-  const body = {
-    sourceKey: values.sourceKey,
-    version: '1',
-    ivaDetraibile: Number(values.ivaDetraibile),
-    receiptDate: values.receiptDate,
-    competenceDate: values.competenceDate,
-    registrationDate: values.registrationDate,
-    vatDate: values.vatDate,
-    dueDate: values.dueDate || null,
-    costAccountCode: values.costAccountCode,
-    vatAccountCode: Number(values.ivaDetraibile) > 0 ? values.vatAccountCode : undefined,
-    payableAccountCode: values.payableAccountCode,
-    postingRule: { id: values.postingRuleId, version: values.postingRuleVersion },
-    reason: values.reason
-  };
-  try {
-    const result = await api('/api/supplier-invoices/validate', { method: 'POST', body: JSON.stringify(body) });
-    $('#supplierInvoiceResult').textContent = result.duplicate ? 'Fattura già validata: identità canonica invariata.' : 'Fattura validata: competenza e partita aperta generate.';
-    form.classList.add('hidden');
-    await loadSupplierInvoices();
-  } catch (error) { $('#supplierInvoiceResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
+function renderSupplierDirectory() {
+  const query = $('#supplierDirectoryQuery').value.trim().toLowerCase();
+  const status = $('#supplierDirectoryStatus').value;
+  const rows = supplierDirectoryData.rows.filter((row) => (!status || row.status === status)
+    && (!query || `${row.name} ${row.vatId || ''} ${row.taxId || ''} ${row.invoices.map((invoice) => invoice.number).join(' ')}`.toLowerCase().includes(query)));
+  const counts = supplierDirectoryData.counts || {};
+  $('#supplierDirectoryCards').innerHTML = [
+    [counts.suppliers || 0, 'fornitori osservati'],
+    [counts.pendingInvoices || 0, 'fatture da elaborare'],
+    [counts.canonicalInvoices || 0, 'fatture canoniche'],
+    [euro.format(Number(counts.residualCents || 0) / 100), 'debito residuo documentale']
+  ].map(([value, label]) => `<article class="card"><small>${label}</small><strong>${value}</strong></article>`).join('');
+  $('#supplierDirectoryMessage').textContent = `${rows.length} fornitori visualizzati · raggruppamento soltanto per identificativo fiscale esatto`;
+  $('#supplierDirectoryRows').innerHTML = rows.length ? rows.map((row) => `<article class="supplier-card">
+    <header><div><h4>${escapeHtml(row.name)}</h4><small>${escapeHtml(row.vatId || row.taxId || 'Identificativo da verificare')}</small></div>${badge(row.status)}</header>
+    <div class="supplier-metrics"><span><strong>${row.pendingInvoices}</strong> da elaborare</span><span><strong>${row.canonicalInvoices}</strong> canoniche</span><span><strong>${euro.format(Number(row.residualCents || 0) / 100)}</strong> residuo</span></div>
+    <details ${row.pendingInvoices ? 'open' : ''}><summary>${row.invoices.length} fatture</summary><div class="table-wrap compact-table"><table><thead><tr><th>Documento</th><th>Data</th><th class="num">Totale</th><th>Stato</th><th>Dettaglio</th></tr></thead><tbody>${row.invoices.map((invoice) => `<tr><td><strong>${escapeHtml(invoice.number)}</strong><small>${escapeHtml(invoice.documentType || '')}</small></td><td>${fmtDate(invoice.documentDate)}</td><td class="num">${euro.format(Number(invoice.totalCents || 0) / 100)}</td><td>${badge(invoice.stage)}</td><td>${invoice.invoiceId ? `<button type="button" class="supplier-invoice-tree supplier-directory-tree" data-invoice-id="${escapeHtml(invoice.invoiceId)}">Albero</button>` : '<span class="muted">Elaborazione automatica</span>'}</td></tr>`).join('')}</tbody></table></div></details>
+  </article>`).join('') : '<div class="muted">Nessun fornitore corrisponde ai filtri.</div>';
+}
+
+async function loadSupplierDirectory() {
+  supplierDirectoryData = await api('/api/supplier-invoices/suppliers/directory');
+  renderSupplierDirectory();
+}
+
+function renderDeclarationGroups() {
+  const category = $('#driveDeclarationCategory').value;
+  const year = $('#driveDeclarationYear').value;
+  const rows = driveDeclarations.filter((row) => (!category || row.category === category) && (!year || row.year === year));
+  const grouped = new Map();
+  for (const row of rows) {
+    if (!grouped.has(row.category)) grouped.set(row.category, []);
+    grouped.get(row.category).push(row);
+  }
+  $('#driveDeclarationGroups').innerHTML = rows.length ? [...grouped.entries()].map(([group, declarations]) => `<details class="document-group" ${category ? 'open' : ''}><summary><strong>${escapeHtml(group)}</strong><span>${declarations.length} documenti</span></summary><div class="table-wrap compact-table"><table><thead><tr><th>Modello</th><th>Anno dichiarazione</th><th>Periodo d'imposta</th><th>Protocollo / invio</th><th>Documento</th></tr></thead><tbody>${declarations.map((row) => `<tr><td><strong>${escapeHtml(row.model)}</strong><small>Fonte: ${escapeHtml(row.sourceType || 'indice')}</small></td><td>${escapeHtml(row.year || '—')}</td><td>${escapeHtml(row.taxYear || '—')}</td><td>${escapeHtml(row.protocol || row.submissionReference || '—')}</td><td>${row.documentId ? `<button type="button" class="drive-open" data-document-id="${escapeHtml(row.documentId)}">Apri su Drive</button>` : `<button type="button" class="drive-open-url" data-url="${escapeHtml(row.drivePackageWebViewLink || '')}">Apri pacchetto</button>`}<small>${escapeHtml(row.documentName || row.archivePath)}</small></td></tr>`).join('')}</tbody></table></div></details>`).join('') : '<div class="muted">Nessuna dichiarazione corrisponde ai filtri.</div>';
+}
+
+function renderResignations(data) {
+  $('#driveResignationRows').innerHTML = data.rows.length ? data.rows.map((row) => `<tr><td><strong>${escapeHtml(row.employeeName || 'Dipendente da identificare')}</strong><small>${escapeHtml(row.employeeTaxIdMasked || '')}</small></td><td>${escapeHtml(row.effectiveDate || '—')}<small>Trasmissione ${escapeHtml(row.transmissionDate || row.documentDate || '—')}</small></td><td>${escapeHtml(row.communicationType || 'Dimissioni telematiche')}<small>${badge(row.status)}</small></td><td><button type="button" class="drive-open" data-document-id="${escapeHtml(row.documentId)}">Apri PDF</button><small>${escapeHtml(row.documentName)}</small></td><td>${row.technicalSourceDocumentId ? `<button type="button" class="drive-open secondary" data-document-id="${escapeHtml(row.technicalSourceDocumentId)}">Apri prova PEC</button>` : '<span class="muted">Non collegata</span>'}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">Nessuna dimissione PDF indicizzata.</td></tr>';
 }
 
 async function showSupplierInvoiceTree(invoiceId) {
@@ -484,8 +573,32 @@ async function loadDriveIndex(force = false) {
   $('#driveImportStatus').textContent = lastRun?.stato === 'IN_CORSO' ? 'Importazione in corso…' : lastRun?.stato ? `${lastRun.stato.replaceAll('_', ' ')} · ${fmtDate(lastRun.completatoIl || lastRun.iniziatoIl)}` : 'In attesa del primo import';
   $('#driveDataRows').innerHTML = imported?.byDomain?.length ? imported.byDomain.map((row) => `<tr><td>${escapeHtml(row._id || '(radice)')}</td><td class="num"><strong>${row.count}</strong></td></tr>`).join('') : '<tr><td colspan="2" class="muted">La sincronizzazione del catalogo è in corso.</td></tr>';
   $('#driveIndexMessage').textContent = `Indice letto ${fmtDate(overview.loadedAt)} · originali conservati esclusivamente su Drive`;
-  const declarations = await api('/api/drive-index/declarations');
-  $('#driveDeclarationRows').innerHTML = declarations.map((row) => `<tr><td>${escapeHtml(row.year)}</td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.protocol || '—')}</td><td><button type="button" class="drive-open" data-document-id="${escapeHtml(row.documentId)}">Apri su Drive</button><small>${escapeHtml(row.archivePath)}</small></td></tr>`).join('');
+  const [declarations, resignations, packageDeclarations] = await Promise.all([
+    api('/api/drive-index/declarations'),
+    api('/api/drive-index/resignations').catch(() => ({ total: 0, rows: [] })),
+    api('/api/drive-data/source-packages/records?recordType=DICHIARAZIONE_FISCALE&limit=1000').catch(() => ({ rows: [] }))
+  ]);
+  const declarationKeys = new Set(declarations.map((row) => `${row.model}|${row.year}|${row.taxYear || ''}|${row.protocol || row.submissionReference || row.documentName}`));
+  driveDeclarations = [...declarations];
+  for (const row of packageDeclarations.rows) {
+    if (!row.declaration) continue;
+    const mapped = {
+      ...row.declaration,
+      sourceType: `ZIP ${row.packageKind}`,
+      documentName: row.fileName,
+      archivePath: row.relativePath,
+      drivePackageWebViewLink: row.drivePackageWebViewLink,
+      documentId: null
+    };
+    const key = `${mapped.model}|${mapped.year}|${mapped.taxYear || ''}|${mapped.protocol || mapped.documentName}`;
+    if (!declarationKeys.has(key)) { declarationKeys.add(key); driveDeclarations.push(mapped); }
+  }
+  fillSelect($('#driveDeclarationCategory'), ['', ...new Set(driveDeclarations.map((row) => row.category))]);
+  $('#driveDeclarationCategory option:first-child').textContent = 'Tutte le categorie';
+  fillSelect($('#driveDeclarationYear'), ['', ...new Set(driveDeclarations.map((row) => row.year).filter(Boolean).sort().reverse())]);
+  $('#driveDeclarationYear option:first-child').textContent = 'Tutti gli anni';
+  renderDeclarationGroups();
+  renderResignations(resignations);
   await loadDriveDocuments();
   await loadSupplierInvoices();
 }
@@ -496,6 +609,7 @@ async function loadDriveDocuments() {
   const year = $('#driveDocumentYear').value;
   if (query) params.set('q', query);
   if (year) params.set('year', year);
+  params.set('includeTechnical', $('#includeTechnicalDocuments').checked ? 'true' : 'false');
   const full = await api(`/api/drive-data/files?${params}`).catch(() => null);
   const data = full?.rows?.length || full?.total ? full : await api(`/api/drive-index/documents?${params}`);
   $('#driveIndexMessage').textContent = `${data.total} documenti trovati · visualizzati ${data.rows.length}`;
@@ -551,7 +665,7 @@ async function submitTributo(event) {
   try { const saved = await api('/api/tributi', { method: 'POST', body: JSON.stringify(body) }); $('#tributoResult').innerHTML = `<strong>${escapeHtml(saved.codice)}</strong><span>versione registrata</span>`; formElement.reset(); await Promise.all([loadTributi(), loadF24(), loadDashboard()]); } catch (error) { $('#tributoResult').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`; }
 }
 
-function setView(name) { $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`)); $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === name)); if (name === 'prima-nota') loadLedger().catch((e) => showLogin(e.message)); if (name === 'documenti') loadDriveIndex().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); if (name === 'riconciliazione') loadReconciliation().catch((e) => { $('#reconciliationResult').textContent = e.message; }); if (name === 'amministrazione') Promise.all([loadF24(), loadTributi(), loadRiscossione()]).catch((e) => showLogin(e.message)); if (name === 'controllo') loadControls().catch((e) => { $('#controlIssues').innerHTML = issue('ALTA', 'Controllo non disponibile', e.message); }); }
+function setView(name) { $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`)); $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === name)); if (name === 'prima-nota') loadLedger().catch((e) => showLogin(e.message)); if (name === 'documenti') loadDriveIndex().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); if (name === 'archivi') loadArchives().catch((e) => { $('#archiveMessage').textContent = e.message; }); if (name === 'fornitori') loadSupplierDirectory().catch((e) => { $('#supplierDirectoryMessage').textContent = e.message; }); if (name === 'riconciliazione') loadReconciliation().catch((e) => { $('#reconciliationResult').textContent = e.message; }); if (name === 'amministrazione') Promise.all([loadF24(), loadTributi(), loadRiscossione()]).catch((e) => showLogin(e.message)); if (name === 'controllo') loadControls().catch((e) => { $('#controlIssues').innerHTML = issue('ALTA', 'Controllo non disponibile', e.message); }); }
 
 function bindEvents() {
   $$('.nav-item').forEach((button) => button.addEventListener('click', () => setView(button.dataset.view)));
@@ -568,15 +682,32 @@ function bindEvents() {
   $('#controlYear').addEventListener('change', () => loadControls().catch((e) => { $('#controlIssues').innerHTML = issue('ALTA', 'Controllo non disponibile', e.message); }));
   $('#reloadControls').addEventListener('click', () => loadControls().catch((e) => { $('#controlIssues').innerHTML = issue('ALTA', 'Controllo non disponibile', e.message); }));
   $('#refreshDriveIndex').addEventListener('click', () => loadDriveIndex(true).catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
+  $('#reloadArchives').addEventListener('click', () => loadArchives().catch((e) => { $('#archiveMessage').textContent = e.message; }));
+  $('#searchArchives').addEventListener('click', () => loadArchives().catch((e) => { $('#archiveMessage').textContent = e.message; }));
+  $('#archiveDomain').addEventListener('change', () => loadArchives().catch((e) => { $('#archiveMessage').textContent = e.message; }));
+  $('#archiveYear').addEventListener('change', () => loadArchives().catch((e) => { $('#archiveMessage').textContent = e.message; }));
+  $('#sourcePackageKind').addEventListener('change', () => loadArchives().catch((e) => { $('#sourcePackageMessage').textContent = e.message; }));
+  $('#sourcePackageRecordType').addEventListener('change', () => loadArchives().catch((e) => { $('#sourcePackageMessage').textContent = e.message; }));
+  $('#archiveQuery').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadArchives().catch((e) => { $('#archiveMessage').textContent = e.message; }); });
   $('#reloadSupplierInvoices').addEventListener('click', () => loadSupplierInvoices().catch((e) => { $('#supplierInvoiceResult').textContent = e.message; }));
   $('#supplierInvoiceIntakeForm').addEventListener('submit', submitSupplierInvoiceIntake);
-  $('#supplierInvoiceValidationForm').addEventListener('submit', submitSupplierInvoiceValidation);
+  $('#reloadSupplierDirectory').addEventListener('click', () => loadSupplierDirectory().catch((e) => { $('#supplierDirectoryMessage').textContent = e.message; }));
+  $('#supplierDirectoryQuery').addEventListener('input', renderSupplierDirectory);
+  $('#supplierDirectoryStatus').addEventListener('change', renderSupplierDirectory);
+  $('#supplierImportOpenInvoices').addEventListener('click', () => { setView('fornitori'); });
+  $('#driveDeclarationCategory').addEventListener('change', renderDeclarationGroups);
+  $('#driveDeclarationYear').addEventListener('change', renderDeclarationGroups);
+  $('#includeTechnicalDocuments').addEventListener('change', () => loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
   $('#searchDriveDocuments').addEventListener('click', () => loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }));
   $('#driveDocumentQuery').addEventListener('keydown', (event) => { if (event.key === 'Enter') loadDriveDocuments().catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
   document.addEventListener('click', (event) => { const button = event.target.closest('.drive-open'); if (button) openDriveDocument(button.dataset.documentId).catch((e) => { $('#driveIndexMessage').textContent = e.message; }); });
-  document.addEventListener('click', (event) => { const button = event.target.closest('.drive-open-url'); if (button?.dataset.url) window.open(button.dataset.url, '_blank', 'noopener,noreferrer'); });
-  document.addEventListener('click', (event) => { const button = event.target.closest('.supplier-invoice-select'); if (button) selectSupplierInvoiceForValidation(button.dataset.sourceKey); });
-  document.addEventListener('click', (event) => { const button = event.target.closest('.supplier-invoice-tree'); if (button) showSupplierInvoiceTree(button.dataset.invoiceId).catch((e) => { $('#supplierInvoiceTree').textContent = e.message; }); });
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('.drive-open-url');
+    if (!button?.dataset.url) return;
+    try { openExternalUrl(button.dataset.url); }
+    catch (error) { $('#driveIndexMessage').textContent = error.message; }
+  });
+  document.addEventListener('click', (event) => { const button = event.target.closest('.supplier-invoice-tree'); if (button) showSupplierInvoiceTree(button.dataset.invoiceId).then(() => { if (button.classList.contains('supplier-directory-tree')) { setView('documenti'); $('#supplierInvoiceTree').scrollIntoView({ behavior: 'smooth', block: 'center' }); } }).catch((e) => { $('#supplierInvoiceTree').textContent = e.message; }); });
   $('#newMovement').addEventListener('click', () => $('#movementDialog').showModal()); $('#closeDialog').addEventListener('click', () => $('#movementDialog').close());
   $('#movementForm').addEventListener('submit', submitMovement); $('#receiptsForm').addEventListener('submit', submitReceipts); $('#tributoForm').addEventListener('submit', submitTributo); $('#riscossioneForm').addEventListener('submit', submitRiscossione);
   $('#loginForm').addEventListener('submit', submitLogin); $('#pinConfirmationForm').addEventListener('submit', submitPinConfirmation); $('#cancelPinConfirmation').addEventListener('click', cancelPinConfirmation); $('#logoutButton').addEventListener('click', logout);

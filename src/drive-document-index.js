@@ -1,5 +1,6 @@
 import { strFromU8, unzipSync } from 'fflate';
 import { XMLParser } from 'fast-xml-parser';
+import { documentRole } from './document-index-metadata.js';
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
 const INDEX_FOLDER = 'INDICI GESTIONALE';
@@ -180,7 +181,16 @@ export function createDriveDocumentIndex({ drive, rootFolderId, maxIndexBytes = 
     throw new Error(`Percorso Drive non risolto: ${path}`);
   }
 
-  return { load, resolvePath };
+  async function downloadDocument(documentId) {
+    const index = await load();
+    const row = index.byId.get(clean(documentId));
+    if (!row) throw new Error('Documento non trovato nell indice Drive');
+    const document = publicDocument(row);
+    const resolved = await resolvePath(document.path);
+    return { document, drive: resolved, buffer: await drive.downloadBuffer(resolved.id) };
+  }
+
+  return { load, resolvePath, downloadDocument };
 }
 
 export function publicDocument(row) {
@@ -195,6 +205,7 @@ export function publicDocument(row) {
     sha256: row.__sha,
     path: row.__path,
     status: clean(row.Stato),
-    number: clean(row['Numero documento']) || null
+    number: clean(row['Numero documento']) || null,
+    role: documentRole(row)
   };
 }

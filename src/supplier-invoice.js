@@ -1,11 +1,23 @@
 import { parseMoney, roundMoney } from './money.js';
-import { ensureEventEngineIndexes, publishDomainEventInSession } from './event-engine.js';
+import {
+  changeAccountingPeriod,
+  ensureEventEngineIndexes,
+  publishDomainEventInSession,
+  registerPostingRule
+} from './event-engine.js';
 import { stableFingerprint } from './fingerprint.js';
 import { withMongoTransaction } from './mongo-transaction.js';
 import { projectSupplierInvoiceValidated } from './supplier-invoice-projection.js';
 
 const readyDatabases = new WeakSet();
 const ACCOUNT = /^[A-Z0-9_.:-]{1,120}$/;
+const AUTO_RULE = Object.freeze({
+  id: 'FATTURA_PASSIVA_AUTO_DA_CLASSIFICARE',
+  version: '1',
+  costAccount: 'COSTI_DA_CLASSIFICARE',
+  vatAccount: 'IVA_DA_CLASSIFICARE',
+  payableAccount: 'DEBITI_FORNITORI'
+});
 
 function requiredText(value, label, max = 500) {
   const result = String(value ?? '').trim();
@@ -74,7 +86,8 @@ export function buildSupplierInvoiceValidation(source, input, { actor, now = new
   const version = requiredText(input?.version || '1', 'Versione validazione', 40);
   const taxableCents = cents(source.imponibile, 'Imponibile');
   const exposedVatCents = cents(source.ivaEsposta, 'IVA esposta');
-  const deductibleVatCents = cents(input?.ivaDetraibile, 'IVA detraibile');
+  const vatClassificationPending = input?.vatClassificationPending === true;
+  const deductibleVatCents = vatClassificationPending ? 0 : cents(input?.ivaDetraibile, 'IVA detraibile');
   const totalCents = cents(source.totaleDocumento, 'Totale documento');
   const withholdingCents = cents(source.ritenuta || 0, 'Ritenuta');
   if (deductibleVatCents > exposedVatCents) throw new Error('IVA detraibile superiore all IVA esposta');
@@ -82,7 +95,8 @@ export function buildSupplierInvoiceValidation(source, input, { actor, now = new
   if (taxableCents < 0 || exposedVatCents < 0 || withholdingCents < 0) throw new Error('Componenti fattura non valide');
   const payableCents = totalCents - withholdingCents;
   if (payableCents <= 0) throw new Error('Debito fornitore non positivo');
-  const costCents = totalCents - deductibleVatCents;
+  const pendingVatCents = vatClassificationPending ? exposedVatCents : 0;
+  const costCents = totalCents - deductibleVatCents - pendingVatCents;
   if (costCents <= 0) throw new Error('Costo contabile non positivo');
 
   const documentDate = isoDate(source.data, 'Data documento');
@@ -93,12 +107,13 @@ export function buildSupplierInvoiceValidation(source, input, { actor, now = new
   const dueDate = input?.dueDate || source.pagamenti?.find((item) => item?.scadenza)?.scadenza;
   const normalizedDueDate = dueDate ? isoDate(dueDate, 'Data scadenza') : null;
   const costAccount = account(input?.costAccountCode, 'Conto costo');
-  const vatAccount = deductibleVatCents > 0 ? account(input?.vatAccountCode, 'Conto IVA') : null;
+  const vatAccount = deductibleVatCents > 0 || pendingVatCents > 0 ? account(input?.vatAccountCode, 'Conto IVA') : null;
   const payableAccount = account(input?.payableAccountCode, 'Conto debiti fornitori');
   const withholdingAccount = withholdingCents > 0 ? account(input?.withholdingAccountCode, 'Conto ritenute') : null;
 
   const lines = [{ accountCode: costAccount, debit: costCents / 100, credit: 0, description: 'Costo fattura fornitore' }];
   if (deductibleVatCents > 0) lines.push({ accountCode: vatAccount, debit: deductibleVatCents / 100, credit: 0, description: 'IVA detraibile fattura fornitore' });
+  if (pendingVatCents > 0) lines.push({ accountCode: vatAccount, debit: pendingVatCents / 100, credit: 0, description: 'IVA esposta da classificare' });
   lines.push({ accountCode: payableAccount, debit: 0, credit: payableCents / 100, description: 'Debito verso fornitore' });
   if (withholdingCents > 0) lines.push({ accountCode: withholdingAccount, debit: 0, credit: withholdingCents / 100, description: 'Ritenuta da versare' });
   const debit = lines.reduce((sum, line) => sum + Math.round(line.debit * 100), 0);
@@ -127,7 +142,8 @@ export function buildSupplierInvoiceValidation(source, input, { actor, now = new
       taxableCents,
       exposedVatCents,
       deductibleVatCents,
-      nonDeductibleVatCents: exposedVatCents - deductibleVatCents,
+      nonDeductibleVatCents: vatClassificationPending ? 0 : exposedVatCents - deductibleVatCents,
+      pendingVatCents,
       totalCents,
       withholdingCents,
       payableCents,
@@ -141,10 +157,11 @@ export function buildSupplierInvoiceValidation(source, input, { actor, now = new
     sourceLines: Array.isArray(source.righe) ? source.righe : [],
     vatSummaries: Array.isArray(source.riepiloghiIva) ? source.riepiloghiIva : [],
     validation: {
-      status: 'VALIDATED',
+      status: vatClassificationPending ? 'AUTO_VALIDATED_PENDING_CLASSIFICATION' : 'VALIDATED',
       actor: requiredText(actor, 'Attore', 200),
       reason: requiredText(input?.reason, 'Motivo validazione', 500),
-      validatedAt: now
+      validatedAt: now,
+      vatClassificationPending
     }
   };
   invoice.sources = [{ sourceKey: invoice.sourceKey, sourceVersion: invoice.sourceVersion, documentId: invoice.documentId }];
@@ -192,6 +209,59 @@ export function buildSupplierInvoiceValidation(source, input, { actor, now = new
   return { invoice, event };
 }
 
+async function ensureAutomaticInvoiceInfrastructure(context, registrationDate, now) {
+  const { client, db } = context;
+  const rule = await db.collection('accounting_posting_rules').findOne({ ruleId: AUTO_RULE.id, version: AUTO_RULE.version });
+  if (!rule) {
+    await registerPostingRule(context, {
+      ruleId: AUTO_RULE.id,
+      version: AUTO_RULE.version,
+      allowedEntryKinds: ['DOCUMENT_COMPETENCE'],
+      allowedAccounts: [AUTO_RULE.costAccount, AUTO_RULE.vatAccount, AUTO_RULE.payableAccount],
+      description: 'Scrittura automatica da XML FatturaPA esatto con costo e IVA in conti tecnici da classificare',
+      approvalReason: 'Regola di bootstrap limitata a XML FatturaPA quadrati e conti tecnici non definitivi'
+    }, { actor: 'SYSTEM_EXACT_INTAKE', now });
+  }
+  const year = registrationDate.getUTCFullYear();
+  const month = registrationDate.getUTCMonth() + 1;
+  const period = await db.collection('accounting_periods').findOne({ year, month });
+  if (!period) {
+    await changeAccountingPeriod(context, {
+      year,
+      month,
+      action: 'OPEN',
+      reason: 'Apertura tecnica del periodo di registrazione per intake automatico FatturaPA esatto'
+    }, { actor: 'SYSTEM_EXACT_INTAKE', now });
+  }
+}
+
+export async function autoValidateSupplierInvoice(context, sourceKey, { now = new Date() } = {}) {
+  if (!context?.client || !context?.db) throw new Error('Validazione automatica richiede MongoDB transazionale');
+  const source = await context.db.collection('fatture').findOne({ sourceKey: requiredText(sourceKey, 'Chiave fonte', 500) });
+  if (!source) throw new Error('Fattura importata non trovata');
+  if (source.extractionVersion !== 'FATTURAPA_XML_V2' || source.quadraturaEstrazione?.status !== 'EXACT') {
+    return { reviewRequired: true, reason: 'SUPPLIER_INVOICE_REVIEW_REQUIRED' };
+  }
+  const acquiredAt = isoDate(source.creatoIl || source.aggiornatoIl || now, 'Data acquisizione');
+  await ensureAutomaticInvoiceInfrastructure(context, acquiredAt, now);
+  const output = await validateSupplierInvoice(context, source.sourceKey, {
+    version: '1',
+    sourceVersion: source.sourceVersion || source.documentSha256 || '1',
+    vatClassificationPending: true,
+    receiptDate: acquiredAt,
+    competenceDate: source.data,
+    registrationDate: acquiredAt,
+    vatDate: acquiredAt,
+    dueDate: source.pagamenti?.find((item) => item?.scadenza)?.scadenza || null,
+    costAccountCode: AUTO_RULE.costAccount,
+    vatAccountCode: AUTO_RULE.vatAccount,
+    payableAccountCode: AUTO_RULE.payableAccount,
+    postingRule: { id: AUTO_RULE.id, version: AUTO_RULE.version },
+    reason: 'Importazione automatica da XML FatturaPA esatto; IVA e costo conservati in conti tecnici da classificare'
+  }, { actor: 'SYSTEM_EXACT_INTAKE', now });
+  return { ...output, reviewRequired: false };
+}
+
 export async function validateSupplierInvoice({ client, db }, sourceKey, input, options = {}) {
   if (!client || !db) throw new Error('Validazione fattura richiede MongoDB transazionale');
   await Promise.all([ensureSupplierInvoiceIndexes(db), ensureEventEngineIndexes(db)]);
@@ -211,6 +281,11 @@ export async function validateSupplierInvoice({ client, db }, sourceKey, input, 
       const recordedEvent = await db.collection('domain_events').findOne({ eventKey: event.eventKey }, { session });
       if (!recordedEvent) throw new Error('SUPPLIER_INVOICE_EVENT_NOT_FOUND');
       await projectSupplierInvoiceValidated(db, recordedEvent, { session, now });
+      await db.collection('fatture').updateOne(
+        { _id: source._id },
+        { $set: { stato: 'VALIDATA', canonicalInvoiceId: existing.invoiceId, canonicalVersion: existing.version, validataIl: now, aggiornatoIl: now } },
+        { session }
+      );
       const alreadyLinked = (existing.sources || []).some((item) => item.sourceKey === invoice.sourceKey && item.sourceVersion === invoice.sourceVersion);
       return { invoice: { ...existing, sources: alreadyLinked ? existing.sources : [...(existing.sources || []), invoice.sources[0]] }, event: recordedEvent, duplicate: true };
     }
@@ -219,6 +294,11 @@ export async function validateSupplierInvoice({ client, db }, sourceKey, input, 
     await db.collection('invoice_suppliers').insertOne({ ...invoice, createdAt: now, updatedAt: now }, { session });
     const published = await publishDomainEventInSession(db, event, { session, now });
     const domainProjection = await projectSupplierInvoiceValidated(db, published.event, { session, now });
+    await db.collection('fatture').updateOne(
+      { _id: source._id },
+      { $set: { stato: 'VALIDATA', canonicalInvoiceId: invoice.invoiceId, canonicalVersion: invoice.version, validataIl: now, aggiornatoIl: now } },
+      { session }
+    );
     return { invoice, event: published.event, domainProjection, duplicate: false };
   });
 }
