@@ -97,6 +97,12 @@ test('HTTP reale: anonimato, PIN, CSRF e riconferma PIN sulle operazioni sensibi
     throw new Error(`${error.message}\n${logs}`);
   });
 
+  const health = await jsonRequest(`${baseUrl}/api/health`);
+  assert.equal(health.status, 200);
+  const healthPayload = await health.json();
+  assert.equal(healthPayload.versione, '0.11.0');
+  assert.equal(healthPayload.database, 'connected');
+
   const anonymous = await jsonRequest(`${baseUrl}/api/config`);
   assert.equal(anonymous.status, 401);
 
