@@ -37,6 +37,20 @@ Prima di commit, push o apertura di una pull request, ripetere il controllo del 
 - Aprire le pull request inizialmente in bozza verso `main` e non unirle senza approvazione esplicita dell'utente.
 - Non inserire documenti fiscali reali, credenziali, token, identificativi privati o dati personali in codice, fixture, log e commit.
 
+## Anatomia funzionale obbligatoria
+
+- `docs/anatomia-gestionale/catalogo.json` è la fonte canonica per sezioni, pagine, proprietari funzionali, entità, relazioni e stato di implementazione.
+- `docs/anatomia-gestionale/topologia-flussi.json` è il contratto canonico per eventi, proiezioni delle pagine, azioni consentite, idempotenza, propagazione degli errori e collegamenti fra domini.
+- Gli inventari in `docs/anatomia-gestionale/inventari/` sono lo snapshot storico autosufficiente usato per decidere consolidamento, ridisegno o esclusione; non sono codice da copiare né una dipendenza runtime.
+- Prima di aggiungere una pagina, un endpoint, una collezione, un job o un motore, cercare nel catalogo l'equivalente esistente. Se esiste, estenderlo o correggerlo: non creare implementazioni parallele.
+- Ogni nuova capacità deve avere un solo proprietario funzionale, una fonte autorevole per ciascun fatto, regole di deduplicazione e un esito esplicito in caso di ambiguità.
+- Le pagine sono proiezioni/read model dei fatti canonici. Un comando avviato da una pagina deve scrivere attraverso il proprietario del dominio e pubblicare un evento idempotente; non creare copie modificabili dello stesso fatto per alimentare più pagine.
+- Qualunque modifica che aggiunge un ingresso, cambia un'entità o produce effetti su altre pagine deve aggiornare insieme catalogo e topologia, includendo deduplicazione, provenienza, quadrature, invalidazione/storno e stato di errore.
+- La pagina Coerenza legge e valuta i domini con regole versionate, ma non corregge direttamente i loro fatti autorevoli. La correzione avviene nel dominio proprietario e genera un nuovo evento sottoposto nuovamente ai controlli.
+- La presenza di un file, una classe, una route o una schermata non prova che una capacità sia completa. Aggiornare lo stato nel catalogo soltanto con test e collegamenti reali tra ingresso, persistenza, uso e controllo.
+- Le sorgenti storiche restano riferimenti di sola lettura. Il catalogo e i documenti presenti in questo repository devono essere sufficienti per proseguire il lavoro senza interrogarle di nuovo.
+- Eseguire `npm run validate:anatomia` quando si modifica il catalogo o la struttura funzionale.
+
 ## Richiamo iniziale
 
 All'inizio di ogni nuova attività sul progetto, il primo aggiornamento deve dichiarare:

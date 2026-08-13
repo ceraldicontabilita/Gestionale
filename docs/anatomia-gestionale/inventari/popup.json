@@ -1,0 +1,806 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "historical_popups",
+  "sourceSnapshot": {
+    "label": "snapshot-storico-sola-lettura",
+    "commit": "7f126c80522db6bd79f0eecaccfd643bae981793",
+    "capturedAt": "2026-08-13",
+    "runtimeDependency": false
+  },
+  "summary": {
+    "recordCount": 36,
+    "kinds": {
+      "drawer": 1,
+      "inline_panel": 6,
+      "modal": 26,
+      "native_confirm": 3
+    },
+    "totalFieldsOrButtons": 204
+  },
+  "records": [
+    {
+      "id": "popup:admin-rollback-conferma-eliminazione",
+      "name": "Modale di conferma \"Confermi l'eliminazione?\" (rollback dati per periodo)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/admin-rollback-conferma-eliminazione.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Admin.jsx (componente RollbackDatiTab, righe 1438-1684; overlay del modale righe 1594-1681)"
+      ],
+      "symbol": "admin-rollback-conferma-eliminazione",
+      "fieldOrButtonCount": 4,
+      "owner": "AMMINISTRAZIONE",
+      "domain": "amministrazione",
+      "canonicalDestination": "amministrazione.integrazioni_scheduler",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "È un vero strumento di cancellazione dati reali (non un rollback da backup): permette all'admin di eliminare in modo irreversibile tutti i documenti di una sezione del gestionale (Corrispettivi, Fatture, PayPal, Cedolini, Prima Nota Cassa/Banca, F24, Assegni, Verbali Noleggio, Archivio Bonifici, Magazzino) che ricadono in un periodo scelto (ultimo giorno/settimana/mese, oppure un intero anno solare 2023/2024/2025). Il caso d'uso dichiarato nel commento del router backend è il controllo di precisione: si cancellano i dati recenti di un periodo, si re-importano e si verifica che i calcoli tornino corretti. Il modale esiste per mostrare all'utente il numero ESATTO di record che verranno persi prima di chiedere una conferma esplicita, evitando cancellazioni alla cieca.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:archivio-bonifici-dropdown-associa-fattura",
+      "name": "Dropdown 'Associa Fattura' (NON è un vero modale)",
+      "uiKind": "inline_panel",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/archivio-bonifici-dropdown-associa-fattura.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/ArchivioBonifici.jsx (bottone/dropdown righe ~1243-1290+; logica toggleAssociaFatturaDropdown riga 355, loadFattureCompatibili riga 343, handleAssociaFattura riga 369, handleDisassociaFattura riga 382; endpoint backend in app/routers/bonifici_module/associazioni.py)"
+      ],
+      "symbol": "archivio-bonifici-dropdown-associa-fattura",
+      "fieldOrButtonCount": 4,
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Proporre e collegare un bonifico a una fattura fornitore presente nella collezione invoices, con tolleranza sull'importo del ±5%.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:archivio-bonifici-dropdown-associa-salario",
+      "name": "Dropdown 'Associa Salario' (NON è un vero modale)",
+      "uiKind": "inline_panel",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/archivio-bonifici-dropdown-associa-salario.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/ArchivioBonifici.jsx (bottone/dropdown righe ~1031-1210; logica toggleAssociaDropdown riga 296, handleAssocia riga 312, handleDisassocia riga 326; endpoint backend in app/routers/bonifici_module/associazioni.py)"
+      ],
+      "symbol": "archivio-bonifici-dropdown-associa-salario",
+      "fieldOrButtonCount": 3,
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Proporre e collegare un bonifico bancario a un'operazione di Prima Nota Salari (pagamento stipendio a un dipendente) con un punteggio di compatibilità basato su importo (±5%).",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:assegni-collega-fatture",
+      "name": "Modal 'Collega Fatture all'Assegno' (draggable)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/assegni-collega-fatture.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/GestioneAssegni.jsx (righe ~3258-3732; stato showFattureModal/editingAssegnoForFatture/selectedFatture/fatture/modalPosition/isDragging/dragOffset dichiarato righe ~72-82; logica in openFattureModal riga ~281, toggleFattura riga ~325, saveFattureCollegate riga ~375, loadFatture riga ~147)"
+      ],
+      "symbol": "assegni-collega-fatture",
+      "fieldOrButtonCount": 7,
+      "owner": "TESORERIA",
+      "domain": "assegni",
+      "canonicalDestination": "riconciliazione.assegni",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Permettere di collegare da 0 a 4 fatture passive dello stesso fornitore a un singolo assegno, distribuendo l'importo dell'assegno tra le fatture tramite un sistema di 'quote' in euro (non necessariamente uguali all'importo pieno della fattura: può essere un pagamento parziale). Gestisce anche le note di credito (TD04), mostrate con importo negativo.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:assegni-genera-progressivi",
+      "name": "Modal 'Genera 10 Assegni Progressivi'",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/assegni-genera-progressivi.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/GestioneAssegni.jsx (righe ~3147-3256, stato showGenerate/generateForm/generating dichiarato riga ~63-66)"
+      ],
+      "symbol": "assegni-genera-progressivi",
+      "fieldOrButtonCount": 5,
+      "owner": "TESORERIA",
+      "domain": "assegni",
+      "canonicalDestination": "riconciliazione.assegni",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Creare in blocco N assegni vuoti progressivi appartenenti allo stesso carnet fisico, a partire da un numero di partenza nel formato PREFISSO-NUMERO. Il titolo del modale è fisso ('Genera 10 Assegni Progressivi') ma il valore reale inviato è generateForm.quantita, inizializzato a 10 nello stato React: NON esiste nel JSX alcun campo input per modificare la quantità, quindi nella pratica operativa il modale genera SEMPRE e SOLO 10 assegni per click, nonostante il backend (POST /api/assegni/genera) accetti un parametro quantita libero da 1 a 100.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:assegni-pannello-ambigui",
+      "name": "Pannello 'Assegni ambigui — serve la tua decisione' (NON è un vero modale)",
+      "uiKind": "inline_panel",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/assegni-pannello-ambigui.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/GestioneAssegni.jsx (pannello righe ~1259-1420 circa; logica loadAmbigui riga 484, toggleAmbiguiSection riga 502, resolveAmbiguo riga 520)"
+      ],
+      "symbol": "assegni-pannello-ambigui",
+      "fieldOrButtonCount": 3,
+      "owner": "TESORERIA",
+      "domain": "assegni",
+      "canonicalDestination": "riconciliazione.assegni",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare gli assegni per cui l'auto-matcher a 4 livelli (run_auto_match, dry_run implicito lato GET /ambigui) ha trovato più fatture candidate con importo compatibile per lo stesso assegno, senza riuscire a decidere da solo (regola conservativa: mai indovinare, sempre chiedere all'utente in caso di ambiguità), e permettere di risolvere manualmente selezionando la o le fatture corrette.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:coerenza-pos-chiusura-serale",
+      "name": "ModalChiusuraSerale",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/coerenza-pos-chiusura-serale.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/CoerenzaPOSCorrispettivi.jsx, righe 1242-1409 — componente definito INLINE nello stesso file della pagina; montato condizionalmente riga ~746-750 ({modalAperta && <ModalChiusuraSerale onClose={...} onSaved={...} />})"
+      ],
+      "symbol": "coerenza-pos-chiusura-serale",
+      "fieldOrButtonCount": 8,
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Permettere l'inserimento manuale, in chiusura di giornata, del totale corrispettivo provvisorio (in attesa dell'XML ufficiale dell'Agenzia delle Entrate) e/o del valore realmente battuto sul POS fisico, dati necessari rispettivamente alla FASE 1 (RT vs POS reale) e alla base del confronto di FASE 2 (POS reale vs accredito banca) del Controllo a 2 Fasi. Serve anche come fallback quando l'XML dei corrispettivi non è ancora arrivato dal registratore telematico.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:controllo-mensile-dettaglio-versamenti",
+      "name": "Modale 'Dettaglio Versamenti - {Mese} {Anno}'",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/controllo-mensile-dettaglio-versamenti.json",
+      "sourceFrontendPaths": [],
+      "symbol": "controllo-mensile-dettaglio-versamenti",
+      "fieldOrButtonCount": 3,
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare l'elenco dei movimenti di Prima Nota Cassa del mese corrente classificati come 'versamento' (uscite verso banca), per verificare/riconciliare il totale versamenti usato nel confronto POS/corrispettivi della pagina.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:corrispettivi-conferma-eliminazione",
+      "name": "window.confirm() nativo — conferma eliminazione corrispettivo",
+      "uiKind": "native_confirm",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/corrispettivi-conferma-eliminazione.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Corrispettivi.jsx (funzione handleDelete, righe 64-73)"
+      ],
+      "symbol": "corrispettivi-conferma-eliminazione",
+      "fieldOrButtonCount": 1,
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Evitare l'eliminazione accidentale di un corrispettivo con un solo click, chiedendo una conferma esplicita prima di procedere con una richiesta irreversibile (soft-delete lato server, ma senza possibilità di 'undo' nell'interfaccia).",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:corrispettivi-dettaglio-pannello",
+      "name": "Pannello 'Dettaglio Corrispettivo' (inline, non è un vero overlay/modale)",
+      "uiKind": "inline_panel",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/corrispettivi-dettaglio-pannello.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Corrispettivi.jsx (righe 195-323)"
+      ],
+      "symbol": "corrispettivi-dettaglio-pannello",
+      "fieldOrButtonCount": 3,
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare il dettaglio completo di UN corrispettivo giornaliero (una singola giornata di incasso) senza uscire dalla pagina elenco: dati generali del registratore telematico, ripartizione del pagamento (cassa/elettronico), e riepilogo IVA per aliquota.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:dashboard-registra-pagamento",
+      "name": "Modale 'Registra Pagamento' (interno al widget Scadenze)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/dashboard-registra-pagamento.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Dashboard.jsx (componente ScadenzeWidget, righe 1896-2416 circa; il modale vero e proprio è renderizzato alle righe 2242-2413, montato SOLO quando pagaModal è valorizzato)"
+      ],
+      "symbol": "dashboard-registra-pagamento",
+      "fieldOrButtonCount": 5,
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Permettere di saldare rapidamente, senza uscire dalla Dashboard, una scadenza imminente (fattura fornitore, IVA, F24, INPS) scegliendo se il pagamento è avvenuto in contanti/Cassa (saldato subito) o tramite Banca (da riconciliare in seguito con l'estratto conto). È pensato come scorciatoia operativa dal cruscotto principale, evitando di dover navigare fino alla pagina Scadenze o Fatture per registrare un pagamento urgente.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:documenti-pdf-viewer-modal",
+      "name": "PDF Viewer Modal (visualizzatore PDF inline)",
+      "uiKind": "modal",
+      "openedFrom": [
+        "Documenti → Archivio (frontend/src/pages/Documenti.jsx, montato dentro l'hub /documenti tramite frontend/src/pages/hub/DocumentiHub.jsx). È l'unico vero popup con overlay trovato in tutto il modulo Documenti: si apre sia dal sotto-tab 'Tutti i Documenti' (activeTab='email', tabella su documents_inbox) sia dal sotto-tab 'AI Estratti' (activeTab='ai', tabella su extracted_documents). Il sotto-tab 'Per Mittente' non ha righe con azione 'Vedi' e non apre mai questo modale. Il tab gemello 'Import Documenti' (ImportDocumenti.jsx) non ha alcun popup: usa solo alert() nativi e pannelli inline (verificato via grep su position:'fixed'/Modal/Drawer/Portal, nessun risultato)."
+      ],
+      "sourcePath": "memoria/popup/documenti-pdf-viewer-modal.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Documenti.jsx (blocco JSX del modale righe 1857-1953; stato selectedPdfDoc dichiarato riga 118; funzioni handleViewPdf riga 377, handleDownloadFile riga 358, closePdfViewer riga 406; secondo punto di apertura per il tab AI Estratti alle righe 1788-1803)"
+      ],
+      "symbol": "documenti-pdf-viewer-modal",
+      "fieldOrButtonCount": 3,
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Permettere di guardare subito il contenuto di un documento (fattura, F24, busta paga, estratto conto, ecc.) senza dover scaricare il file sul disco e aprirlo con un lettore esterno — un'anteprima rapida per verificare che il documento scaricato/estratto sia quello giusto prima di procedere con altre azioni (cambio categoria, eliminazione, ecc.).",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:fatture-banner-deep-link-fattura-non-trovata",
+      "name": "Banner deep-link 'Fattura non trovata / anno diverso' (pannello inline, non un vero overlay/modale)",
+      "uiKind": "inline_panel",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/fatture-banner-deep-link-fattura-non-trovata.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/ArchivioFattureRicevute.jsx (stato e logica righe 144-196, rendering righe 348-413)"
+      ],
+      "symbol": "fatture-banner-deep-link-fattura-non-trovata",
+      "fieldOrButtonCount": 3,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Evitare che un link diretto a una fattura (es. da un pagamento PayPal o da un'altra pagina) sembri 'rotto' quando in realtà la fattura esiste ma è filtrata fuori perché appartiene a un anno diverso da quello globale selezionato; oppure informare esplicitamente l'utente che la fattura non esiste più / è stata eliminata.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:fornitori-conferma-eliminazione",
+      "name": "window.confirm() nativo — conferma (doppia) eliminazione fornitore",
+      "uiKind": "native_confirm",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/fornitori-conferma-eliminazione.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Fornitori.jsx (funzione handleDelete, righe 1728-1763)"
+      ],
+      "symbol": "fornitori-conferma-eliminazione",
+      "fieldOrButtonCount": 2,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Prevenire l'eliminazione accidentale di un fornitore con un doppio livello di conferma: la prima finestra nativa conferma l'intento generico di eliminare; una SECONDA finestra nativa (solo se il backend segnala che il fornitore ha fatture collegate) chiede esplicitamente se forzare comunque l'eliminazione nonostante il rischio di lasciare fatture orfane.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:fornitori-estratto-fatture",
+      "name": "Modale Estratto Fatture (estratto conto fatture del fornitore)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/fornitori-estratto-fatture.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Fornitori.jsx (logica handleViewInvoicesModal righe 1858-1888, reloadEstratto righe 1891-1914; rendering righe 2686-3366 circa, in un React Portal)"
+      ],
+      "symbol": "fornitori-estratto-fatture",
+      "fieldOrButtonCount": 15,
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare, senza uscire dalla pagina Fornitori, l'elenco completo delle fatture (e note di credito) di un fornitore con filtri su anno/data/importo/tipo documento, i totali aggregati (documenti, totale, note credito, netto), e permettere di segnare rapidamente una fattura come pagata in Cassa o Banca direttamente da questa vista, oltre a stampare l'estratto.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:fornitori-fatturato-annuo",
+      "name": "Modale Fatturato (fatturato annuo del fornitore)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/fornitori-fatturato-annuo.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Fornitori.jsx (logica handleShowFatturato righe 1840-1855; rendering righe 2470-2684, in un React Portal)"
+      ],
+      "symbol": "fornitori-fatturato-annuo",
+      "fieldOrButtonCount": 6,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare rapidamente, senza uscire dalla pagina Fornitori, il riepilogo del fatturato di un fornitore per un anno specifico: totale fatturato, numero fatture, quante sono pagate/da pagare (con relativi importi) e il dettaglio mese per mese.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:fornitori-menu-metodo-pagamento",
+      "name": "Menu a tendina (popover) 'Metodo Pagamento' sul badge della card fornitore",
+      "uiKind": "inline_panel",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/fornitori-menu-metodo-pagamento.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Fornitori.jsx (componente SupplierCard: stato e handler righe 940-1004; rendering del menu righe 1452-1531, in un React Portal)"
+      ],
+      "symbol": "fornitori-menu-metodo-pagamento",
+      "fieldOrButtonCount": 2,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Permettere di cambiare rapidamente il metodo di pagamento abituale di un fornitore direttamente dalla card, senza dover aprire il modale completo di modifica (SupplierModal). È la scorciatoia più veloce per correggere il metodo dopo aver importato molte fatture da fornitori nuovi.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:fornitori-schede-tecniche",
+      "name": "Modale Schede Tecniche (prodotti del fornitore)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/fornitori-schede-tecniche.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Fornitori.jsx (logica handleViewSchedeTecniche righe 1919-1936, handleCercaSchedeTecniche righe 1938-1973; rendering righe 3372-3755, in un React Portal)"
+      ],
+      "symbol": "fornitori-schede-tecniche",
+      "fieldOrButtonCount": 7,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare l'elenco delle schede tecniche (PDF) dei prodotti acquistati da un fornitore, identificati automaticamente analizzando le righe delle fatture XML del fornitore. Permette di avviare una ricerca automatica sul web (con AI) delle schede tecniche ufficiali dei prodotti non ancora trovati, seguendo il progresso con un polling, e di scaricare i PDF trovati o aprire i link suggeriti.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:fornitori-supplier-modal",
+      "name": "SupplierModal (creazione/modifica anagrafica fornitore)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/fornitori-supplier-modal.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Fornitori.jsx (componente definito righe 113-877 circa; montato una sola volta nel JSX principale alle righe 2459-2468, renderizzato in un React Portal)"
+      ],
+      "symbol": "fornitori-supplier-modal",
+      "fieldOrButtonCount": 16,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Form di creazione o modifica dell'anagrafica di un fornitore: dati identificativi (ragione sociale, P.IVA, codice fiscale), indirizzo, contatti, metodo di pagamento abituale, giorni di pagamento e IBAN. Include due scorciatoie per compilare automaticamente i campi mancanti: dati camerali da OpenAPI Imprese e dati di contatto estratti dagli XML delle fatture già importate.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:modal-fattura-condiviso",
+      "name": "ModalFattura (componente condiviso)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/modal-fattura-condiviso.json",
+      "sourceFrontendPaths": [
+        "frontend/src/components/ModalFattura.jsx — dal 2026-07 è un wrapper sottile sul motore condiviso frontend/src/components/DocumentViewerModal.jsx (unico punto di verità per il pattern 'Vedi Documento': overlay, header navy, ESC/overlay/✕ per chiudere, iframe; supporta sia src diretto sia fetchUrl blob via API). Stessi data-testid di sempre (modal-fattura-overlay, modal-fattura-close)."
+      ],
+      "symbol": "modal-fattura-condiviso",
+      "fieldOrButtonCount": 2,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostra il documento di una fattura (vista AssoInvoice) DENTRO la pagina corrente tramite un iframe, invece di aprire una nuova scheda del browser come fa invece il link statico 'Vedi' presente in ArchivioFattureRicevute.jsx. Serve per non far perdere all'utente il contesto/stato della pagina chiamante (es. la selezione fatture in corso in GestioneAssegni.jsx) mentre consulta il documento.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:modal-fattura-in-page",
+      "name": "ModalFattura (componente condiviso, visualizzazione fattura in-page)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/modal-fattura-in-page.json",
+      "sourceFrontendPaths": [
+        "frontend/src/components/ModalFattura.jsx (110 righe, componente autonomo riusabile)"
+      ],
+      "symbol": "modal-fattura-in-page",
+      "fieldOrButtonCount": 4,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare il PDF/vista AssoInvoice di una fattura senza mai aprire una nuova scheda del browser, mantenendo il contesto della pagina chiamante (es. il modale Collega Fatture resta sotto, sovrapposto da questo che ha zIndex più alto).",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:noleggio-aggiungi-veicolo",
+      "name": "Modal 'Aggiungi Veicolo'",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/noleggio-aggiungi-veicolo.json",
+      "sourceFrontendPaths": [],
+      "symbol": "noleggio-aggiungi-veicolo",
+      "fieldOrButtonCount": 8,
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Associare manualmente una targa a un fornitore di noleggio quando il sistema non riesce a estrarre automaticamente la targa dalle fatture XML del fornitore (tipicamente LeasePlan, che non include la targa in fattura): senza questo passaggio le fatture di quel fornitore resterebbero permanentemente 'non associate'.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:noleggio-associa-targa-driver",
+      "name": "Modal 'Associa Targa a Driver' (Associazione Manuale)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/noleggio-associa-targa-driver.json",
+      "sourceFrontendPaths": [],
+      "symbol": "noleggio-associa-targa-driver",
+      "fieldOrButtonCount": 5,
+      "owner": "INTAKE_DOCUMENTALE",
+      "domain": "documenti",
+      "canonicalDestination": "documenti.acquisizione_inbox",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Collegare manualmente una targa veicolo a un dipendente (driver) quando le strategie automatiche di associazione (veicoli_noleggio, storico assegnazioni, contratti, ricerca testuale) non sono riuscite a determinare chi guidava quel veicolo. Il collegamento si applica retroattivamente a tutti i verbali esistenti con quella targa privi di driver.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:noleggio-fatture-non-associate",
+      "name": "Modal 'Fatture Non Associate'",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/noleggio-fatture-non-associate.json",
+      "sourceFrontendPaths": [],
+      "symbol": "noleggio-fatture-non-associate",
+      "fieldOrButtonCount": 3,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare l'elenco delle fatture di noleggio che il sistema non è riuscito ad agganciare con certezza a nessuna targa/veicolo, per permettere all'utente di risolverle manualmente (di solito creando il veicolo mancante o aggiungendo il numero contratto sul veicolo esistente).",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:noleggio-modifica-veicolo",
+      "name": "Modal 'Modifica Veicolo'",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/noleggio-modifica-veicolo.json",
+      "sourceFrontendPaths": [],
+      "symbol": "noleggio-modifica-veicolo",
+      "fieldOrButtonCount": 14,
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Correggere/integrare a mano i dati anagrafici di un veicolo a noleggio che il sistema ha scoperto automaticamente dalle fatture XML (driver, contratto, canone, dati tecnici), oltre a poter interrogare il servizio esterno OpenAPI Automotive per precompilare marca/modello/anno/alimentazione/potenza/cilindrata dalla targa.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:paypal-crea-fornitore",
+      "name": "CreaFornitorePaypalModal (crea fornitore inline + mappa)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/paypal-crea-fornitore.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/RiconciliazionePaypal.jsx, righe 1524-1721 — componente definito INLINE nello stesso file della pagina (non un file separato in components/), montato condizionalmente riga ~1509 ({createModal && <CreaFornitorePaypalModal .../>})"
+      ],
+      "symbol": "paypal-crea-fornitore",
+      "fieldOrButtonCount": 10,
+      "owner": "RICONCILIAZIONE",
+      "domain": "paypal_pagopa",
+      "canonicalDestination": "riconciliazione.paypal_pagopa",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Permettere di creare in un colpo solo un nuovo fornitore in anagrafica E collegarlo (mappare) immediatamente al paypal_account_id, per gli account PayPal (tipicamente fornitori SaaS/esteri) che non hanno ancora un fornitore corrispondente in anagrafica.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:paypal-transaction-detail",
+      "name": "PaypalTransactionDetailModal (modale dettaglio transazione PayPal)",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/paypal-transaction-detail.json",
+      "sourceFrontendPaths": [
+        "frontend/src/components/PaypalTransactionDetailModal.jsx (656 righe, componente riusabile con props open/onClose/transactionId); montato in frontend/src/pages/RiconciliazionePaypal.jsx riga ~1502"
+      ],
+      "symbol": "paypal-transaction-detail",
+      "fieldOrButtonCount": 12,
+      "owner": "RICONCILIAZIONE",
+      "domain": "paypal_pagopa",
+      "canonicalDestination": "riconciliazione.paypal_pagopa",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare in un'unica vista tutti i collegamenti già risolti per una specifica transazione PayPal: dati PayPal grezzi, eventuale verbale di multa PagoPA collegato, dipendente e trattenuta in busta paga collegati al verbale, fornitore mappato e fatture correlate, più uno strumento di ricerca su Gmail per le fatture esterne (SaaS/fornitori esteri) che non passano dal Sistema di Interscambio.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:piano-conti-drawer-dettaglio-conto",
+      "name": "Drawer laterale 'Dettaglio Conto'",
+      "uiKind": "drawer",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/piano-conti-drawer-dettaglio-conto.json",
+      "sourceFrontendPaths": [],
+      "symbol": "piano-conti-drawer-dettaglio-conto",
+      "fieldOrButtonCount": 3,
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostrare il dettaglio dei movimenti che compongono il saldo di un singolo conto del Piano dei Conti, calcolati al volo dalle collezioni operative pertinenti (non da scritture salvate).",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:piano-conti-nuova-regola",
+      "name": "Modal 'Nuova Regola Categorizzazione'",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/piano-conti-nuova-regola.json",
+      "sourceFrontendPaths": [],
+      "symbol": "piano-conti-nuova-regola",
+      "fieldOrButtonCount": 9,
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Creare una regola automatica che, in base al fornitore (o tipo documento / metodo pagamento), determina su quali conti DARE/AVERE registrare una fattura durante la registrazione automatica.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:piano-conti-nuovo-conto",
+      "name": "Modal 'Nuovo Conto'",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/piano-conti-nuovo-conto.json",
+      "sourceFrontendPaths": [],
+      "symbol": "piano-conti-nuovo-conto",
+      "fieldOrButtonCount": 8,
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Creare un nuovo conto nel Piano dei Conti aziendale (partita doppia), da collocare in una delle 5 categorie base (attivo/passivo/patrimonio_netto/ricavi/costi).",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:prima-nota-conferma-eliminazione-movimento",
+      "name": "confirm() nativo — conferma con avvisi per eliminazione movimento Cassa/Banca",
+      "uiKind": "native_confirm",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/prima-nota-conferma-eliminazione-movimento.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/PrimaNota.jsx (funzione handleDeleteMovimento, righe 457-470)"
+      ],
+      "symbol": "prima-nota-conferma-eliminazione-movimento",
+      "fieldOrButtonCount": 2,
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Avvisare esplicitamente l'utente delle CONSEGUENZE non ovvie dell'eliminazione (es. il movimento è collegato a una fattura che tornerà 'da pagare', oppure il movimento è già stato confermato/riconciliato) prima di procedere, invece di eliminare silenziosamente o bloccare del tutto — un compromesso a metà tra un'eliminazione libera e un blocco rigido.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:prima-nota-edit-movimento",
+      "name": "EditMovimentoModal",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/prima-nota-edit-movimento.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/PrimaNota.jsx (componente separato definito in fondo al file, righe 2846-3130; viene montato all'interno del componente MovementsTable, righe 2054-2086)"
+      ],
+      "symbol": "prima-nota-edit-movimento",
+      "fieldOrButtonCount": 10,
+      "owner": "PRIMA_NOTA",
+      "domain": "prima_nota",
+      "canonicalDestination": "prima_nota.registro_saldi",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Permette di correggere manualmente i dati di un movimento di Prima Nota (Cassa o Banca) già registrato, es. per correggere un importo, una data o una descrizione sbagliata, senza doverlo eliminare e ricreare. Alla conferma, il modale passa automaticamente al movimento successivo (nella pagina corrente o in quella dopo) per velocizzare la correzione in serie di più righe.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:prima-nota-pagamento-parziale-misto",
+      "name": "Modale \"Pagamento parziale (Misto)\"",
+      "uiKind": "modal",
+      "openedFrom": [],
+      "sourcePath": "memoria/popup/prima-nota-pagamento-parziale-misto.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/PrimaNota.jsx (righe 1585-1751, definito inline nel componente principale, non in un file separato)"
+      ],
+      "symbol": "prima-nota-pagamento-parziale-misto",
+      "fieldOrButtonCount": 4,
+      "owner": "PRIMA_NOTA",
+      "domain": "prima_nota",
+      "canonicalDestination": "prima_nota.registro_saldi",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Sostituisce un vecchio prompt() nativo del browser (commento esplicito nel codice: 'sostituisce il vecchio prompt() del browser'). Permette di dividere il pagamento di UNA fattura fornitore ancora provvisoria tra CASSA (contanti) e BANCA (bonifico): l'utente inserisce solo la quota pagata in contanti, il residuo per la banca viene calcolato automaticamente e mostrato prima della conferma, evitando errori di calcolo manuale.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:scadenze-nuova-scadenza",
+      "name": "Modal Nuova Scadenza",
+      "uiKind": "modal",
+      "openedFrom": [
+        "Scadenze e Notifiche (/scadenze), header della pagina"
+      ],
+      "sourcePath": "memoria/popup/scadenze-nuova-scadenza.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Scadenze.jsx (modal inline, righe ~1020-1252 del componente Scadenze, nessun file separato)"
+      ],
+      "symbol": "scadenze-nuova-scadenza",
+      "fieldOrButtonCount": 3,
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Permette di creare a mano una notifica/scadenza personalizzata, cioè un promemoria che non deriva né da una fattura fornitore né da una scadenza fiscale fissa (F24/IVA), ma che l'utente vuole comunque vedere nel cruscotto Scadenze — ad esempio un pagamento concordato verbalmente con un fornitore, un adempimento non ancora tracciato altrove, o un semplice appunto con data e priorità.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:scadenze-registra-pagamento",
+      "name": "Modal Registra Pagamento (Cassa/Banca)",
+      "uiKind": "modal",
+      "openedFrom": [
+        "Scadenze e Notifiche (/scadenze), bottone '💰 Paga' su ogni riga con tipo FATTURA / source='fattura' / importo>0, non ancora pagata"
+      ],
+      "sourcePath": "memoria/popup/scadenze-registra-pagamento.json",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Scadenze.jsx (modal inline, righe ~1266-1421 del componente Scadenze, nessun file separato)"
+      ],
+      "symbol": "scadenze-registra-pagamento",
+      "fieldOrButtonCount": 4,
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Click sul bottone '💰 Paga' sulla riga di una scadenza collegata a una fattura fornitore: setPagaModal(s) valorizza lo stato con l'intera scadenza cliccata. È un vero overlay: div con position:'fixed', inset:0, sfondo rgba(0,0,0,0.5), zIndex:1000, pannello bianco centrato max-width 420px con ombra pronunciata (onClick del pannello interno con stopPropagation).",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    },
+    {
+      "id": "popup:scadenze-visualizzazione-fattura",
+      "name": "Modal Visualizzazione Fattura (InvoiceXMLViewer)",
+      "uiKind": "modal",
+      "openedFrom": [
+        "Scadenze e Notifiche (/scadenze), bottone 👁️ su ogni riga della tabella scadenze con tipo FATTURA (o source='fattura')"
+      ],
+      "sourcePath": "memoria/popup/scadenze-visualizzazione-fattura.json",
+      "sourceFrontendPaths": [
+        "frontend/src/components/InvoiceXMLViewer.jsx (1592 righe, componente condiviso — non specifico di Scadenze) montato da frontend/src/pages/Scadenze.jsx (righe 1254-1263: {viewingInvoice && invoiceData && <InvoiceXMLViewer invoice={invoiceData} onClose={...} />})"
+      ],
+      "symbol": "scadenze-visualizzazione-fattura",
+      "fieldOrButtonCount": 3,
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_NEL_FLUSSO_DELLA_PAGINA_CANONICA",
+      "notes": "Mostra il dettaglio strutturato della fattura fornitore collegata alla scadenza, in stile 'AssoInvoice' (il software gestionale di fatturazione più diffuso in Italia), con tre modalità di visualizzazione selezionabili: Semplificata (solo dati fiscalmente rilevanti, compatta), Completa (tutti i dati incluse informazioni gestionali interne) e Ministeriale (formato ufficiale che replica l'aspetto delle fatture elettroniche validate da Agenzia Entrate/Sogei). Serve a consultare/stampare la fattura senza lasciare la pagina Scadenze e senza aprire una nuova scheda del browser.",
+      "acceptanceTests": [
+        "Apertura, chiusura, focus, tastiera e stato di errore sono accessibili e testati.",
+        "Una conferma distruttiva mostra target e conseguenze e produce audit/rollback quando previsto.",
+        "Il popup non introduce uno store o un writer diverso dalla pagina proprietaria."
+      ]
+    }
+  ]
+}

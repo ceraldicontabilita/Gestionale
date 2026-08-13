@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "outside_catalog_fiscal_page",
+  "sourceSnapshot": {
+    "label": "snapshot-storico-sola-lettura",
+    "commit": "7f126c80522db6bd79f0eecaccfd643bae981793",
+    "capturedAt": "2026-08-13",
+    "runtimeDependency": false
+  },
+  "summary": {
+    "recordCount": 8,
+    "pageCount": 1,
+    "tabCount": 7,
+    "outsideCatalog": true
+  },
+  "records": [
+    {
+      "id": "outside-page:situazione-fiscale",
+      "recordType": "page",
+      "label": "Situazione fiscale",
+      "route": "/situazione-fiscale",
+      "outsideCatalog": true,
+      "access": "admin",
+      "sourcePath": "frontend/src/pages/SituazioneFiscale.jsx",
+      "symbol": "SituazioneFiscale",
+      "owner": "CONTROLLO",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "SCOMPORRE_PER_OWNER_MANTENENDO_VISTA_UNICA",
+      "notes": "Pagina montata nel router e nella navigazione, ma assente dal vecchio page_catalog.json.",
+      "acceptanceTests": [
+        "Accesso admin e step-up per azioni sensibili sono verificati.",
+        "La vista unisce risultati senza fondere obblighi, pagamenti, atti e prove.",
+        "PDF o record importato non equivale a pagamento senza prova finanziaria collegata."
+      ]
+    },
+    {
+      "id": "outside-tab:situazione-fiscale:tributi",
+      "recordType": "tab",
+      "parentId": "outside-page:situazione-fiscale",
+      "label": "Tributi",
+      "route": "/situazione-fiscale/tributi",
+      "endpoint": "/api/fiscal/obligations",
+      "outsideCatalog": true,
+      "sourcePath": "frontend/src/pages/SituazioneFiscale.jsx",
+      "symbol": "tributi",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "amministrazione.iva_fiscalita",
+      "decision": "CONSOLIDARE_NELLA_VISTA_FISCALE_CANONICA",
+      "notes": "Tab storica indicizzata separatamente per non perderne il requisito.",
+      "acceptanceTests": [
+        "Stato, importo, periodo e provenienza sono mostrati senza inferenze silenziose.",
+        "Ogni relazione automatica richiede chiave esatta e quadratura; altrimenti revisione.",
+        "Navigazione e stato vuoto distinguono dati assenti da import non completato."
+      ]
+    },
+    {
+      "id": "outside-tab:situazione-fiscale:tributi-pagati",
+      "recordType": "tab",
+      "parentId": "outside-page:situazione-fiscale",
+      "label": "Tributi pagati",
+      "route": "/situazione-fiscale/tributi-pagati",
+      "endpoint": "/api/fiscal/obligations?status=PAID_ON_TIME",
+      "outsideCatalog": true,
+      "sourcePath": "frontend/src/pages/SituazioneFiscale.jsx",
+      "symbol": "tributi-pagati",
+      "owner": "RICONCILIAZIONE",
+      "domain": "fiscalita",
+      "canonicalDestination": "riconciliazione.f24_banca",
+      "decision": "CONSOLIDARE_NELLA_VISTA_FISCALE_CANONICA",
+      "notes": "Tab storica indicizzata separatamente per non perderne il requisito.",
+      "acceptanceTests": [
+        "Stato, importo, periodo e provenienza sono mostrati senza inferenze silenziose.",
+        "Ogni relazione automatica richiede chiave esatta e quadratura; altrimenti revisione.",
+        "Navigazione e stato vuoto distinguono dati assenti da import non completato."
+      ]
+    },
+    {
+      "id": "outside-tab:situazione-fiscale:f24",
+      "recordType": "tab",
+      "parentId": "outside-page:situazione-fiscale",
+      "label": "F24 e crediti",
+      "route": "/situazione-fiscale/f24",
+      "endpoint": "/api/fiscal/f24-rows",
+      "outsideCatalog": true,
+      "sourcePath": "frontend/src/pages/SituazioneFiscale.jsx",
+      "symbol": "f24",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "documenti.f24_quietanze_dichiarazioni",
+      "decision": "CONSOLIDARE_NELLA_VISTA_FISCALE_CANONICA",
+      "notes": "Tab storica indicizzata separatamente per non perderne il requisito.",
+      "acceptanceTests": [
+        "Stato, importo, periodo e provenienza sono mostrati senza inferenze silenziose.",
+        "Ogni relazione automatica richiede chiave esatta e quadratura; altrimenti revisione.",
+        "Navigazione e stato vuoto distinguono dati assenti da import non completato."
+      ]
+    },
+    {
+      "id": "outside-tab:situazione-fiscale:codici-tributo",
+      "recordType": "tab",
+      "parentId": "outside-page:situazione-fiscale",
+      "label": "Codici tributo",
+      "route": "/situazione-fiscale/codici-tributo",
+      "endpoint": "/api/documenti/tax-codes/status",
+      "outsideCatalog": true,
+      "sourcePath": "frontend/src/pages/SituazioneFiscale.jsx",
+      "symbol": "codici-tributo",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "amministrazione.f24_codici",
+      "decision": "CONSOLIDARE_NELLA_VISTA_FISCALE_CANONICA",
+      "notes": "Tab storica indicizzata separatamente per non perderne il requisito.",
+      "acceptanceTests": [
+        "Stato, importo, periodo e provenienza sono mostrati senza inferenze silenziose.",
+        "Ogni relazione automatica richiede chiave esatta e quadratura; altrimenti revisione.",
+        "Navigazione e stato vuoto distinguono dati assenti da import non completato."
+      ]
+    },
+    {
+      "id": "outside-tab:situazione-fiscale:crosswalk-riscossione",
+      "recordType": "tab",
+      "parentId": "outside-page:situazione-fiscale",
+      "label": "Crosswalk riscossione",
+      "route": "/situazione-fiscale/crosswalk-riscossione",
+      "endpoint": "/api/fiscal/crosswalk",
+      "outsideCatalog": true,
+      "sourcePath": "frontend/src/pages/SituazioneFiscale.jsx",
+      "symbol": "crosswalk-riscossione",
+      "owner": "RISCOSSIONE",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "CONSOLIDARE_NELLA_VISTA_FISCALE_CANONICA",
+      "notes": "Tab storica indicizzata separatamente per non perderne il requisito.",
+      "acceptanceTests": [
+        "Stato, importo, periodo e provenienza sono mostrati senza inferenze silenziose.",
+        "Ogni relazione automatica richiede chiave esatta e quadratura; altrimenti revisione.",
+        "Navigazione e stato vuoto distinguono dati assenti da import non completato."
+      ]
+    },
+    {
+      "id": "outside-tab:situazione-fiscale:riscossione",
+      "recordType": "tab",
+      "parentId": "outside-page:situazione-fiscale",
+      "label": "Riscossione",
+      "route": "/situazione-fiscale/riscossione",
+      "endpoint": "/api/fiscal/collections",
+      "outsideCatalog": true,
+      "sourcePath": "frontend/src/pages/SituazioneFiscale.jsx",
+      "symbol": "riscossione",
+      "owner": "RISCOSSIONE",
+      "domain": "fiscalita",
+      "canonicalDestination": "riconciliazione.riscossione_banca",
+      "decision": "CONSOLIDARE_NELLA_VISTA_FISCALE_CANONICA",
+      "notes": "Tab storica indicizzata separatamente per non perderne il requisito.",
+      "acceptanceTests": [
+        "Stato, importo, periodo e provenienza sono mostrati senza inferenze silenziose.",
+        "Ogni relazione automatica richiede chiave esatta e quadratura; altrimenti revisione.",
+        "Navigazione e stato vuoto distinguono dati assenti da import non completato."
+      ]
+    },
+    {
+      "id": "outside-tab:situazione-fiscale:ader",
+      "recordType": "tab",
+      "parentId": "outside-page:situazione-fiscale",
+      "label": "Snapshot AdeR",
+      "route": "/situazione-fiscale/ader",
+      "endpoint": "/api/fiscal/ader-snapshots",
+      "outsideCatalog": true,
+      "sourcePath": "frontend/src/pages/SituazioneFiscale.jsx",
+      "symbol": "ader",
+      "owner": "RISCOSSIONE",
+      "domain": "fiscalita",
+      "canonicalDestination": "amministrazione.riscossione_rate",
+      "decision": "CONSOLIDARE_NELLA_VISTA_FISCALE_CANONICA",
+      "notes": "Tab storica indicizzata separatamente per non perderne il requisito.",
+      "acceptanceTests": [
+        "Stato, importo, periodo e provenienza sono mostrati senza inferenze silenziose.",
+        "Ogni relazione automatica richiede chiave esatta e quadratura; altrimenti revisione.",
+        "Navigazione e stato vuoto distinguono dati assenti da import non completato."
+      ]
+    }
+  ]
+}

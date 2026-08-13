@@ -1,0 +1,5551 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "models_and_enums",
+  "sourceSnapshot": {
+    "label": "snapshot-storico-sola-lettura",
+    "commit": "7f126c80522db6bd79f0eecaccfd643bae981793",
+    "capturedAt": "2026-08-13",
+    "runtimeDependency": false
+  },
+  "summary": {
+    "recordCount": 174,
+    "pydanticModels": 135,
+    "enums": 39,
+    "sourceFiles": 44
+  },
+  "records": [
+    {
+      "id": "enum:app/agents/models.py:TipoSegnalazione",
+      "kind": "enum",
+      "name": "TipoSegnalazione",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "INFO",
+        "AVVISO",
+        "URGENTE",
+        "ANOMALIA",
+        "SUGGERIMENTO"
+      ],
+      "sourcePath": "app/agents/models.py",
+      "sourceLine": 9,
+      "symbol": "TipoSegnalazione",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/agents/models.py:LivelloAutonomia",
+      "kind": "enum",
+      "name": "LivelloAutonomia",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "L0",
+        "L1",
+        "L2",
+        "L3",
+        "L4"
+      ],
+      "sourcePath": "app/agents/models.py",
+      "sourceLine": 17,
+      "symbol": "LivelloAutonomia",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/agents/models.py:LivelloRischio",
+      "kind": "enum",
+      "name": "LivelloRischio",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "sourcePath": "app/agents/models.py",
+      "sourceLine": 25,
+      "symbol": "LivelloRischio",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/agents/models.py:Reversibilita",
+      "kind": "enum",
+      "name": "Reversibilita",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "FULL",
+        "PARTIAL",
+        "NONE"
+      ],
+      "sourcePath": "app/agents/models.py",
+      "sourceLine": 32,
+      "symbol": "Reversibilita",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/agents/models.py:StatoEsecuzione",
+      "kind": "enum",
+      "name": "StatoEsecuzione",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "OBSERVED",
+        "PROPOSED",
+        "PENDING_APPROVAL",
+        "READY_L2",
+        "APPROVED_PENDING_EXECUTION",
+        "REJECTED",
+        "BLOCKED",
+        "SUSPENDED",
+        "SUPERSEDED"
+      ],
+      "sourcePath": "app/agents/models.py",
+      "sourceLine": 38,
+      "symbol": "StatoEsecuzione",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/agents/models.py:DecisioneInput",
+      "kind": "pydantic_model",
+      "name": "DecisioneInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "decision_key",
+        "semantic_key",
+        "agent",
+        "objective",
+        "input_sources",
+        "facts",
+        "assumptions",
+        "rule_ids",
+        "alternatives",
+        "recommended_action",
+        "confidence",
+        "financial_impact",
+        "risk_level",
+        "reversibility",
+        "autonomy_level",
+        "approver_role",
+        "explanation",
+        "rollback_reference",
+        "metadata"
+      ],
+      "members": [],
+      "sourcePath": "app/agents/models.py",
+      "sourceLine": 50,
+      "symbol": "DecisioneInput",
+      "owner": "CONTROLLO",
+      "domain": "controllo",
+      "canonicalDestination": "controllo.anomalie",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/accounting_advanced.py:EntryType",
+      "kind": "enum",
+      "name": "EntryType",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "OPENING",
+        "ORDINARY",
+        "ADJUSTMENT",
+        "CLOSING"
+      ],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 11,
+      "symbol": "EntryType",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:AccountingEntryLine",
+      "kind": "pydantic_model",
+      "name": "AccountingEntryLine",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "account_id",
+        "account_code",
+        "account_name",
+        "debit",
+        "credit",
+        "description"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 19,
+      "symbol": "AccountingEntryLine",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:AccountingEntryCreate",
+      "kind": "pydantic_model",
+      "name": "AccountingEntryCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "date",
+        "entry_type",
+        "description",
+        "document_number",
+        "document_date",
+        "lines",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 29,
+      "symbol": "AccountingEntryCreate",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:AccountingEntryUpdate",
+      "kind": "pydantic_model",
+      "name": "AccountingEntryUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "date",
+        "entry_type",
+        "description",
+        "document_number",
+        "document_date",
+        "lines",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 42,
+      "symbol": "AccountingEntryUpdate",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:AccountingEntryResponse",
+      "kind": "pydantic_model",
+      "name": "AccountingEntryResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "date",
+        "entry_type",
+        "description",
+        "document_number",
+        "document_date",
+        "lines",
+        "total_debit",
+        "total_credit",
+        "balanced",
+        "notes",
+        "created_by",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 55,
+      "symbol": "AccountingEntryResponse",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/accounting_advanced.py:VATType",
+      "kind": "enum",
+      "name": "VATType",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "DEDUCTIBLE",
+        "PAYABLE",
+        "NON_DEDUCTIBLE"
+      ],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 77,
+      "symbol": "VATType",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:VATRate",
+      "kind": "pydantic_model",
+      "name": "VATRate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "rate",
+        "taxable",
+        "vat_amount"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 84,
+      "symbol": "VATRate",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:VATLiquidation",
+      "kind": "pydantic_model",
+      "name": "VATLiquidation",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "quarter",
+        "year",
+        "vat_deductible",
+        "vat_payable",
+        "vat_balance",
+        "previous_credit",
+        "to_pay",
+        "payment_date",
+        "paid",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 91,
+      "symbol": "VATLiquidation",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:VATRegistryEntry",
+      "kind": "pydantic_model",
+      "name": "VATRegistryEntry",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "date",
+        "document_number",
+        "supplier_name",
+        "taxable",
+        "vat_rate",
+        "vat_amount",
+        "total",
+        "vat_type",
+        "deductible",
+        "invoice_id"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 107,
+      "symbol": "VATRegistryEntry",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/accounting_advanced.py:F24TributeCode",
+      "kind": "enum",
+      "name": "F24TributeCode",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "IVA_6001",
+        "IVA_6002",
+        "INPS",
+        "IRPEF",
+        "IRAP",
+        "IMU"
+      ],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 123,
+      "symbol": "F24TributeCode",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:F24Tribute",
+      "kind": "pydantic_model",
+      "name": "F24Tribute",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "code",
+        "description",
+        "amount",
+        "debit_account"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 133,
+      "symbol": "F24Tribute",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:F24Create",
+      "kind": "pydantic_model",
+      "name": "F24Create",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "reference_month",
+        "reference_year",
+        "payment_date",
+        "tributes",
+        "total_amount",
+        "paid",
+        "payment_reference",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 143,
+      "symbol": "F24Create",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:F24Update",
+      "kind": "pydantic_model",
+      "name": "F24Update",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "payment_date",
+        "paid",
+        "payment_reference",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 155,
+      "symbol": "F24Update",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:F24Response",
+      "kind": "pydantic_model",
+      "name": "F24Response",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "reference_month",
+        "reference_year",
+        "payment_date",
+        "tributes",
+        "total_amount",
+        "paid",
+        "payment_reference",
+        "notes",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 163,
+      "symbol": "F24Response",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/accounting_advanced.py:BalanceSheetSection",
+      "kind": "enum",
+      "name": "BalanceSheetSection",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "ASSETS",
+        "LIABILITIES",
+        "EQUITY",
+        "REVENUE",
+        "EXPENSES"
+      ],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 182,
+      "symbol": "BalanceSheetSection",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:BalanceSheetItem",
+      "kind": "pydantic_model",
+      "name": "BalanceSheetItem",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "account_code",
+        "account_name",
+        "section",
+        "amount",
+        "percentage",
+        "parent_account"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 191,
+      "symbol": "BalanceSheetItem",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:BalanceSheet",
+      "kind": "pydantic_model",
+      "name": "BalanceSheet",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "year",
+        "date",
+        "assets_total",
+        "liabilities_total",
+        "equity_total",
+        "revenue_total",
+        "expenses_total",
+        "net_profit",
+        "items",
+        "generated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 203,
+      "symbol": "BalanceSheet",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:TrialBalance",
+      "kind": "pydantic_model",
+      "name": "TrialBalance",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "date",
+        "accounts",
+        "total_debit",
+        "total_credit",
+        "balanced",
+        "generated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 217,
+      "symbol": "TrialBalance",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:ProfitLoss",
+      "kind": "pydantic_model",
+      "name": "ProfitLoss",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "year",
+        "revenue",
+        "expenses",
+        "gross_profit",
+        "operating_profit",
+        "net_profit",
+        "revenue_total",
+        "expenses_total"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 227,
+      "symbol": "ProfitLoss",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:CashFlow",
+      "kind": "pydantic_model",
+      "name": "CashFlow",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "year",
+        "operating_activities",
+        "investing_activities",
+        "financing_activities",
+        "net_cash_flow",
+        "opening_cash",
+        "closing_cash"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 239,
+      "symbol": "CashFlow",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:InvoiceAccountLink",
+      "kind": "pydantic_model",
+      "name": "InvoiceAccountLink",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "invoice_id",
+        "account_id",
+        "amount",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 252,
+      "symbol": "InvoiceAccountLink",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_advanced.py:InvoiceAccountLinkResponse",
+      "kind": "pydantic_model",
+      "name": "InvoiceAccountLinkResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "invoice_id",
+        "invoice_number",
+        "account_id",
+        "account_code",
+        "account_name",
+        "amount",
+        "notes",
+        "created_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_advanced.py",
+      "sourceLine": 260,
+      "symbol": "InvoiceAccountLinkResponse",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_extended.py:ChartOfAccount",
+      "kind": "pydantic_model",
+      "name": "ChartOfAccount",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "code",
+        "name",
+        "type",
+        "parent_id",
+        "level",
+        "is_active",
+        "description",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_extended.py",
+      "sourceLine": 10,
+      "symbol": "ChartOfAccount",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_extended.py:ChartOfAccountCreate",
+      "kind": "pydantic_model",
+      "name": "ChartOfAccountCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "code",
+        "name",
+        "type",
+        "parent_id",
+        "description"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_extended.py",
+      "sourceLine": 42,
+      "symbol": "ChartOfAccountCreate",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/accounting_extended.py:ChartOfAccountUpdate",
+      "kind": "pydantic_model",
+      "name": "ChartOfAccountUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "name",
+        "type",
+        "is_active",
+        "description"
+      ],
+      "members": [],
+      "sourcePath": "app/models/accounting_extended.py",
+      "sourceLine": 52,
+      "symbol": "ChartOfAccountUpdate",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/cash.py:CashMovement",
+      "kind": "pydantic_model",
+      "name": "CashMovement",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "date",
+        "time",
+        "type",
+        "amount",
+        "description",
+        "category",
+        "payment_method",
+        "reference_number",
+        "notes",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/cash.py",
+      "sourceLine": 10,
+      "symbol": "CashMovement",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/cash.py:CashMovementCreate",
+      "kind": "pydantic_model",
+      "name": "CashMovementCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "date",
+        "time",
+        "type",
+        "amount",
+        "description",
+        "category",
+        "payment_method",
+        "reference_number",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/models/cash.py",
+      "sourceLine": 55,
+      "symbol": "CashMovementCreate",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/cash.py:CashMovementUpdate",
+      "kind": "pydantic_model",
+      "name": "CashMovementUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "amount",
+        "description",
+        "category",
+        "payment_method",
+        "reference_number",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/models/cash.py",
+      "sourceLine": 69,
+      "symbol": "CashMovementUpdate",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/cash.py:CashMovementResponse",
+      "kind": "pydantic_model",
+      "name": "CashMovementResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "date",
+        "time",
+        "type",
+        "amount",
+        "description",
+        "category",
+        "payment_method",
+        "reference_number",
+        "notes",
+        "created_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/cash.py",
+      "sourceLine": 80,
+      "symbol": "CashMovementResponse",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/cash.py:Corrispettivo",
+      "kind": "pydantic_model",
+      "name": "Corrispettivo",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "date",
+        "total_cash",
+        "total_card",
+        "total_other",
+        "total_receipts",
+        "total_amount",
+        "opening_balance",
+        "closing_balance",
+        "expected_balance",
+        "difference",
+        "notes",
+        "is_reconciled",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/cash.py",
+      "sourceLine": 97,
+      "symbol": "Corrispettivo",
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/cash.py:CorrissettivoCreate",
+      "kind": "pydantic_model",
+      "name": "CorrissettivoCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "date",
+        "total_cash",
+        "total_card",
+        "total_other",
+        "total_receipts",
+        "opening_balance",
+        "closing_balance",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/models/cash.py",
+      "sourceLine": 173,
+      "symbol": "CorrissettivoCreate",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/cash.py:CorrissettivoUpdate",
+      "kind": "pydantic_model",
+      "name": "CorrissettivoUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "total_cash",
+        "total_card",
+        "total_other",
+        "total_receipts",
+        "opening_balance",
+        "closing_balance",
+        "notes",
+        "is_reconciled"
+      ],
+      "members": [],
+      "sourcePath": "app/models/cash.py",
+      "sourceLine": 187,
+      "symbol": "CorrissettivoUpdate",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/cash.py:CorrissettivoResponse",
+      "kind": "pydantic_model",
+      "name": "CorrissettivoResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "date",
+        "total_cash",
+        "total_card",
+        "total_other",
+        "total_amount",
+        "total_receipts",
+        "opening_balance",
+        "closing_balance",
+        "expected_balance",
+        "difference",
+        "is_reconciled",
+        "created_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/cash.py",
+      "sourceLine": 201,
+      "symbol": "CorrissettivoResponse",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/cash.py:CashStats",
+      "kind": "pydantic_model",
+      "name": "CashStats",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "total_in",
+        "total_out",
+        "current_balance",
+        "movements_count",
+        "by_category",
+        "by_payment_method",
+        "date_range"
+      ],
+      "members": [],
+      "sourcePath": "app/models/cash.py",
+      "sourceLine": 219,
+      "symbol": "CashStats",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:Product",
+      "kind": "pydantic_model",
+      "name": "Product",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "descrizione",
+        "quantita",
+        "prezzo_unitario",
+        "iva",
+        "totale",
+        "unita_misura",
+        "codice_articolo"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 10,
+      "symbol": "Product",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:Invoice",
+      "kind": "pydantic_model",
+      "name": "Invoice",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "filename",
+        "supplier_name",
+        "supplier_vat",
+        "supplier_address",
+        "supplier_email",
+        "invoice_number",
+        "invoice_date",
+        "due_date",
+        "month_year",
+        "total_amount",
+        "total_iva",
+        "total_imponibile",
+        "products",
+        "status",
+        "payment_method",
+        "payment_status",
+        "amount_paid",
+        "check_number",
+        "xml_content",
+        "content_hash",
+        "user_id",
+        "uploaded_at",
+        "processed_at",
+        "bank_reconciled",
+        "bank_transaction_id",
+        "notes",
+        "tags"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 34,
+      "symbol": "Invoice",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:InvoiceCreate",
+      "kind": "pydantic_model",
+      "name": "InvoiceCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "filename",
+        "supplier_name",
+        "supplier_vat",
+        "invoice_number",
+        "invoice_date",
+        "total_amount",
+        "total_iva",
+        "total_imponibile",
+        "products",
+        "xml_content",
+        "payment_method"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 94,
+      "symbol": "InvoiceCreate",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:InvoiceUpdate",
+      "kind": "pydantic_model",
+      "name": "InvoiceUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "status",
+        "payment_method",
+        "payment_status",
+        "amount_paid",
+        "check_number",
+        "notes",
+        "tags"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 109,
+      "symbol": "InvoiceUpdate",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:InvoiceResponse",
+      "kind": "pydantic_model",
+      "name": "InvoiceResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "filename",
+        "supplier_name",
+        "supplier_vat",
+        "invoice_number",
+        "invoice_date",
+        "month_year",
+        "total_amount",
+        "total_iva",
+        "total_imponibile",
+        "status",
+        "payment_method",
+        "payment_status",
+        "amount_paid",
+        "remaining_amount",
+        "uploaded_at",
+        "products_count"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 120,
+      "symbol": "InvoiceResponse",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:PaginatedInvoicesResponse",
+      "kind": "pydantic_model",
+      "name": "PaginatedInvoicesResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "invoices",
+        "total",
+        "skip",
+        "limit",
+        "has_more"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 141,
+      "symbol": "PaginatedInvoicesResponse",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:InvoiceStats",
+      "kind": "pydantic_model",
+      "name": "InvoiceStats",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "total_invoices",
+        "total_amount",
+        "total_paid",
+        "total_unpaid",
+        "by_status",
+        "by_payment_method",
+        "by_month"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 150,
+      "symbol": "InvoiceStats",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:InvoiceMetadata",
+      "kind": "pydantic_model",
+      "name": "InvoiceMetadata",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "invoice_id",
+        "user_id",
+        "category",
+        "chart_of_account_id",
+        "chart_of_account_name",
+        "custom_fields",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 161,
+      "symbol": "InvoiceMetadata",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:InvoiceMetadataField",
+      "kind": "pydantic_model",
+      "name": "InvoiceMetadataField",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "field_name",
+        "field_type",
+        "field_value",
+        "required"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 181,
+      "symbol": "InvoiceMetadataField",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:InvoiceMetadataCreate",
+      "kind": "pydantic_model",
+      "name": "InvoiceMetadataCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "invoice_id",
+        "metadata_fields",
+        "template_name"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 189,
+      "symbol": "InvoiceMetadataCreate",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:InvoiceMetadataTemplate",
+      "kind": "pydantic_model",
+      "name": "InvoiceMetadataTemplate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "template_name",
+        "description",
+        "fields",
+        "apply_to_supplier"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 196,
+      "symbol": "InvoiceMetadataTemplate",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/invoice.py:InvoiceMetadataResponse",
+      "kind": "pydantic_model",
+      "name": "InvoiceMetadataResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "invoice_id",
+        "invoice_number",
+        "metadata_fields",
+        "template_name",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/invoice.py",
+      "sourceLine": 204,
+      "symbol": "InvoiceMetadataResponse",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/mutui.py:RataMutuo",
+      "kind": "pydantic_model",
+      "name": "RataMutuo",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "numero_rata",
+        "data_scadenza",
+        "importo_totale",
+        "quota_capitale",
+        "quota_interessi",
+        "stato",
+        "riconciliata",
+        "movimento_bancario_id",
+        "data_pagamento_effettivo",
+        "note_riconciliazione"
+      ],
+      "members": [],
+      "sourcePath": "app/models/mutui.py",
+      "sourceLine": 16,
+      "symbol": "RataMutuo",
+      "owner": "TESORERIA",
+      "domain": "finanziamenti",
+      "canonicalDestination": "amministrazione.finanziamenti_mutui",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/mutui.py:MutuoCreate",
+      "kind": "pydantic_model",
+      "name": "MutuoCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "mutuo_id",
+        "nome",
+        "tipo_finanziamento",
+        "importo_accordato",
+        "numero_delibera",
+        "banca",
+        "iban",
+        "data_erogazione",
+        "data_prima_rata",
+        "data_ultima_rata",
+        "rate",
+        "totale_rate",
+        "rate_pagate",
+        "rate_da_pagare",
+        "rate_residue_dichiarate",
+        "totale_pagato_capitale",
+        "totale_pagato_interessi",
+        "totale_pagato",
+        "debito_residuo_capitale",
+        "debito_residuo_interessi",
+        "debito_residuo_totale",
+        "prossima_data_scadenza",
+        "prossimo_importo",
+        "rate_riconciliate",
+        "rate_non_riconciliate",
+        "percentuale_riconciliazione",
+        "file_piano_ammortamento",
+        "allegati",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/models/mutui.py",
+      "sourceLine": 32,
+      "symbol": "MutuoCreate",
+      "owner": "TESORERIA",
+      "domain": "finanziamenti",
+      "canonicalDestination": "amministrazione.finanziamenti_mutui",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/mutui.py:MutuoUpdate",
+      "kind": "pydantic_model",
+      "name": "MutuoUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "nome",
+        "tipo_finanziamento",
+        "banca",
+        "iban",
+        "note",
+        "file_piano_ammortamento",
+        "allegati"
+      ],
+      "members": [],
+      "sourcePath": "app/models/mutui.py",
+      "sourceLine": 73,
+      "symbol": "MutuoUpdate",
+      "owner": "TESORERIA",
+      "domain": "finanziamenti",
+      "canonicalDestination": "amministrazione.finanziamenti_mutui",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/mutui.py:RiconciliazioneRequest",
+      "kind": "pydantic_model",
+      "name": "RiconciliazioneRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "data_inizio",
+        "data_fine",
+        "tolleranza_importo",
+        "tolleranza_giorni"
+      ],
+      "members": [],
+      "sourcePath": "app/models/mutui.py",
+      "sourceLine": 84,
+      "symbol": "RiconciliazioneRequest",
+      "owner": "RICONCILIAZIONE",
+      "domain": "riconciliazione",
+      "canonicalDestination": "riconciliazione.coda_generale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/mutui.py:RiconciliazioneManualRequest",
+      "kind": "pydantic_model",
+      "name": "RiconciliazioneManualRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "movimento_id",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/models/mutui.py",
+      "sourceLine": 92,
+      "symbol": "RiconciliazioneManualRequest",
+      "owner": "RICONCILIAZIONE",
+      "domain": "riconciliazione",
+      "canonicalDestination": "riconciliazione.coda_generale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/stati.py:StatoPagamento",
+      "kind": "enum",
+      "name": "StatoPagamento",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "DA_PAGARE",
+        "IN_SCADENZA",
+        "SCADUTO",
+        "PARZIALE",
+        "PAGATO",
+        "ANNULLATO"
+      ],
+      "sourcePath": "app/models/stati.py",
+      "sourceLine": 9,
+      "symbol": "StatoPagamento",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/stati.py:StatoRiconciliazione",
+      "kind": "enum",
+      "name": "StatoRiconciliazione",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "NON_RICONCILIATO",
+        "PROPOSTA",
+        "RICONCILIATO",
+        "PARZIALE",
+        "ERRORE"
+      ],
+      "sourcePath": "app/models/stati.py",
+      "sourceLine": 64,
+      "symbol": "StatoRiconciliazione",
+      "owner": "RICONCILIAZIONE",
+      "domain": "riconciliazione",
+      "canonicalDestination": "riconciliazione.coda_generale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/stati.py:StatoDocumento",
+      "kind": "enum",
+      "name": "StatoDocumento",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "BOZZA",
+        "ATTIVO",
+        "IN_ELABORAZIONE",
+        "COMPLETATO",
+        "ARCHIVIATO",
+        "ELIMINATO"
+      ],
+      "sourcePath": "app/models/stati.py",
+      "sourceLine": 84,
+      "symbol": "StatoDocumento",
+      "owner": "INTAKE_DOCUMENTALE",
+      "domain": "documenti",
+      "canonicalDestination": "documenti.acquisizione_inbox",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/stati.py:StatoAssegno",
+      "kind": "enum",
+      "name": "StatoAssegno",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "VUOTO",
+        "COMPILATO",
+        "EMESSO",
+        "INCASSATO",
+        "ANNULLATO",
+        "SCADUTO"
+      ],
+      "sourcePath": "app/models/stati.py",
+      "sourceLine": 96,
+      "symbol": "StatoAssegno",
+      "owner": "TESORERIA",
+      "domain": "assegni",
+      "canonicalDestination": "riconciliazione.assegni",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/stati.py:StatoCedolino",
+      "kind": "enum",
+      "name": "StatoCedolino",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "IMPORTATO",
+        "VERIFICATO",
+        "DA_PAGARE",
+        "PAGATO",
+        "RICONCILIATO"
+      ],
+      "sourcePath": "app/models/stati.py",
+      "sourceLine": 108,
+      "symbol": "StatoCedolino",
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/models/stati.py:StatoF24",
+      "kind": "enum",
+      "name": "StatoF24",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "BOZZA",
+        "GENERATO",
+        "DA_PAGARE",
+        "PAGATO",
+        "ANNULLATO"
+      ],
+      "sourcePath": "app/models/stati.py",
+      "sourceLine": 119,
+      "symbol": "StatoF24",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/supplier.py:SupplierBase",
+      "kind": "pydantic_model",
+      "name": "SupplierBase",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "vat_number",
+        "name",
+        "fiscal_code",
+        "address",
+        "city",
+        "province",
+        "postal_code",
+        "country",
+        "email",
+        "pec",
+        "phone",
+        "mobile",
+        "website",
+        "payment_method",
+        "payment_terms_days",
+        "bank_iban",
+        "bank_name",
+        "notes",
+        "tags",
+        "is_active"
+      ],
+      "members": [],
+      "sourcePath": "app/models/supplier.py",
+      "sourceLine": 10,
+      "symbol": "SupplierBase",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/supplier.py:SupplierUpdate",
+      "kind": "pydantic_model",
+      "name": "SupplierUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "name",
+        "address",
+        "city",
+        "province",
+        "postal_code",
+        "email",
+        "pec",
+        "phone",
+        "mobile",
+        "website",
+        "payment_method",
+        "payment_terms_days",
+        "bank_iban",
+        "bank_name",
+        "notes",
+        "tags",
+        "is_active"
+      ],
+      "members": [],
+      "sourcePath": "app/models/supplier.py",
+      "sourceLine": 78,
+      "symbol": "SupplierUpdate",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/supplier.py:SupplierResponse",
+      "kind": "pydantic_model",
+      "name": "SupplierResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "vat_number",
+        "name",
+        "email",
+        "phone",
+        "city",
+        "payment_method",
+        "payment_terms_days",
+        "total_invoices",
+        "total_amount",
+        "last_invoice_date",
+        "is_active"
+      ],
+      "members": [],
+      "sourcePath": "app/models/supplier.py",
+      "sourceLine": 99,
+      "symbol": "SupplierResponse",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/supplier.py:SupplierStats",
+      "kind": "pydantic_model",
+      "name": "SupplierStats",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "total_suppliers",
+        "active_suppliers",
+        "total_invoices",
+        "total_amount",
+        "by_payment_method",
+        "top_suppliers"
+      ],
+      "members": [],
+      "sourcePath": "app/models/supplier.py",
+      "sourceLine": 115,
+      "symbol": "SupplierStats",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/supplier.py:SupplierPaymentMethod",
+      "kind": "pydantic_model",
+      "name": "SupplierPaymentMethod",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "supplier_vat",
+        "user_id",
+        "payment_method",
+        "default_bank_account",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/supplier.py",
+      "sourceLine": 125,
+      "symbol": "SupplierPaymentMethod",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/supplier.py:SupplierPaymentHistory",
+      "kind": "pydantic_model",
+      "name": "SupplierPaymentHistory",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "supplier_vat",
+        "supplier_name",
+        "user_id",
+        "invoice_id",
+        "invoice_number",
+        "payment_date",
+        "amount",
+        "payment_method",
+        "bank_transaction_id",
+        "check_number",
+        "notes",
+        "created_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/supplier.py",
+      "sourceLine": 140,
+      "symbol": "SupplierPaymentHistory",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/user.py:UserRegister",
+      "kind": "pydantic_model",
+      "name": "UserRegister",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "email",
+        "password",
+        "name"
+      ],
+      "members": [],
+      "sourcePath": "app/models/user.py",
+      "sourceLine": 10,
+      "symbol": "UserRegister",
+      "owner": "SICUREZZA",
+      "domain": "sicurezza",
+      "canonicalDestination": "amministrazione.utenti_sicurezza",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/user.py:UserLogin",
+      "kind": "pydantic_model",
+      "name": "UserLogin",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "username",
+        "email",
+        "password"
+      ],
+      "members": [],
+      "sourcePath": "app/models/user.py",
+      "sourceLine": 27,
+      "symbol": "UserLogin",
+      "owner": "SICUREZZA",
+      "domain": "sicurezza",
+      "canonicalDestination": "amministrazione.utenti_sicurezza",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/user.py:TokenResponse",
+      "kind": "pydantic_model",
+      "name": "TokenResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "access_token",
+        "token_type",
+        "user_id",
+        "email",
+        "name"
+      ],
+      "members": [],
+      "sourcePath": "app/models/user.py",
+      "sourceLine": 51,
+      "symbol": "TokenResponse",
+      "owner": "SICUREZZA",
+      "domain": "sicurezza",
+      "canonicalDestination": "amministrazione.utenti_sicurezza",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/user.py:UserInDB",
+      "kind": "pydantic_model",
+      "name": "UserInDB",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "name",
+        "role",
+        "is_active",
+        "created_at",
+        "updated_at",
+        "last_login"
+      ],
+      "members": [],
+      "sourcePath": "app/models/user.py",
+      "sourceLine": 60,
+      "symbol": "UserInDB",
+      "owner": "SICUREZZA",
+      "domain": "sicurezza",
+      "canonicalDestination": "amministrazione.utenti_sicurezza",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/user.py:UserResponse",
+      "kind": "pydantic_model",
+      "name": "UserResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "email",
+        "name",
+        "role",
+        "is_active",
+        "created_at",
+        "last_login"
+      ],
+      "members": [],
+      "sourcePath": "app/models/user.py",
+      "sourceLine": 85,
+      "symbol": "UserResponse",
+      "owner": "SICUREZZA",
+      "domain": "sicurezza",
+      "canonicalDestination": "amministrazione.utenti_sicurezza",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/user.py:UserUpdate",
+      "kind": "pydantic_model",
+      "name": "UserUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "name",
+        "email",
+        "role",
+        "is_active"
+      ],
+      "members": [],
+      "sourcePath": "app/models/user.py",
+      "sourceLine": 96,
+      "symbol": "UserUpdate",
+      "owner": "SICUREZZA",
+      "domain": "sicurezza",
+      "canonicalDestination": "amministrazione.utenti_sicurezza",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/user.py:PasswordChange",
+      "kind": "pydantic_model",
+      "name": "PasswordChange",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "old_password",
+        "new_password"
+      ],
+      "members": [],
+      "sourcePath": "app/models/user.py",
+      "sourceLine": 113,
+      "symbol": "PasswordChange",
+      "owner": "SICUREZZA",
+      "domain": "sicurezza",
+      "canonicalDestination": "amministrazione.utenti_sicurezza",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/warehouse.py:WarehouseProduct",
+      "kind": "pydantic_model",
+      "name": "WarehouseProduct",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "product_name",
+        "product_description",
+        "product_code",
+        "unit_of_measure",
+        "quantity_purchased",
+        "quantity_used",
+        "quantity_available",
+        "minimum_stock",
+        "optimal_stock",
+        "chart_of_account_id",
+        "chart_of_account_name",
+        "supplier_vat",
+        "supplier_name",
+        "primary_supplier",
+        "unit_price_avg",
+        "unit_price_min",
+        "unit_price_max",
+        "last_purchase_price",
+        "last_purchase_date",
+        "last_movement_date",
+        "category",
+        "subcategory",
+        "brand",
+        "storage_location",
+        "lot_tracking_enabled",
+        "current_lot",
+        "barcode",
+        "ean",
+        "sku",
+        "notes",
+        "tags",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/warehouse.py",
+      "sourceLine": 10,
+      "symbol": "WarehouseProduct",
+      "owner": "CONTROLLO",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "controllo.comparazione_prezzi_acquisto",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/warehouse.py:WarehouseMovement",
+      "kind": "pydantic_model",
+      "name": "WarehouseMovement",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "product_id",
+        "product_name",
+        "movement_type",
+        "quantity",
+        "unit_of_measure",
+        "unit_price",
+        "total_value",
+        "quantity_before",
+        "quantity_after",
+        "document_type",
+        "document_id",
+        "document_number",
+        "invoice_id",
+        "supplier_vat",
+        "supplier_name",
+        "lot_number",
+        "expiry_date",
+        "movement_date",
+        "reason",
+        "notes",
+        "created_by",
+        "created_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/warehouse.py",
+      "sourceLine": 95,
+      "symbol": "WarehouseMovement",
+      "owner": "CONTROLLO",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "controllo.comparazione_prezzi_acquisto",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/warehouse.py:ProductCatalog",
+      "kind": "pydantic_model",
+      "name": "ProductCatalog",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "product_name",
+        "product_code",
+        "description",
+        "category",
+        "subcategory",
+        "unit_of_measure",
+        "cost_price",
+        "selling_price",
+        "vat_rate",
+        "preferred_supplier_vat",
+        "preferred_supplier_name",
+        "brand",
+        "manufacturer",
+        "barcode",
+        "ean",
+        "sku",
+        "is_active",
+        "is_sellable",
+        "is_purchasable",
+        "tags",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/warehouse.py",
+      "sourceLine": 155,
+      "symbol": "ProductCatalog",
+      "owner": "CONTROLLO",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "controllo.comparazione_prezzi_acquisto",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/warehouse.py:PriceHistoryEntry",
+      "kind": "pydantic_model",
+      "name": "PriceHistoryEntry",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "product_name",
+        "supplier_vat",
+        "supplier_name",
+        "price",
+        "unit_of_measure",
+        "quantity",
+        "invoice_id",
+        "invoice_number",
+        "invoice_date",
+        "recorded_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/warehouse.py",
+      "sourceLine": 199,
+      "symbol": "PriceHistoryEntry",
+      "owner": "CONTROLLO",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "controllo.comparazione_prezzi_acquisto",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/warehouse.py:ProductMapping",
+      "kind": "pydantic_model",
+      "name": "ProductMapping",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "original_name",
+        "standard_name",
+        "supplier_vat",
+        "category",
+        "created_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/warehouse.py",
+      "sourceLine": 234,
+      "symbol": "ProductMapping",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "amministrazione.dizionario_prodotti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Mappa il nome prodotto originale in fattura su un prodotto standard; non è un modello di autenticazione nonostante il campo user_id.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/warehouse.py:InventorySnapshot",
+      "kind": "pydantic_model",
+      "name": "InventorySnapshot",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "snapshot_date",
+        "snapshot_type",
+        "products",
+        "total_items",
+        "total_value",
+        "notes",
+        "created_by",
+        "created_at"
+      ],
+      "members": [],
+      "sourcePath": "app/models/warehouse.py",
+      "sourceLine": 250,
+      "symbol": "InventorySnapshot",
+      "owner": "CONTROLLO",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "controllo.comparazione_prezzi_acquisto",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/models/warehouse.py:StockAlert",
+      "kind": "pydantic_model",
+      "name": "StockAlert",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "product_id",
+        "product_name",
+        "current_quantity",
+        "minimum_stock",
+        "suggested_order_quantity",
+        "supplier_name",
+        "alert_level"
+      ],
+      "members": [],
+      "sourcePath": "app/models/warehouse.py",
+      "sourceLine": 271,
+      "symbol": "StockAlert",
+      "owner": "CONTROLLO",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "controllo.comparazione_prezzi_acquisto",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/admin_rollback.py:PuliziaDriveRequest",
+      "kind": "pydantic_model",
+      "name": "PuliziaDriveRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "folder",
+        "anni"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/admin_rollback.py",
+      "sourceLine": 250,
+      "symbol": "PuliziaDriveRequest",
+      "owner": "INTAKE_DOCUMENTALE",
+      "domain": "documenti",
+      "canonicalDestination": "documenti.acquisizione_inbox",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/auth.py:LoginRequest",
+      "kind": "pydantic_model",
+      "name": "LoginRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "email",
+        "password"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/auth.py",
+      "sourceLine": 53,
+      "symbol": "LoginRequest",
+      "owner": "SICUREZZA",
+      "domain": "sicurezza",
+      "canonicalDestination": "amministrazione.utenti_sicurezza",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/bank/assegni.py:FatturaQuotaIn",
+      "kind": "pydantic_model",
+      "name": "FatturaQuotaIn",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "fattura_id",
+        "quota"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/bank/assegni.py",
+      "sourceLine": 1385,
+      "symbol": "FatturaQuotaIn",
+      "owner": "TESORERIA",
+      "domain": "assegni",
+      "canonicalDestination": "riconciliazione.assegni",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/bank/assegni.py:FattureCollegateIn",
+      "kind": "pydantic_model",
+      "name": "FattureCollegateIn",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "fatture"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/bank/assegni.py",
+      "sourceLine": 1392,
+      "symbol": "FattureCollegateIn",
+      "owner": "TESORERIA",
+      "domain": "assegni",
+      "canonicalDestination": "riconciliazione.assegni",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/batch_operations.py:RiconciliazioneItem",
+      "kind": "pydantic_model",
+      "name": "RiconciliazioneItem",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "movimento_id",
+        "tipo_match",
+        "match_id"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/batch_operations.py",
+      "sourceLine": 37,
+      "symbol": "RiconciliazioneItem",
+      "owner": "RICONCILIAZIONE",
+      "domain": "riconciliazione",
+      "canonicalDestination": "riconciliazione.coda_generale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/batch_operations.py:PagamentoItem",
+      "kind": "pydantic_model",
+      "name": "PagamentoItem",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "fattura_id",
+        "importo",
+        "metodo"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/batch_operations.py",
+      "sourceLine": 43,
+      "symbol": "PagamentoItem",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/batch_operations.py:CategorizzaItem",
+      "kind": "pydantic_model",
+      "name": "CategorizzaItem",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "fattura_id",
+        "centro_costo_id"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/batch_operations.py",
+      "sourceLine": 49,
+      "symbol": "CategorizzaItem",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/cespiti.py:CespiteInput",
+      "kind": "pydantic_model",
+      "name": "CespiteInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "descrizione",
+        "categoria",
+        "data_acquisto",
+        "data_entrata_funzione",
+        "valore_acquisto",
+        "fornitore",
+        "numero_fattura",
+        "ubicazione",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/cespiti.py",
+      "sourceLine": 99,
+      "symbol": "CespiteInput",
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/cespiti.py:DismissioneInput",
+      "kind": "pydantic_model",
+      "name": "DismissioneInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "cespite_id",
+        "data_dismissione",
+        "tipo",
+        "prezzo_vendita",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/cespiti.py",
+      "sourceLine": 124,
+      "symbol": "DismissioneInput",
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/cespiti.py:CespiteUpdate",
+      "kind": "pydantic_model",
+      "name": "CespiteUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "descrizione",
+        "fornitore",
+        "numero_fattura",
+        "ubicazione",
+        "note",
+        "valore_acquisto",
+        "data_acquisto",
+        "data_entrata_funzione"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/cespiti.py",
+      "sourceLine": 1131,
+      "symbol": "CespiteUpdate",
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/chiusura_esercizio.py:ChiusuraEsercizioInput",
+      "kind": "pydantic_model",
+      "name": "ChiusuraEsercizioInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "anno",
+        "conferma_scritture",
+        "conferma_quadrature",
+        "conferma_testo",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/chiusura_esercizio.py",
+      "sourceLine": 26,
+      "symbol": "ChiusuraEsercizioInput",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/chiusura_esercizio.py:AperturaEsercizioInput",
+      "kind": "pydantic_model",
+      "name": "AperturaEsercizioInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "anno_nuovo",
+        "conferma_testo"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/chiusura_esercizio.py",
+      "sourceLine": 34,
+      "symbol": "AperturaEsercizioInput",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/configurazioni.py:EmailAccountInput",
+      "kind": "pydantic_model",
+      "name": "EmailAccountInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "nome",
+        "email",
+        "app_password",
+        "imap_server",
+        "imap_port",
+        "attivo",
+        "parole_chiave",
+        "cartelle",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/configurazioni.py",
+      "sourceLine": 24,
+      "symbol": "EmailAccountInput",
+      "owner": "INTAKE_DOCUMENTALE",
+      "domain": "documenti",
+      "canonicalDestination": "documenti.acquisizione_inbox",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/configurazioni.py:EmailAccountUpdate",
+      "kind": "pydantic_model",
+      "name": "EmailAccountUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "nome",
+        "email",
+        "app_password",
+        "imap_server",
+        "imap_port",
+        "attivo",
+        "parole_chiave",
+        "cartelle",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/configurazioni.py",
+      "sourceLine": 37,
+      "symbol": "EmailAccountUpdate",
+      "owner": "INTAKE_DOCUMENTALE",
+      "domain": "documenti",
+      "canonicalDestination": "documenti.acquisizione_inbox",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/configurazioni.py:ParolaChiaveInput",
+      "kind": "pydantic_model",
+      "name": "ParolaChiaveInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "parola",
+        "categoria",
+        "attiva"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/configurazioni.py",
+      "sourceLine": 50,
+      "symbol": "ParolaChiaveInput",
+      "owner": "AMMINISTRAZIONE",
+      "domain": "amministrazione",
+      "canonicalDestination": "amministrazione.integrazioni_scheduler",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/erp_bridge.py:RigaFattura",
+      "kind": "pydantic_model",
+      "name": "RigaFattura",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "descrizione",
+        "prezzo_unitario",
+        "quantita"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/erp_bridge.py",
+      "sourceLine": 38,
+      "symbol": "RigaFattura",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/erp_bridge.py:FatturaRicevutaPayload",
+      "kind": "pydantic_model",
+      "name": "FatturaRicevutaPayload",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "numero_fattura",
+        "fornitore",
+        "partita_iva",
+        "data",
+        "imponibile",
+        "iva",
+        "totale",
+        "righe"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/erp_bridge.py",
+      "sourceLine": 44,
+      "symbol": "FatturaRicevutaPayload",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/f24_email_settings.py:MittenteConfig",
+      "kind": "pydantic_model",
+      "name": "MittenteConfig",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "email",
+        "nome",
+        "tipo",
+        "categoria_f24",
+        "parole_chiave",
+        "attivo"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/f24_email_settings.py",
+      "sourceLine": 20,
+      "symbol": "MittenteConfig",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/f24_email_settings.py:EmailSettingsUpdate",
+      "kind": "pydantic_model",
+      "name": "EmailSettingsUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "mittenti",
+        "scan_interval_minuti",
+        "giorni_indietro",
+        "auto_scan_attivo"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/f24_email_settings.py",
+      "sourceLine": 29,
+      "symbol": "EmailSettingsUpdate",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/fiscal_control.py:SnapshotRow",
+      "kind": "pydantic_model",
+      "name": "SnapshotRow",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "collection_number",
+        "original_amount",
+        "residual",
+        "portal_status",
+        "payment_evidence",
+        "suspended",
+        "disputed",
+        "metadata"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/fiscal_control.py",
+      "sourceLine": 36,
+      "symbol": "SnapshotRow",
+      "owner": "RISCOSSIONE",
+      "domain": "riscossione",
+      "canonicalDestination": "amministrazione.riscossione_rate",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/fiscal_control.py:SnapshotRequest",
+      "kind": "pydantic_model",
+      "name": "SnapshotRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "source_document_id",
+        "captured_at",
+        "rows"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/fiscal_control.py",
+      "sourceLine": 47,
+      "symbol": "SnapshotRequest",
+      "owner": "RISCOSSIONE",
+      "domain": "riscossione",
+      "canonicalDestination": "amministrazione.riscossione_rate",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/fiscal_control.py:RavvedimentoRequest",
+      "kind": "pydantic_model",
+      "name": "RavvedimentoRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "principal",
+        "days_late",
+        "legal_rule_version"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/fiscal_control.py",
+      "sourceLine": 53,
+      "symbol": "RavvedimentoRequest",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/fiscal_control.py:CollectionEventRequest",
+      "kind": "pydantic_model",
+      "name": "CollectionEventRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "event_type",
+        "effective_at",
+        "amount",
+        "evidence_ids",
+        "closure_cause",
+        "source_reference"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/fiscal_control.py",
+      "sourceLine": 59,
+      "symbol": "CollectionEventRequest",
+      "owner": "RISCOSSIONE",
+      "domain": "riscossione",
+      "canonicalDestination": "amministrazione.riscossione_rate",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/fiscal_control.py:AderArchiveRequest",
+      "kind": "pydantic_model",
+      "name": "AderArchiveRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "source_archive_document_id",
+        "expected_sha256"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/fiscal_control.py",
+      "sourceLine": 68,
+      "symbol": "AderArchiveRequest",
+      "owner": "RISCOSSIONE",
+      "domain": "riscossione",
+      "canonicalDestination": "documenti.riscossione_pagopa",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/fiscalita_italiana.py:F24Create",
+      "kind": "pydantic_model",
+      "name": "F24Create",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "data_versamento",
+        "data_scadenza",
+        "tributi",
+        "crediti_compensati",
+        "totale_versato",
+        "modalita",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/fiscalita_italiana.py",
+      "sourceLine": 597,
+      "symbol": "F24Create",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/fornitori_learning.py:FornitoreKeywordsCreate",
+      "kind": "pydantic_model",
+      "name": "FornitoreKeywordsCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "fornitore_nome",
+        "keywords",
+        "centro_costo_suggerito",
+        "centri_costo_ammessi",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/fornitori_learning.py",
+      "sourceLine": 19,
+      "symbol": "FornitoreKeywordsCreate",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/fornitori_learning.py:FornitoreKeywordsResponse",
+      "kind": "pydantic_model",
+      "name": "FornitoreKeywordsResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "fornitore_nome",
+        "fornitore_nome_normalizzato",
+        "keywords",
+        "centro_costo_suggerito",
+        "centri_costo_ammessi",
+        "note",
+        "fatture_count",
+        "totale_fatture",
+        "created_at",
+        "updated_at"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/fornitori_learning.py",
+      "sourceLine": 28,
+      "symbol": "FornitoreKeywordsResponse",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/learning_machine.py:FeedbackRequest",
+      "kind": "pydantic_model",
+      "name": "FeedbackRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "document_id",
+        "categoria_corretta",
+        "keywords_nuove",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/learning_machine.py",
+      "sourceLine": 208,
+      "symbol": "FeedbackRequest",
+      "owner": "CONTROLLO",
+      "domain": "controllo",
+      "canonicalDestination": "controllo.anomalie",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/learning_machine.py:ScanRequest",
+      "kind": "pydantic_model",
+      "name": "ScanRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "cartelle",
+        "giorni",
+        "limite_per_cartella"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/learning_machine.py",
+      "sourceLine": 215,
+      "symbol": "ScanRequest",
+      "owner": "CONTROLLO",
+      "domain": "controllo",
+      "canonicalDestination": "controllo.anomalie",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/mfa.py:MfaCodeRequest",
+      "kind": "pydantic_model",
+      "name": "MfaCodeRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "code"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/mfa.py",
+      "sourceLine": 22,
+      "symbol": "MfaCodeRequest",
+      "owner": "SICUREZZA",
+      "domain": "sicurezza",
+      "canonicalDestination": "amministrazione.utenti_sicurezza",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/openapi_automotive.py:UpdateVeicoloRequest",
+      "kind": "pydantic_model",
+      "name": "UpdateVeicoloRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "targa",
+        "force_update"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/openapi_automotive.py",
+      "sourceLine": 22,
+      "symbol": "UpdateVeicoloRequest",
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/openapi_imprese.py:UpdateFornitoreRequest",
+      "kind": "pydantic_model",
+      "name": "UpdateFornitoreRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "partita_iva",
+        "force_update"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/openapi_imprese.py",
+      "sourceLine": 22,
+      "symbol": "UpdateFornitoreRequest",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/openapi_it.py:BilancioXBRLRequest",
+      "kind": "pydantic_model",
+      "name": "BilancioXBRLRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "partita_iva",
+        "anno_chiusura"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/openapi_it.py",
+      "sourceLine": 53,
+      "symbol": "BilancioXBRLRequest",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/openapi_it.py:BankAccountConnect",
+      "kind": "pydantic_model",
+      "name": "BankAccountConnect",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "bank_code",
+        "iban",
+        "consent_id"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/openapi_it.py",
+      "sourceLine": 59,
+      "symbol": "BankAccountConnect",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/operazioni_module/common.py:ConfermaBatchRequest",
+      "kind": "pydantic_model",
+      "name": "ConfermaBatchRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "operazioni"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/operazioni_module/common.py",
+      "sourceLine": 50,
+      "symbol": "ConfermaBatchRequest",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/operazioni_module/common.py:RiconciliaManuale",
+      "kind": "pydantic_model",
+      "name": "RiconciliaManuale",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "movimento_id",
+        "tipo",
+        "associazioni",
+        "categoria",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/operazioni_module/common.py",
+      "sourceLine": 54,
+      "symbol": "RiconciliaManuale",
+      "owner": "RICONCILIAZIONE",
+      "domain": "riconciliazione",
+      "canonicalDestination": "riconciliazione.coda_generale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/prima_nota_module/manutenzione.py:SpostaMovimentoRequest",
+      "kind": "pydantic_model",
+      "name": "SpostaMovimentoRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "movimento_id",
+        "da",
+        "a",
+        "conferma",
+        "motivo"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/prima_nota_module/manutenzione.py",
+      "sourceLine": 23,
+      "symbol": "SpostaMovimentoRequest",
+      "owner": "PRIMA_NOTA",
+      "domain": "prima_nota",
+      "canonicalDestination": "prima_nota.registro_saldi",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/prima_nota_module/manutenzione.py:AnnullaAssociazioneFatturaBancaRequest",
+      "kind": "pydantic_model",
+      "name": "AnnullaAssociazioneFatturaBancaRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "partita_iva",
+        "numero_fattura",
+        "motivo",
+        "importo_atteso"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/prima_nota_module/manutenzione.py",
+      "sourceLine": 31,
+      "symbol": "AnnullaAssociazioneFatturaBancaRequest",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/prima_nota_module/operation_index.py:ManualIndexDecisionIn",
+      "kind": "pydantic_model",
+      "name": "ManualIndexDecisionIn",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "category",
+        "target_id",
+        "note",
+        "expected_version"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/prima_nota_module/operation_index.py",
+      "sourceLine": 126,
+      "symbol": "ManualIndexDecisionIn",
+      "owner": "PRIMA_NOTA",
+      "domain": "prima_nota",
+      "canonicalDestination": "prima_nota.registro_saldi",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/scadenzario_fornitori.py:ScadenzaUpdate",
+      "kind": "pydantic_model",
+      "name": "ScadenzaUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "fattura_id",
+        "data_scadenza",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/scadenzario_fornitori.py",
+      "sourceLine": 22,
+      "symbol": "ScadenzaUpdate",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/sumup.py:NumiaRepairRequest",
+      "kind": "pydantic_model",
+      "name": "NumiaRepairRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "anno",
+        "conferma"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/sumup.py",
+      "sourceLine": 30,
+      "symbol": "NumiaRepairRequest",
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/sumup.py:NumiaRepairResponse",
+      "kind": "pydantic_model",
+      "name": "NumiaRepairResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "success",
+        "dry_run",
+        "anno",
+        "righe_ec_numia",
+        "giornate_numia",
+        "giornate_riconciliate",
+        "giornate_non_quadrate",
+        "giornate_senza_trasferimento",
+        "giornate_trasferimento_ambiguo",
+        "righe_ec_riconciliate",
+        "righe_ec_duplicate_escluse",
+        "righe_prima_nota_da_archiviare",
+        "righe_prima_nota_archiviate",
+        "recupero_storico",
+        "dettaglio"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/sumup.py",
+      "sourceLine": 37,
+      "symbol": "NumiaRepairResponse",
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/tfr.py:AccantonamentoTFRInput",
+      "kind": "pydantic_model",
+      "name": "AccantonamentoTFRInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "dipendente_id",
+        "anno",
+        "retribuzione_annua",
+        "indice_istat"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/tfr.py",
+      "sourceLine": 41,
+      "symbol": "AccantonamentoTFRInput",
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/tfr.py:LiquidazioneTFRInput",
+      "kind": "pydantic_model",
+      "name": "LiquidazioneTFRInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "dipendente_id",
+        "data_liquidazione",
+        "motivo",
+        "importo_richiesto",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/tfr.py",
+      "sourceLine": 48,
+      "symbol": "LiquidazioneTFRInput",
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/tfr.py:AccontoInput",
+      "kind": "pydantic_model",
+      "name": "AccontoInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "dipendente_id",
+        "tipo",
+        "importo",
+        "data",
+        "note",
+        "natura_acconto",
+        "tipo_bonifico",
+        "scalato_su_anno_mese"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/tfr.py",
+      "sourceLine": 595,
+      "symbol": "AccontoInput",
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/tfr.py:AccontoUpdateInput",
+      "kind": "pydantic_model",
+      "name": "AccontoUpdateInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "importo",
+        "data",
+        "tipo",
+        "note",
+        "natura_acconto",
+        "tipo_bonifico",
+        "scalato_su_anno_mese",
+        "stato"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/tfr.py",
+      "sourceLine": 621,
+      "symbol": "AccontoUpdateInput",
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/tfr.py:RiconciliaBancaInput",
+      "kind": "pydantic_model",
+      "name": "RiconciliaBancaInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "movimento_id"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/tfr.py",
+      "sourceLine": 1173,
+      "symbol": "RiconciliaBancaInput",
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/tfr.py:ScalaturaInput",
+      "kind": "pydantic_model",
+      "name": "ScalaturaInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "forza_anche_se_discrepanza"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/tfr.py",
+      "sourceLine": 1506,
+      "symbol": "ScalaturaInput",
+      "owner": "PAGHE",
+      "domain": "paghe",
+      "canonicalDestination": "documenti.cedolini_paghe",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/routers/voci_bilancio.py:VoceBilancioInput",
+      "kind": "pydantic_model",
+      "name": "VoceBilancioInput",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "codice_cee",
+        "importo",
+        "anno",
+        "note"
+      ],
+      "members": [],
+      "sourcePath": "app/routers/voci_bilancio.py",
+      "sourceLine": 35,
+      "symbol": "VoceBilancioInput",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/schemas/advanced_accounting.py:TipoRiserva",
+      "kind": "enum",
+      "name": "TipoRiserva",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "LEGALE",
+        "STRAORDINARIA",
+        "CAPITALE",
+        "SOSPENSIONE_IMPOSTA",
+        "UTILI_PORTATI_NUOVO",
+        "RIVALUTAZIONE"
+      ],
+      "sourcePath": "app/schemas/advanced_accounting.py",
+      "sourceLine": 14,
+      "symbol": "TipoRiserva",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/schemas/advanced_accounting.py:TipoRateoRisconto",
+      "kind": "enum",
+      "name": "TipoRateoRisconto",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "RATEO_ATTIVO",
+        "RATEO_PASSIVO",
+        "RISCONTO_ATTIVO",
+        "RISCONTO_PASSIVO"
+      ],
+      "sourcePath": "app/schemas/advanced_accounting.py",
+      "sourceLine": 127,
+      "symbol": "TipoRateoRisconto",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/schemas/advanced_accounting.py:MetodoValutazioneRimanenze",
+      "kind": "enum",
+      "name": "MetodoValutazioneRimanenze",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "FIFO",
+        "LIFO",
+        "COSTO_MEDIO"
+      ],
+      "sourcePath": "app/schemas/advanced_accounting.py",
+      "sourceLine": 215,
+      "symbol": "MetodoValutazioneRimanenze",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/schemas/chart_of_accounts.py:AccountType",
+      "kind": "enum",
+      "name": "AccountType",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "ATTIVO",
+        "PASSIVO",
+        "PATRIMONIO_NETTO",
+        "RICAVI",
+        "COSTI"
+      ],
+      "sourcePath": "app/schemas/chart_of_accounts.py",
+      "sourceLine": 12,
+      "symbol": "AccountType",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/schemas/chart_of_accounts.py:AccountCategory",
+      "kind": "enum",
+      "name": "AccountCategory",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "IMMOBILIZZAZIONI_MATERIALI",
+        "IMMOBILIZZAZIONI_IMMATERIALI",
+        "CASSA",
+        "BANCA",
+        "CREDITI_CLIENTI",
+        "RIMANENZE_MAGAZZINO",
+        "ALTRI_CREDITI",
+        "DEBITI_FORNITORI",
+        "DEBITI_BANCARI",
+        "DEBITI_TRIBUTARI",
+        "DEBITI_PREVIDENZIALI",
+        "ALTRI_DEBITI",
+        "CAPITALE_SOCIALE",
+        "RISERVE",
+        "UTILI_PERDITE",
+        "VENDITE_BAR",
+        "VENDITE_CUCINA",
+        "ALTRI_RICAVI",
+        "MERCE_FORNITORI",
+        "COSTO_PERSONALE",
+        "AFFITTI_LOCAZIONI",
+        "UTENZE",
+        "AMMORTAMENTI",
+        "CONSULENZE",
+        "MANUTENZIONI",
+        "TRASPORTI",
+        "IMPOSTE_TASSE",
+        "INTERESSI_PASSIVI",
+        "ALTRI_COSTI"
+      ],
+      "sourcePath": "app/schemas/chart_of_accounts.py",
+      "sourceLine": 21,
+      "symbol": "AccountCategory",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/chart_of_accounts.py:Account",
+      "kind": "pydantic_model",
+      "name": "Account",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "account_code",
+        "account_name",
+        "account_type",
+        "account_category",
+        "parent_code",
+        "level",
+        "is_active",
+        "allow_manual_entry",
+        "description",
+        "keywords",
+        "created_at",
+        "updated_at",
+        "deleted_at",
+        "deleted_by"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/chart_of_accounts.py",
+      "sourceLine": 63,
+      "symbol": "Account",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/chart_of_accounts.py:AccountCreate",
+      "kind": "pydantic_model",
+      "name": "AccountCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "account_code",
+        "account_name",
+        "account_type",
+        "account_category",
+        "parent_code",
+        "level",
+        "description",
+        "keywords",
+        "allow_manual_entry"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/chart_of_accounts.py",
+      "sourceLine": 101,
+      "symbol": "AccountCreate",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/chart_of_accounts.py:AccountUpdate",
+      "kind": "pydantic_model",
+      "name": "AccountUpdate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "account_name",
+        "description",
+        "keywords",
+        "is_active",
+        "allow_manual_entry"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/chart_of_accounts.py",
+      "sourceLine": 114,
+      "symbol": "AccountUpdate",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/chart_of_accounts.py:JournalEntry",
+      "kind": "pydantic_model",
+      "name": "JournalEntry",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "entry_date",
+        "document_date",
+        "document_type",
+        "document_number",
+        "document_id",
+        "description",
+        "lines",
+        "status",
+        "registered_at",
+        "registered_by",
+        "created_at",
+        "updated_at",
+        "deleted_at",
+        "deleted_by"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/chart_of_accounts.py",
+      "sourceLine": 123,
+      "symbol": "JournalEntry",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/chart_of_accounts.py:JournalEntryCreate",
+      "kind": "pydantic_model",
+      "name": "JournalEntryCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "entry_date",
+        "document_date",
+        "document_type",
+        "document_number",
+        "document_id",
+        "description",
+        "lines"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/chart_of_accounts.py",
+      "sourceLine": 161,
+      "symbol": "JournalEntryCreate",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/chart_of_accounts.py:AutoCategorizationRule",
+      "kind": "pydantic_model",
+      "name": "AutoCategorizationRule",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "id",
+        "user_id",
+        "keywords",
+        "supplier_vat",
+        "account_code",
+        "priority",
+        "confidence",
+        "match_count",
+        "last_used",
+        "created_at",
+        "updated_at",
+        "deleted_at",
+        "deleted_by"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/chart_of_accounts.py",
+      "sourceLine": 172,
+      "symbol": "AutoCategorizationRule",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/chart_of_accounts.py:AutoCategorizationRuleCreate",
+      "kind": "pydantic_model",
+      "name": "AutoCategorizationRuleCreate",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "keywords",
+        "supplier_vat",
+        "account_code",
+        "priority",
+        "confidence"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/chart_of_accounts.py",
+      "sourceLine": 205,
+      "symbol": "AutoCategorizationRuleCreate",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/schemas/integrated_accounting.py:PaymentStatus",
+      "kind": "enum",
+      "name": "PaymentStatus",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "PENDING",
+        "PAID_CASH",
+        "PAID_BANK_PENDING",
+        "RECONCILED"
+      ],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 12,
+      "symbol": "PaymentStatus",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/schemas/integrated_accounting.py:MovementType",
+      "kind": "enum",
+      "name": "MovementType",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "IN",
+        "OUT"
+      ],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 20,
+      "symbol": "MovementType",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/schemas/integrated_accounting.py:EntryType",
+      "kind": "enum",
+      "name": "EntryType",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "ENTRATA",
+        "USCITA"
+      ],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 26,
+      "symbol": "EntryType",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/integrated_accounting.py:InvoiceExtended",
+      "kind": "pydantic_model",
+      "name": "InvoiceExtended",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "invoice_number",
+        "invoice_date",
+        "supplier_vat",
+        "supplier_name",
+        "total_amount",
+        "taxable_amount",
+        "products",
+        "payment_method",
+        "payment_status",
+        "reconciliation_date",
+        "bank_transaction_id",
+        "suspended_reason",
+        "user_id",
+        "status",
+        "created_at",
+        "deleted_at",
+        "deleted_by"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 32,
+      "symbol": "InvoiceExtended",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/integrated_accounting.py:InventoryItem",
+      "kind": "pydantic_model",
+      "name": "InventoryItem",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "product_code",
+        "description",
+        "unit_of_measure",
+        "stock_quantity",
+        "reorder_level",
+        "user_id",
+        "last_updated",
+        "deleted_at",
+        "deleted_by"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 63,
+      "symbol": "InventoryItem",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/integrated_accounting.py:InventoryMovement",
+      "kind": "pydantic_model",
+      "name": "InventoryMovement",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "movement_id",
+        "movement_type",
+        "invoice_id",
+        "invoice_number",
+        "supplier_vat",
+        "product_code",
+        "quantity",
+        "cost_basis",
+        "date",
+        "notes",
+        "user_id",
+        "created_at",
+        "deleted_at",
+        "deleted_by"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 86,
+      "symbol": "InventoryMovement",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/integrated_accounting.py:ProductAlias",
+      "kind": "pydantic_model",
+      "name": "ProductAlias",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "supplier_vat",
+        "raw_description",
+        "normalized_description",
+        "product_code",
+        "confidence",
+        "last_used",
+        "user_id",
+        "deleted_at",
+        "deleted_by"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 116,
+      "symbol": "ProductAlias",
+      "owner": "CONTROLLO",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "controllo.comparazione_prezzi_acquisto",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/integrated_accounting.py:BankJournalEntry",
+      "kind": "pydantic_model",
+      "name": "BankJournalEntry",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "entry_id",
+        "date",
+        "description",
+        "amount",
+        "currency",
+        "entry_type",
+        "invoice_id",
+        "invoice_number",
+        "bank_transaction_id",
+        "reconciled",
+        "reconciliation_date",
+        "user_id",
+        "created_at",
+        "deleted_at",
+        "deleted_by"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 137,
+      "symbol": "BankJournalEntry",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/integrated_accounting.py:CashJournalEntry",
+      "kind": "pydantic_model",
+      "name": "CashJournalEntry",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "entry_id",
+        "date",
+        "description",
+        "amount",
+        "entry_type",
+        "category",
+        "invoice_id",
+        "invoice_number",
+        "user_id",
+        "created_at",
+        "deleted_at",
+        "deleted_by"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 170,
+      "symbol": "CashJournalEntry",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/schemas/integrated_accounting.py:OperationAudit",
+      "kind": "pydantic_model",
+      "name": "OperationAudit",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "audit_id",
+        "entity",
+        "entity_id",
+        "action",
+        "before",
+        "after",
+        "user_id",
+        "timestamp",
+        "source",
+        "notes"
+      ],
+      "members": [],
+      "sourcePath": "app/schemas/integrated_accounting.py",
+      "sourceLine": 198,
+      "symbol": "OperationAudit",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/accounting_engine.py:TipoConto",
+      "kind": "enum",
+      "name": "TipoConto",
+      "bases": [
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "ATTIVO",
+        "PASSIVO",
+        "COSTO",
+        "RICAVO"
+      ],
+      "sourcePath": "app/services/accounting_engine.py",
+      "sourceLine": 31,
+      "symbol": "TipoConto",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/accounting_engine.py:TipoOperazione",
+      "kind": "enum",
+      "name": "TipoOperazione",
+      "bases": [
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "CASSA",
+        "BANCA",
+        "STORNO"
+      ],
+      "sourcePath": "app/services/accounting_engine.py",
+      "sourceLine": 39,
+      "symbol": "TipoOperazione",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/accounting_engine.py:StatoTransazione",
+      "kind": "enum",
+      "name": "StatoTransazione",
+      "bases": [
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "VALIDA",
+        "STORNATA",
+        "PROVVISORIA"
+      ],
+      "sourcePath": "app/services/accounting_engine.py",
+      "sourceLine": 46,
+      "symbol": "StatoTransazione",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/business_rules.py:EntityStatus",
+      "kind": "enum",
+      "name": "EntityStatus",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "ACTIVE",
+        "DELETED",
+        "ARCHIVED"
+      ],
+      "sourcePath": "app/services/business_rules.py",
+      "sourceLine": 38,
+      "symbol": "EntityStatus",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/business_rules.py:PaymentStatus",
+      "kind": "enum",
+      "name": "PaymentStatus",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "UNPAID",
+        "PARTIAL",
+        "PAID"
+      ],
+      "sourcePath": "app/services/business_rules.py",
+      "sourceLine": 45,
+      "symbol": "PaymentStatus",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/business_rules.py:InvoiceStatus",
+      "kind": "enum",
+      "name": "InvoiceStatus",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "IMPORTED",
+        "VALIDATED",
+        "REGISTERED",
+        "PAID",
+        "CANCELLED"
+      ],
+      "sourcePath": "app/services/business_rules.py",
+      "sourceLine": 52,
+      "symbol": "InvoiceStatus",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/business_rules.py:CorrispettivoStatus",
+      "kind": "enum",
+      "name": "CorrispettivoStatus",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "IMPORTED",
+        "VALIDATED",
+        "SENT_ADE"
+      ],
+      "sourcePath": "app/services/business_rules.py",
+      "sourceLine": 61,
+      "symbol": "CorrispettivoStatus",
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/business_rules.py:MovementStatus",
+      "kind": "enum",
+      "name": "MovementStatus",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "DRAFT",
+        "CONFIRMED",
+        "RECONCILED"
+      ],
+      "sourcePath": "app/services/business_rules.py",
+      "sourceLine": 68,
+      "symbol": "MovementStatus",
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/categorizzazione_contabile.py:CategoriaFiscale",
+      "kind": "enum",
+      "name": "CategoriaFiscale",
+      "bases": [
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "MERCE_RIVENDITA",
+        "MATERIE_PRIME",
+        "SERVIZI",
+        "UTENZE",
+        "TELEFONIA",
+        "CARBURANTE",
+        "NOLEGGIO_BENI_STRUMENTALI",
+        "NOLEGGIO_AUTO",
+        "MANUTENZIONE_ORDINARIA",
+        "MANUTENZIONE_STRAORDINARIA",
+        "ASSICURAZIONI",
+        "CONSULENZE_PROFESSIONALI",
+        "PUBBLICITA",
+        "RAPPRESENTANZA",
+        "ATTREZZATURE_MINORI",
+        "BENI_STRUMENTALI",
+        "LEASING",
+        "AFFITTO_LOCALI",
+        "INTERESSI_PASSIVI",
+        "IMPOSTE_TASSE",
+        "PERSONALE",
+        "ALTRO"
+      ],
+      "sourcePath": "app/services/categorizzazione_contabile.py",
+      "sourceLine": 21,
+      "symbol": "CategoriaFiscale",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/contabilita_generale.py:CategoriaConti",
+      "kind": "enum",
+      "name": "CategoriaConti",
+      "bases": [
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "IMMOBILIZZAZIONI_IMMATERIALI",
+        "IMMOBILIZZAZIONI_MATERIALI",
+        "IMMOBILIZZAZIONI_FINANZIARIE",
+        "RIMANENZE",
+        "CREDITI",
+        "ATTIVITA_FINANZIARIE",
+        "DISPONIBILITA_LIQUIDE",
+        "RATEI_RISCONTI_ATTIVI",
+        "PATRIMONIO_NETTO",
+        "FONDI_RISCHI_ONERI",
+        "TFR",
+        "DEBITI",
+        "RATEI_RISCONTI_PASSIVI",
+        "RICAVI_VENDITE",
+        "VARIAZIONE_RIMANENZE",
+        "ALTRI_RICAVI",
+        "COSTI_MATERIE_PRIME",
+        "COSTI_SERVIZI",
+        "COSTI_GODIMENTO_TERZI",
+        "COSTI_PERSONALE",
+        "AMMORTAMENTI",
+        "VARIAZIONE_RIMANENZE_MP",
+        "ACCANTONAMENTI_RISCHI",
+        "ALTRI_ACCANTONAMENTI",
+        "ONERI_DIVERSI",
+        "PROVENTI_FINANZIARI",
+        "ONERI_FINANZIARI",
+        "RETTIFICHE_ATTIVITA_FIN",
+        "PROVENTI_ONERI_STRAORD",
+        "IMPOSTE"
+      ],
+      "sourcePath": "app/services/contabilita_generale.py",
+      "sourceLine": 89,
+      "symbol": "CategoriaConti",
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/f24_gestione_avanzata.py:StatoF24",
+      "kind": "enum",
+      "name": "StatoF24",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "RICEVUTO",
+        "DA_PAGARE",
+        "PAGATO",
+        "SOSTITUITO",
+        "SCADUTO",
+        "ANNULLATO"
+      ],
+      "sourcePath": "app/services/f24_gestione_avanzata.py",
+      "sourceLine": 16,
+      "symbol": "StatoF24",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/f24_gestione_avanzata.py:TipoF24",
+      "kind": "enum",
+      "name": "TipoF24",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "ORIGINALE",
+        "RAVVEDIMENTO",
+        "SOSTITUTIVO"
+      ],
+      "sourcePath": "app/services/f24_gestione_avanzata.py",
+      "sourceLine": 26,
+      "symbol": "TipoF24",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/f24_gestione_avanzata.py:CategoriaArchivio",
+      "kind": "enum",
+      "name": "CategoriaArchivio",
+      "bases": [
+        "str",
+        "Enum"
+      ],
+      "fields": [],
+      "members": [
+        "ATTIVI",
+        "ORIGINALI_SOSTITUITI",
+        "RAVVEDUTI",
+        "STORICO"
+      ],
+      "sourcePath": "app/services/f24_gestione_avanzata.py",
+      "sourceLine": 33,
+      "symbol": "CategoriaArchivio",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/fiscal_domain.py:DocumentType",
+      "kind": "enum",
+      "name": "DocumentType",
+      "bases": [
+        "StrEnum"
+      ],
+      "fields": [],
+      "members": [
+        "F24",
+        "QUIETANZA_F24",
+        "RICEVUTA_F24",
+        "DICHIARAZIONE_IVA",
+        "LIPE",
+        "MODELLO_770",
+        "CU",
+        "AVVISO_BONARIO",
+        "COMUNICAZIONE_IRREGOLARITA",
+        "CARTELLA_ADE_R",
+        "AVVISO_ADDEBITO_INPS",
+        "QUIETANZA_ADE_R",
+        "RICEVUTA_PAGOPA",
+        "AVVISO_PAGOPA",
+        "ESITO_NEGATIVO_PAGOPA",
+        "RICEVUTA_CBILL",
+        "PIANO_RATEIZZAZIONE",
+        "RATA_RATEIZZAZIONE",
+        "DEFINIZIONE_AGEVOLATA",
+        "SGRAVIO",
+        "SOSPENSIONE",
+        "AUTOTUTELA",
+        "SENTENZA",
+        "ATTO_GIUDIZIARIO",
+        "DIRITTO_CAMERA_COMMERCIO",
+        "VERBALE_CODICE_STRADA",
+        "TARI_AVVISO",
+        "DIMISSIONI_TELEMATICHE",
+        "MOVIMENTO_BANCARIO_DOCUMENTO",
+        "ALTRO_FISCALE"
+      ],
+      "sourcePath": "app/services/fiscal_domain.py",
+      "sourceLine": 26,
+      "symbol": "DocumentType",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/fiscal_domain.py:PaymentStatus",
+      "kind": "enum",
+      "name": "PaymentStatus",
+      "bases": [
+        "StrEnum"
+      ],
+      "fields": [],
+      "members": [
+        "DUE",
+        "PAID_ON_TIME",
+        "PAID_LATE",
+        "PAID_LATE_WITH_COMPLETE_RAVVEDIMENTO",
+        "PAID_LATE_WITH_INCOMPLETE_RAVVEDIMENTO",
+        "PAID_LATE_WITHOUT_RAVVEDIMENTO",
+        "PARTIALLY_PAID",
+        "OFFSET_BY_CREDIT",
+        "PAID_AFTER_NOTICE",
+        "PAID_AFTER_ROLE",
+        "PAID_AFTER_CARTELLA",
+        "SUSPENDED",
+        "RELIEVED",
+        "TO_VERIFY"
+      ],
+      "sourcePath": "app/services/fiscal_domain.py",
+      "sourceLine": 59,
+      "symbol": "PaymentStatus",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "enum:app/services/fiscal_domain.py:RavvedimentoStatus",
+      "kind": "enum",
+      "name": "RavvedimentoStatus",
+      "bases": [
+        "StrEnum"
+      ],
+      "fields": [],
+      "members": [
+        "NOT_REQUIRED",
+        "COMPLETE",
+        "PARTIAL",
+        "MISSING",
+        "NOT_DETERMINABLE"
+      ],
+      "sourcePath": "app/services/fiscal_domain.py",
+      "sourceLine": 76,
+      "symbol": "RavvedimentoStatus",
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/services/invoice_payments.py:ManualInvoicePaymentRequest",
+      "kind": "pydantic_model",
+      "name": "ManualInvoicePaymentRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "fattura_id",
+        "scadenza_id",
+        "importo",
+        "metodo",
+        "data_pagamento",
+        "fornitore",
+        "numero_fattura",
+        "idempotency_key"
+      ],
+      "members": [],
+      "sourcePath": "app/services/invoice_payments.py",
+      "sourceLine": 20,
+      "symbol": "ManualInvoicePaymentRequest",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/services/invoice_payments.py:ManualInvoicePaymentResponse",
+      "kind": "pydantic_model",
+      "name": "ManualInvoicePaymentResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "success",
+        "movimento_id",
+        "metodo",
+        "importo",
+        "riconciliato",
+        "collection",
+        "message",
+        "idempotent_replay"
+      ],
+      "members": [],
+      "sourcePath": "app/services/invoice_payments.py",
+      "sourceLine": 51,
+      "symbol": "ManualInvoicePaymentResponse",
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/services/invoice_payments.py:InvoiceBankReconciliationRequest",
+      "kind": "pydantic_model",
+      "name": "InvoiceBankReconciliationRequest",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "fattura_id",
+        "movimento_id",
+        "override_reason"
+      ],
+      "members": [],
+      "sourcePath": "app/services/invoice_payments.py",
+      "sourceLine": 62,
+      "symbol": "InvoiceBankReconciliationRequest",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    },
+    {
+      "id": "pydantic_model:app/services/invoice_payments.py:InvoiceBankReconciliationResponse",
+      "kind": "pydantic_model",
+      "name": "InvoiceBankReconciliationResponse",
+      "bases": [
+        "BaseModel"
+      ],
+      "fields": [
+        "success",
+        "fattura_id",
+        "movimento_id",
+        "message",
+        "idempotent_replay"
+      ],
+      "members": [],
+      "sourcePath": "app/services/invoice_payments.py",
+      "sourceLine": 70,
+      "symbol": "InvoiceBankReconciliationResponse",
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "RIDISEGNARE_E_CONSOLIDARE_SCHEMA",
+      "notes": "Classe storica: il nome o la forma non attribuiscono autorità sul dato.",
+      "acceptanceTests": [
+        "Schema canonico, chiavi, unità, stati e provenienza sono espliciti.",
+        "Modelli duplicati dello stesso fatto sono eliminati tramite migrazione testata.",
+        "Validazione copre input incompleto, ambiguo e versioni precedenti."
+      ]
+    }
+  ]
+}

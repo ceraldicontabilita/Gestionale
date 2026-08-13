@@ -1,0 +1,1835 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "historical_page_specs",
+  "sourceSnapshot": {
+    "label": "snapshot-storico-sola-lettura",
+    "commit": "7f126c80522db6bd79f0eecaccfd643bae981793",
+    "capturedAt": "2026-08-13",
+    "runtimeDependency": false
+  },
+  "summary": {
+    "recordCount": 50,
+    "totalTabs": 46,
+    "totalActions": 405,
+    "totalWriteFlows": 139
+  },
+  "records": [
+    {
+      "id": "page-spec:admin-batch-processor",
+      "label": "Elaborazione Batch Automatica",
+      "route": "/batch-processor",
+      "sourcePath": "memoria/pagine/admin-batch-processor.json",
+      "symbol": "admin-batch-processor",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/AdminHub.jsx",
+        "frontend/src/pages/BatchProcessor.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/email_download.py (montato su /api/email-download) — task 'Download Email' e 'Auto-Associazione'",
+        "app/routers/ai_parser.py (montato su /api/ai-parser) — task 'Elaborazione AI'",
+        "app/routers/f24/f24_riconciliazione.py (montato su /api/f24-riconciliazione) — task 'Riconciliazione F24'",
+        "app/routers/bank/estratto_conto.py (montato su /api/estratto-conto-movimenti) — task 'Categorizzazione'"
+      ],
+      "tabCount": 0,
+      "actionCount": 3,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun modale né alert nativo: tutto il feedback (successo/errore per task) avviene tramite il pannello di log integrato nella pagina e le icone di stato per ogni task (Clock=in attesa, Loader2 animato=in corso, CheckCircle verde=OK, XCircle rosso=errore)."
+      ],
+      "owner": "AMMINISTRAZIONE",
+      "domain": "amministrazione",
+      "canonicalDestination": "amministrazione.integrazioni_scheduler",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Cruscotto che esegue AUTOMATICAMENTE, alla sola apertura della pagina (nessun click richiesto), una catena sequenziale di 5 task di sincronizzazione: scarica nuove email con PDF allegati, le elabora con l'AI, prova ad auto-associarle a fatture/F24/cedolini esistenti, riconcilia le quietanze F24 con i versamenti, e ricategorizza i movimenti bancari senza categoria. Mostra un log console-like in tempo reale, lo stato di ogni task (in attesa/in corso/OK/errore) e statistiche aggregate (documenti processati, documenti creati, errori, ultimo aggiornamento). Il pulsante 'Avvia Elaborazione' permette di ripetere manualmente l'intera sequenza.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:admin-batch-reprocessing",
+      "label": "Riprocessamento Batch (F24 e Cedolini)",
+      "route": "/batch-reprocessing",
+      "sourcePath": "memoria/pagine/admin-batch-reprocessing.json",
+      "symbol": "admin-batch-reprocessing",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/AdminHub.jsx",
+        "frontend/src/pages/BatchReprocessing.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/batch_reprocessing.py (montato su prefix /api/batch-reprocess in app/router_registry.py riga ~266)",
+        "app/services/batch_reprocessing.py (BatchReprocessingService, logica effettiva)",
+        "app/services/enhanced_document_parser.py (parse_f24_enhanced / parse_cedolino_enhanced, non incluso nel set file richiesto — solo referenziato)"
+      ],
+      "tabCount": 0,
+      "actionCount": 2,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        "Nessun modale HTML. Conferma nativa del browser (window.confirm) SOLO per i 3 pulsanti della modalità Produzione, assente per la modalità Test.",
+        "alert() nativo in caso di errore all'avvio del job."
+      ],
+      "owner": "AMMINISTRAZIONE",
+      "domain": "amministrazione",
+      "canonicalDestination": "amministrazione.integrazioni_scheduler",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Strumento di manutenzione per riprocessare in blocco tutti gli F24 e i cedolini paga già presenti nel database (con PDF già salvato in base64) usando una versione più recente/migliorata del parser AI, SENZA sovrascrivere i dati originali: i nuovi valori estratti vengono salvati in campi separati con suffisso _enhanced, in modo da poter confrontare vecchio e nuovo prima di decidere. Offre una modalità 'Test' (dry_run=true, non scrive nulla) e una modalità 'Produzione' (dry_run=false, scrive davvero), entrambe disponibili per 'Tutti', solo F24, o soli Cedolini.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:admin",
+      "label": "Amministrazione (Admin)",
+      "route": "/admin",
+      "sourcePath": "memoria/pagine/admin.json",
+      "symbol": "admin",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/AdminHub.jsx",
+        "frontend/src/pages/Admin.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/admin.py (montato su prefix /api/admin)",
+        "app/routers/admin_rollback.py (già montato con prefix completo /api/admin/rollback dentro il file stesso)",
+        "app/routers/config.py o equivalente per /api/config/email-accounts e /api/config/parole-chiave (non incluso nel set di file richiesto per questo audit, endpoint solo referenziati)",
+        "router di /api/fatture/drive/* (Google Drive import fatture, non incluso nel set di file richiesto per questo audit, endpoint solo referenziati)"
+      ],
+      "tabCount": 0,
+      "actionCount": 12,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        "Modale di conferma eliminazione nel tab Rollback Dati (role=dialog, chiudibile con click sull'overlay, sulla X o Annulla se non in corso l'eliminazione): mostra il totale record e il dettaglio per collezione prima di procedere.",
+        "Alert nativi del browser per: esito test connessione email, errori salvataggio/eliminazione account email, errori parole chiave, esito impostazione metodo pagamento Bonifico."
+      ],
+      "owner": "AMMINISTRAZIONE",
+      "domain": "amministrazione",
+      "canonicalDestination": "amministrazione.integrazioni_scheduler",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pannello di amministrazione del gestionale con 5 tab sincronizzate via URL e hash state (useHashState + /admin/:sezione): Email (gestione account email IMAP usati per scaricare documenti + import fatture XML da Google Drive), Parole Chiave (parole chiave globali per categorizzare le email scaricate), Fatture (statistiche metodi di pagamento e azione massiva di default), Sistema (stato salute app + conteggi collection dal riepilogo dashboard), Rollback Dati (strumento per eliminare deliberatamente dati di un periodo/sezione per verificare la correttezza dei calcoli dopo un re-import).",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:agenti",
+      "label": "Agenti AI",
+      "route": "/agenti",
+      "sourcePath": "memoria/pagine/agenti.json",
+      "symbol": "agenti",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Agenti.jsx (458 righe: componente AgentiPage con 4 sotto-componenti — AgenteCard, SegnalazioneCard, PatternCard — più i tab)",
+        "frontend/src/components/WidgetAgenti.jsx (widget contatori riassuntivi mostrato nella Dashboard, con link di navigazione verso questa pagina)",
+        "frontend/src/hooks/useHashState.js (gestisce il tab attivo tramite hash dell'URL, per permettere di condividere il link diretto a un tab specifico con CopyLinkButton)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/agenti.py (montato su /api/agenti: segnalazioni, segnalazioni/count, segnalazioni/summary, segnalazioni/{id}/letta, segnalazioni/{id}/risolta, stato, run, pattern-appresi)",
+        "app/agents/orchestrator.py (funzione run_agenti, orchestratore invocato da POST /api/agenti/run e dallo scheduler)",
+        "app/agents/fiscale_sentinella.py (classe FiscaleSentinella: analizza email/documenti fiscali in arrivo e controlla scadenze F24)",
+        "app/agents/learning_brain.py (classe LearningCervello: genera suggerimenti/pattern appresi dall'attività del gestionale)",
+        "app/agents/notifier.py (funzione crea_segnalazione, usata da entrambi gli agenti per scrivere su agenti_segnalazioni)",
+        "app/scheduler.py (probabile innesco periodico automatico degli agenti, non letto in dettaglio in questa analisi)"
+      ],
+      "tabCount": 0,
+      "actionCount": 4,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun modale: tutte le interazioni sono inline nelle card (AgenteCard, SegnalazioneCard, PatternCard) e nei tab."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "controllo",
+      "canonicalDestination": "controllo.anomalie",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "È il pannello di controllo del sistema di 'intelligenza automatica' del gestionale: due agenti — FiscaleSentinella (sorveglianza fiscale: rileva avvisi bonari, controlla scadenze F24) e LearningCervello (apprendimento pattern: individua es. fatture non pagate da troppo tempo e impara chiave→valore da conferme ripetute) — girano periodicamente (FiscaleSentinella ogni 10 minuti, LearningCervello ogni ora, secondo SCHEDULE in orchestrator.py) o su richiesta manuale, e producono 'segnalazioni' testuali categorizzate (urgente, anomalia, avviso, info, suggerimento) che l'operatore può leggere, ignorare o segnare come risolte. La pagina mostra anche lo stato di salute di ciascun agente (ultima esecuzione, stato completato/errore/in_esecuzione, ultimo errore) e i 'pattern appresi' dalla Learning Machine con relativa % di confidenza.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:archivio-bonifici",
+      "label": "Archivio Bonifici",
+      "route": "/riconciliazione/archivio-bonifici",
+      "sourcePath": "memoria/pagine/archivio-bonifici.json",
+      "symbol": "archivio-bonifici",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/ArchivioBonifici.jsx",
+        "frontend/src/pages/hub/RiconciliazioneHub.jsx",
+        "frontend/src/main.jsx",
+        "frontend/src/pages/PrimaNota.jsx",
+        "frontend/src/pages/ImportDocumenti.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/bonifici_module/__init__.py",
+        "app/routers/bonifici_module/jobs.py",
+        "app/routers/bonifici_module/pdf_parser.py",
+        "app/routers/bonifici_module/associazioni.py",
+        "app/routers/bonifici_module/riconciliazione.py",
+        "app/routers/bonifici_module/transfers.py",
+        "app/routers/bonifici_module/common.py",
+        "app/routers/bank/bonifici_import_unificato.py",
+        "app/router_registry.py",
+        "app/routers/documenti.py"
+      ],
+      "tabCount": 2,
+      "actionCount": 19,
+      "writeFlowCount": 4,
+      "popupMentions": [
+        {
+          "nome": "Dropdown 'Associa Salario'",
+          "descrizione": "Non è un vero modale ma un pannello posizionato in absolute sotto il bottone '+ Associa' della riga; si chiude cliccando fuori dalla tabella (handler globale mousedown su dropdownRef) o ricliccando lo stesso bottone. Mostra operazioni salario compatibili, banner IBAN se presente, punteggio colorato per riga (attualmente sempre vuoto per il mismatch di contratto dati descritto sopra)."
+        },
+        {
+          "nome": "Dropdown 'Associa Fattura'",
+          "descrizione": "Analogo al precedente ma per le fatture compatibili; si escludono a vicenda (aprire l'uno chiude l'altro)."
+        },
+        {
+          "nome": "Editor inline nota",
+          "descrizione": "Non è un modale: sostituisce il testo della cella 'Note' con un input + due bottoni ✓/✗ quando si clicca sulla nota esistente o su '+ Nota'."
+        },
+        {
+          "nome": "window.confirm() doppia conferma disassocia salario",
+          "descrizione": "Due finestre di conferma native del browser in sequenza prima di eseguire DELETE /disassocia-salario. Presente SOLO per il salario, non per la fattura (vedi bug sopra)."
+        },
+        {
+          "nome": "window.alert() vari",
+          "descrizione": "Usati per comunicare esiti di: riconciliazione (successo/errore/timeout), sync IBAN, errori di associazione/disassociazione salario e fattura, errori di salvataggio nota, errori di eliminazione. Nessun toast o notifica in-app: sono tutti alert nativi bloccanti."
+        }
+      ],
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Archivio Bonifici è la pagina che raccoglie tutti i bonifici bancari usciti dall'azienda (in origine estratti da PDF/distinte bancarie) e permette di associarli manualmente a un'operazione di Prima Nota Salari (per i pagamenti agli stipendi) o a una fattura fornitore, oltre a riconciliarli con i movimenti dell'estratto conto per verificare che il pagamento sia realmente transitato in banca. È montata dentro l'hub di navigazione RiconciliazioneHub, condiviso con Riconciliazione Bancaria, PayPal, Assegni e Coerenza POS: la scheda che appare dipende dal segmento di URL /riconciliazione/archivio-bonifici. La pagina è divisa in due viste (tab) puramente client-side — 'Da Associare' e 'Associati' — che filtrano in memoria la stessa lista di bonifici già caricata. A differenza di quanto suggerisce il nome del modulo backend (bonifici_module con jobs.py e pdf_parser.py per l'upload massivo di PDF/ZIP), la UI attuale di questa pagina NON contiene alcun widget di caricamento file: il bottone 'Importa' porta fuori pagina, verso l'importatore documenti generico. Il vero cuore della pagina è la tabella dei bonifici già presenti in archivio, con le azioni di ricerca, associazione, disassociazion",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:assegni",
+      "label": "Assegni",
+      "route": "/riconciliazione/assegni",
+      "sourcePath": "memoria/pagine/assegni.json",
+      "symbol": "assegni",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/GestioneAssegni.jsx",
+        "frontend/src/pages/hub/RiconciliazioneHub.jsx",
+        "frontend/src/App.jsx",
+        "frontend/src/components/ModalFattura.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/bank/assegni.py",
+        "app/routers/bank/assegni_auto_match.py",
+        "app/routers/bank/assegni_learning.py",
+        "app/routers/bank/estratto_conto.py",
+        "app/router_registry.py"
+      ],
+      "tabCount": 6,
+      "actionCount": 27,
+      "writeFlowCount": 5,
+      "popupMentions": [
+        {
+          "nome": "Modal 'Genera N Assegni Progressivi'",
+          "scopo": "Form con campo numero_primo (formato PREFISSO-NUMERO) e quantità; alla conferma chiama POST /api/assegni/genera per creare un blocco di assegni vuoti progressivi appartenenti allo stesso carnet."
+        },
+        {
+          "nome": "Modal 'Collega Fatture all'Assegno'",
+          "scopo": "Modale draggable (trascinabile via mouse) con: riepilogo assegno (numero, importo), elenco fatture già selezionate con totale e differenza vs importo assegno, elenco fatture disponibili del fornitore raggruppate per intestazione fornitore (sticky header), evidenziazione note di credito TD04 in rosso con importo negativo, limite 4 fatture, blocco cross-fornitore. Salva tramite PUT /api/assegni/{id}/fatture-collegate."
+        },
+        {
+          "nome": "Pannello 'Assegni ambigui — serve la tua decisione'",
+          "scopo": "Non è un vero modale (è un pannello inline collassabile) ma funge da interfaccia di risoluzione: per ciascun assegno ambiguo (report auto-matcher) elenca le fatture candidate con checkbox multi-selezione e un bottone 'Collega selezionati' che chiama POST /api/assegni/{id}/risolvi-ambiguo."
+        },
+        {
+          "nome": "ModalFattura (in-page)",
+          "scopo": "Componente condiviso (importato da components/ModalFattura) usato ovunque nella pagina per mostrare il dettaglio di una fattura senza aprire una nuova scheda del browser; attivato da fatturaView({id, numero}) impostato da decine di punti diversi della UI (righe tabella, ambigui, dettaglio match L2/L3/combinazioni)."
+        },
+        {
+          "nome": "Pannelli di risultato non modali (banner inline)",
+          "scopo": "Non sono popup ma banner a piena larghezza mostrati dopo ogni azione asincrona: risultato Auto-Match (nuovo, 4 livelli), risultato Auto-Associazione legacy, risultato Learning, risultato Pulizia Duplicati, risultato Associazione Combinata — tutti con bottone di chiusura (✕) che resetta lo stato React corrispondente."
+        }
+      ],
+      "owner": "TESORERIA",
+      "domain": "assegni",
+      "canonicalDestination": "riconciliazione.assegni",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "La pagina Assegni (montata dentro l'hub di navigazione RiconciliazioneHub, che sceglie il contenuto in base al pathname) gestisce l'intero ciclo di vita degli assegni emessi da Ceraldi Group: generazione progressiva dei numeri di un carnet, compilazione (beneficiario/importo), collegamento N:M con le fatture passive tramite un sistema di quote in euro, e riconciliazione con l'estratto conto bancario quando l'assegno viene effettivamente addebitato. Il cuore della pagina è il motore di auto-matching a 4 livelli (assegni_auto_match.py) che prova a collegare automaticamente assegni e fatture aperte dello stesso fornitore con tolleranza di mezzo centesimo, lasciando all'utente solo i casi realmente ambigui. Accanto all'auto-matcher 'rigoroso' convivono, per compatibilità storica, diversi endpoint di associazione euristica più permissivi (auto-associa, associa-intelligente, cerca-combinazioni-assegni, associa-beneficiari-robusto) nati in fasi diverse dello sviluppo e ancora richiamabili dal menu 'Altro'. La UI non ha tab veri e propri in stile SPA-router: è un'unica vista con pannelli collassabili (ambigui da risolvere, assegni senza beneficiario), un pannello filtri, badge statistiche/",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:coerenza-pos",
+      "label": "Coerenza POS Corrispettivi",
+      "route": "/coerenza-pos",
+      "sourcePath": "memoria/pagine/coerenza-pos.json",
+      "symbol": "coerenza-pos",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/CoerenzaPOSCorrispettivi.jsx",
+        "frontend/src/pages/hub/RiconciliazioneHub.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/pos_corrispettivi_check.py",
+        "app/routers/bank/pos_accredito.py",
+        "app/routers/invoices/corrispettivi.py"
+      ],
+      "tabCount": 4,
+      "actionCount": 11,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        {
+          "nome": "ModalChiusuraSerale",
+          "titolo_mostrato": "Chiusura serale",
+          "scopo": "Form compatto per inserire in un colpo solo il totale del corrispettivo giornaliero (provvisorio, in attesa dell'XML ufficiale AdE) e il POS reale letto dall'hardware, usati rispettivamente per la FASE 0/1 del controllo a 2 fasi.",
+          "campi": [
+            "Data (input type=date, default oggi, max=oggi)",
+            "Totale corrispettivo € (obbligatorio, testo con parsing decimale, accetta virgola)",
+            "POS reale dalla chiusura serale € (opzionale)",
+            "Note (testo libero opzionale)"
+          ],
+          "come_si_apre": "Bottone '+ Inserisci chiusura serale' nella toolbar del tab Controllo 2 Fasi",
+          "come_si_chiude": "Bottone ✕, bottone Annulla, click sull'overlay scuro, oppure automaticamente dopo un salvataggio riuscito",
+          "endpoint_collegato": "POST /api/corrispettivi/manuale",
+          "validazioni": "Data obbligatoria; totale deve essere numero > 0; POS reale se presente deve essere numero >= 0; mostra errori inline in un box rosso sopra i bottoni"
+        }
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Questa pagina verifica che la parte elettronica dei corrispettivi giornalieri (i pagamenti con carta/POS registrati sul registratore telematico) coincida, con lo sfasamento temporale tipico del circuito bancario, con quanto viene realmente accreditato sul conto corrente dal gestore POS. Nasce per prevenire due problemi distinti: errori di battitura al registratore di cassa (l'operatore digita un importo elettronico diverso da quello realmente passato al POS fisico) e mancati o errati accrediti bancari rispetto a quanto incassato. Dal 1° gennaio 2026 la normativa impone l'abbinamento tra RT (registratore telematico) e POS, quindi la pagina serve anche a evitare segnalazioni dall'Agenzia delle Entrate. Il modulo è evoluto in due generazioni di logica: una prima versione (tab 'Giornaliero'/'Mensile'/'Anomalie', endpoint verifica-coerenza) che confrontava direttamente il dato XML dei corrispettivi con gli accrediti bancari, giudicata dal codice stesso 'approccio sbagliato'; e una seconda versione (tab 'Controllo 2 Fasi', di gran lunga la vista predefinita) che scompone il controllo in due fasi sequenziali — RT vs POS reale battuto in cassa, e POS reale vs accredito bancario — per capir",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-avanzata",
+      "label": "Contabilità Avanzata",
+      "route": "/contabilita/avanzata",
+      "sourcePath": "memoria/pagine/contabilita-avanzata.json",
+      "symbol": "contabilita-avanzata",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/ContabilitaAvanzata.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/accounting/contabilita_avanzata.py",
+        "app/routers/contabilita_italiana.py",
+        "app/services/calcolo_imposte.py",
+        "app/services/categorizzazione_contabile.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 5,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        "Nessun popup o modale vero e proprio in questa pagina: solo banner inline di messaggio successo/errore (styles.messageSuccess / styles.messageError) che appaiono sopra le card dopo un'azione"
+      ],
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina che calcola in tempo reale IRES e IRAP dovute, mostra la disponibilità liquida (cassa+banca), statistiche di categorizzazione automatica delle fatture sul Piano dei Conti, e un bilancio dettagliato (Stato Patrimoniale + Conto Economico) con deducibilità fiscale voce per voce. Ha 3 sotto-tab interne (gestite solo in stato React, nessuna route separata: 'imposte', 'statistiche', 'bilancio') più una card fissa di disponibilità liquide sempre visibile in alto. Nulla di quanto mostrato in questa pagina è filtrato per anno tranne il calcolo imposte e la disponibilità liquide: il bilancio dettagliato e le statistiche di categorizzazione leggono SEMPRE tutti i saldi correnti del Piano dei Conti, senza distinzione di anno.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-bilancio",
+      "label": "Bilancio",
+      "route": "/contabilita/bilancio",
+      "sourcePath": "memoria/pagine/contabilita-bilancio.json",
+      "symbol": "contabilita-bilancio",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Bilancio.jsx",
+        "frontend/src/pages/hub/ContabilitaHub.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/accounting/bilancio.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 4,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun modal o popup React nella pagina: i pulsanti di export PDF aprono direttamente una nuova scheda del browser (window.open) verso l'endpoint di download, senza dialog di conferma."
+      ],
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di reportistica contabile che mostra il Bilancio d'esercizio secondo i principi contabili italiani, diviso in due viste (tab): 'Stato Patrimoniale' (fotografia di Attivo/Passivo/Patrimonio Netto a una data) e 'Conto Economico' (flusso di Ricavi/Costi/Risultato di un periodo). Permette di filtrare per anno (selettore globale) e per mese specifico, e di esportare il bilancio in PDF (singolo anno o confronto tra due anni). Il backend NON legge da un piano dei conti con scritture di partita doppia salvate: ricalcola tutto al volo con aggregazioni MongoDB dalle collezioni operative (corrispettivi per i ricavi, invoices per i costi, prima_nota_cassa/prima_nota_banca per liquidità, fatture_emesse per crediti). Regola cardine documentata nel codice: i Ricavi derivano SOLO dai corrispettivi (le fatture emesse a clienti non sono ricavi aggiuntivi, sono già conteggiate negli scontrini).",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-budget",
+      "label": "Budget e Previsionale",
+      "route": "/contabilita/budget",
+      "sourcePath": "memoria/pagine/contabilita-budget.json",
+      "symbol": "contabilita-budget",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/BudgetPrevisionale.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/accounting/contabilita_gestionale.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 10,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        "Pannello inline 'Nuova voce di budget' / 'Modifica: {voce}' (non è un vero modal overlay, è una sezione che si espande nella pagina) con campi Voce, Categoria, Importo annuo, Note e griglia 12 mesi",
+        "Pannello inline 'Duplica Budget {anno} →' con campi Anno destinazione e Variazione %",
+        "window.confirm() nativo del browser per la conferma di eliminazione voce",
+        "alert() nativo del browser per messaggi di esito duplicazione e di errore"
+      ],
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina per costruire un budget previsionale annuale (per voce di costo/ricavo, con distribuzione mensile) e confrontarlo con il consuntivo reale calcolato automaticamente dai dati contabili già presenti nel sistema (corrispettivi per i ricavi, fatture ricevute per i costi). Serve a capire, voce per voce e mese per mese, quanto ci si è scostati dalle previsioni. Ha 3 sotto-tab interne (gestite solo in React, nessuna route separata): 'Budget' (editing delle voci), 'Budget vs Consuntivo' (confronto con scostamenti) e 'Andamento Mensile' (tabella + grafico a barre mese per mese). Il consuntivo NON viene mai salvato: è ricalcolato al volo ad ogni caricamento leggendo le collezioni corrispettivi e invoices per l'anno selezionato.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-calendario",
+      "label": "Calendario Fiscale",
+      "route": "/contabilita/calendario",
+      "sourcePath": "memoria/pagine/contabilita-calendario.json",
+      "symbol": "contabilita-calendario",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/CalendarioFiscale.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/fiscalita_italiana.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 5,
+      "writeFlowCount": 2,
+      "popupMentions": [
+        "Nessun modale: la pagina non presenta popup o dialog, solo box informativi in linea (alert rosso 'Scadenze Critiche' in cima alla pagina, quando notifiche.riepilogo.critiche > 0)"
+      ],
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina che genera e mostra il calendario di tutte le scadenze fiscali, previdenziali e societarie di una SRL italiana per l'anno selezionato (IVA mensile/trimestrale, F24, IRES, IRAP, ritenute, INPS, IMU, INTRASTAT, 770, CU, bilancio, CCIAA, vidimazione libri sociali, ecc.), permette di filtrare per mese e stato, evidenzia le scadenze scadute o imminenti (entro 7 giorni) e consente all'utente di marcare manualmente una scadenza come 'completata' o di creare una notifica (in dashboard o email) per una scadenza urgente. Le scadenze sono generate automaticamente una sola volta per ciascun anno tramite una funzione di calcolo deterministica delle date (genera_scadenze_anno) e poi salvate in MongoDB, dove lo stato 'completato' viene aggiornato dall'utente o automaticamente in seguito alla registrazione di un F24.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-cespiti",
+      "label": "Cespiti & TFR (tab Cespiti)",
+      "route": "/contabilita/cespiti",
+      "sourcePath": "memoria/pagine/contabilita-cespiti.json",
+      "symbol": "contabilita-cespiti",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/GestioneCespiti.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/cespiti.py",
+        "app/routers/tfr.py",
+        "app/routers/scadenzario_fornitori.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 9,
+      "writeFlowCount": 4,
+      "popupMentions": [
+        "Form inline 'Nuovo Cespite' (non un vero modale, è una card che appare/scompare nel flusso della pagina) con campi Descrizione, Categoria, Data Acquisto, Valore, Fornitore.",
+        "Editing inline a riga di tabella (icona matita) per modificare descrizione/valore di un cespite esistente, con icone Check/X per salvare/annullare.",
+        "Nessun modale di conferma (window.confirm) per l'eliminazione cespite: il click sul cestino elimina immediatamente (protetto solo lato UI dal disabled se piano_ammortamento non vuoto, e lato server dalla stessa condizione).",
+        "Tutti i feedback di esito (successo/errore) usano semplici alert() del browser, non componenti modali dedicati."
+      ],
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina 'Cespiti & TFR' (componente GestioneCespiti.jsx) che raggruppa in un'unica vista a 3 sotto-tab la gestione dei beni ammortizzabili dell'azienda (cespiti/immobilizzazioni), il fondo TFR dei dipendenti e lo scadenzario dei debiti verso fornitori. Il tab 'Cespiti' è quello principale: permette di registrare un nuovo cespite (macchinari, arredi, automezzi, software, ecc.), vedere il riepilogo per categoria (valore di acquisto, fondo ammortamento accumulato, valore netto contabile), calcolare e registrare la quota di ammortamento annuale secondo i coefficienti fiscali del DM 31/12/1988 (settore ristorazione), e lanciare una scansione automatica delle fatture XML per individuare beni acquistati che dovrebbero essere capitalizzati come cespiti invece di essere spesati come costi correnti. I tab 'TFR' e 'Scadenzario' sono di sola consultazione e riepilogano dati gestiti altrove (rispettivamente dal modulo Personale/TFR e dal modulo Fatture Fornitori).",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-chiusura",
+      "label": "Chiusura Esercizio",
+      "route": "/contabilita/chiusura",
+      "sourcePath": "memoria/pagine/contabilita-chiusura.json",
+      "symbol": "contabilita-chiusura",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/ChiusuraEsercizio.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/chiusura_esercizio.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 3,
+      "writeFlowCount": 4,
+      "popupMentions": [
+        "Nessun vero modale/dialog: la pagina è un wizard a step visualizzato su un'unica schermata a due colonne (Verifica a sinistra, Bilancino+Azioni a destra).",
+        "Banner inline di errore (rosso, XCircle) e di successo (verde, CheckCircle) mostrati sopra la card di stato, non come popup ma come sezioni condizionali della pagina.",
+        "Nessun window.confirm/alert nativo per confermare l'operazione irreversibile di chiusura: il click sul bottone 'Chiudi Esercizio' esegue la POST direttamente (l'unica salvaguardia è il disabled legato a verifica.pronto_per_chiusura e il testo di avviso 'Risolvi i problemi bloccanti prima di procedere' mostrato sotto il bottone quando non è pronto)."
+      ],
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Wizard guidato a 4 step (Verifica Preliminare -> Bilancino Verifica -> Chiusura -> Nuovo Esercizio) per chiudere formalmente un esercizio contabile annuale e aprire il successivo. La pagina aggrega automaticamente lo stato di chiusura, una checklist di completezza dei dati (fatture, corrispettivi, salari, TFR, ammortamenti, estratto conto), un 'bilancino' con ricavi/costi/risultato d'esercizio, il bottone per eseguire la chiusura vera e propria (che genera scritture e blocca concettualmente l'anno) e, una volta chiuso, il bottone per aprire il nuovo esercizio riportando i saldi. È l'operazione più delicata del modulo Contabilità perché determina l'utile/perdita ufficiale dell'anno e i saldi di apertura dell'anno successivo.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-controllo",
+      "label": "Controllo Mensile (Controllo Annuale/Mensile)",
+      "route": "/contabilita/controllo",
+      "sourcePath": "memoria/pagine/contabilita-controllo.json",
+      "symbol": "contabilita-controllo",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/ControlloMensile.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/prima_nota_module/cassa.py",
+        "app/routers/prima_nota_module/common.py",
+        "app/routers/invoices/corrispettivi.py",
+        "app/routers/bank/bank_statement_import.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 5,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Modale 'Dettaglio Versamenti - {Mese} {Anno}': overlay full-screen con tabella dei versamenti (Data, Descrizione, Importo) e riga totale, apribile solo dalla vista mensile tramite il pulsante 'Versamenti'; si chiude cliccando la X o l'area esterna al box"
+      ],
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di sola lettura (dashboard di riconciliazione) che confronta, mese per mese o giorno per giorno, i dati automatici estratti dagli XML dei corrispettivi telematici (POS RT da chiusura serale, incassi totali) con i dati inseriti manualmente in Prima Nota Cassa (POS reale contato la sera, corrispettivi manuali, versamenti in banca) e con i movimenti dell'estratto conto bancario (accrediti POS). Serve all'utente per individuare discrepanze contabili tra 'quello che dice la macchina/XML' e 'quello che è stato effettivamente incassato/versato', evidenziando in giallo le righe con differenze superiori a 1 euro. Ha due viste: una vista Annuale con tabella aggregata per i 12 mesi, e una vista Mensile con dettaglio giorno per giorno del mese selezionato.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-finanziaria",
+      "label": "Situazione Finanziaria (Finanziaria)",
+      "route": "/contabilita/finanziaria",
+      "sourcePath": "memoria/pagine/contabilita-finanziaria.json",
+      "symbol": "contabilita-finanziaria",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Finanziaria.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/finanziaria.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 1,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun modale o popup presente nella pagina"
+      ],
+      "owner": "TESORERIA",
+      "domain": "finanziamenti",
+      "canonicalDestination": "amministrazione.finanziamenti_mutui",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Dashboard di sola lettura che mostra il quadro finanziario complessivo dell'azienda per l'anno selezionato: entrate e uscite totali (Cassa + Banca), saldo, riepilogo IVA (debito da Corrispettivi, credito da Fatture, saldo IVA da versare o a credito), dettaglio Prima Nota per conto (Cassa/Banca/Salari) e situazione debiti/crediti (fatture da pagare, fatture da incassare, IVA da versare). È pensata per dare una fotografia rapida della salute finanziaria e degli obblighi IVA senza dover consultare separatamente Prima Nota, Corrispettivi e Fatture.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-mutui",
+      "label": "Gestione Mutui",
+      "route": "/contabilita/mutui",
+      "sourcePath": "memoria/pagine/contabilita-mutui.json",
+      "symbol": "contabilita-mutui",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Mutui.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/mutui.py",
+        "app/routers/mutui_parser.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 2,
+      "writeFlowCount": 4,
+      "popupMentions": [
+        "Nessun vero modale/dialog nella pagina: la lista mutui è composta da card espandibili in-page (accordion), non popup.",
+        "Feedback della riconciliazione automatica mostrato con un semplice alert() nativo del browser (conteggio riconciliazioni automatiche vs manuali richieste), non un componente modale dedicato.",
+        "Nessuna interfaccia di upload PDF visibile in questa pagina, nonostante gli endpoint di parsing/import PDF esistano nel backend (mutui_parser.py) — probabile funzionalità non ancora collegata al frontend oppure gestita da un'altra pagina non inclusa in questa analisi."
+      ],
+      "owner": "TESORERIA",
+      "domain": "finanziamenti",
+      "canonicalDestination": "amministrazione.finanziamenti_mutui",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di consultazione e gestione dei mutui/finanziamenti bancari aziendali. Mostra statistiche aggregate (importo totale accordato, già pagato, debito residuo, percentuale di completamento e di riconciliazione), le prossime scadenze rate nei 30 giorni, e per ciascun mutuo una card espandibile con l'intero piano di ammortamento rata per rata (numero, scadenza, quota capitale, quota interessi, totale, stato Pagata/Da pagare/Scaduta, esito riconciliazione). L'unica azione interattiva diretta nella UI è il bottone di riconciliazione automatica delle rate pagate con i movimenti dell'estratto conto bancario. I mutui e i relativi piani di ammortamento vengono creati/importati tramite un parser di PDF (endpoint dedicati in mutui_parser.py) che al momento NON risultano collegati a nessun bottone/form visibile in Mutui.jsx: l'import è quindi un'operazione backend-only o eseguita da un'altra parte dell'applicazione non coperta da questo file.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-piano-conti",
+      "label": "Piano dei Conti",
+      "route": "/contabilita/piano-conti",
+      "sourcePath": "memoria/pagine/contabilita-piano-conti.json",
+      "symbol": "contabilita-piano-conti",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/PianoDeiConti.jsx",
+        "frontend/src/pages/hub/ContabilitaHub.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/accounting/piano_conti.py",
+        "app/routers/warehouse/dizionario_articoli.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 5,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        "Modal 'Nuovo Conto' (showNewConto): form con Codice, Nome Conto, Categoria (select), Natura (select economico/finanziario); pulsanti Annulla e '➕ Crea Conto'.",
+        "Modal 'Nuova Regola Categorizzazione' (showNewRegola): form con Tipo Regola (select fornitore/tipo_documento/pagamento), Pattern regex, Conto DARE, Conto AVERE, Descrizione; pulsanti Annulla e '⚙️ Crea Regola'.",
+        "Drawer laterale destro 'Dettaglio Conto' (selectedConto/contoDetail): non è un modal bloccante classico ma un pannello overlay con header colorato per categoria, box Saldo/Natura/Stato e tabella movimenti; si chiude cliccando la '✕' o l'overlay semi-trasparente di sfondo.",
+        "window.confirm() nativo del browser per la conferma prima di avviare la Ricategorizzazione AI (non è un componente React, ma un popup di sistema)."
+      ],
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.piano_conti",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "È la pagina del sistema di partita doppia dell'ERP: mostra il Piano dei Conti aziendale (elenco codificato di tutti i conti — Attivo, Passivo, Patrimonio Netto, Ricavi, Costi — con codice tipo GG.SS.CC, es. 05.02.02 'Utenze') e per ciascun conto calcola AL VOLO (non da scritture salvate) il saldo aggregando i dati reali dalle collezioni operative del gestionale (fatture, corrispettivi, prima nota cassa/banca, cedolini, F24). Ha due tab interne: 'Piano dei Conti' (elenco conti raggruppati per categoria con saldo, e drawer di dettaglio movimenti al click su un conto) e 'Regole Categorizzazione' (regole automatiche che, in base al fornitore/tipo documento/metodo di pagamento, decidono su quale conto DARE/AVERE registrare una fattura). Include anche il pulsante 'Ricategorizza con AI' che usa un modello AI per assegnare le singole righe delle fatture XML alle sottocategorie di costo corrette (es. Coca-Cola → Bevande analcoliche), così i saldi dei conti di costo si spezzano in dettaglio invece di finire tutti genericamente su 'Acquisto merci'.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-previsioni-acquisti",
+      "label": "Previsioni Acquisti",
+      "route": "/contabilita/previsioni-acquisti",
+      "sourcePath": "memoria/pagine/contabilita-previsioni-acquisti.json",
+      "symbol": "contabilita-previsioni-acquisti",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/PrevisioniAcquisti.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/previsioni_acquisti.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 7,
+      "writeFlowCount": 2,
+      "popupMentions": [
+        "Nessun modale React. Solo alert() nativi del browser: uno di successo dopo 'Popola Storico' (con conteggio fatture processate e prodotti registrati) e uno di errore in caso di fallimento della stessa chiamata."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "acquisti_prezzi",
+      "canonicalDestination": "controllo.comparazione_prezzi_acquisto",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina che analizza lo storico degli acquisti (estratto dalle righe delle fatture XML passive) per mostrare statistiche di consumo (confronto anno corrente vs anno precedente, medie giornaliere/settimanali, frequenza di acquisto) e per generare previsioni di quanto e quando riordinare ogni prodotto nelle prossime N settimane, con relativo costo stimato. Non usa un modello statistico complesso (nessuna media mobile pesata né stagionalità): il calcolo è una semplice media aritmetica sull'intero periodo storico proiettata linearmente sul numero di giorni/settimane richiesti. E' pensata per un bar-pasticceria per aiutare l'imprenditore a decidere cosa e quanto ordinare ai fornitori abituali.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-utile",
+      "label": "Utile Obiettivo",
+      "route": "/contabilita/utile",
+      "sourcePath": "memoria/pagine/contabilita-utile.json",
+      "symbol": "contabilita-utile",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/UtileObiettivo.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/accounting/centri_costo.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 3,
+      "writeFlowCount": 2,
+      "popupMentions": [
+        "Nessun modale/popup dedicato nel file JSX. L'unica interazione di tipo 'popup' è l'alert() nativo del browser mostrato in caso di errore nel salvataggio del target (vedi bottone Salva Target)."
+      ],
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di monitoraggio in tempo reale dell'obiettivo di utile (profitto) annuale dell'azienda. L'utente imposta un target di utile per l'anno selezionato (utile 'obiettivo') e un margine medio atteso; il sistema confronta questo target con l'utile reale calcolato dai dati contabili effettivi (ricavi da corrispettivi meno costi da fatture) e mostra una barra di avanzamento con percentuale di raggiungimento, il gap da colmare rispetto al target proporzionato ad oggi, e uno stato (in linea / attenzione / sotto obiettivo). E' pensata per un bar-pasticceria e serve a dare all'imprenditore una visione immediata se sta andando verso l'obiettivo di profitto fissato per l'anno, con calcolo dei giorni lavorativi trascorsi/rimanenti e proiezione di fine anno.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:contabilita-verifica",
+      "label": "Verifica Bilancio (Bilancio di Verifica)",
+      "route": "/contabilita/verifica",
+      "sourcePath": "memoria/pagine/contabilita-verifica.json",
+      "symbol": "contabilita-verifica",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/BilancioVerifica.jsx",
+        "frontend/src/pages/hub/ContabilitaHub.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/accounting/contabilita_gestionale.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 8,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun modal: la sotto-tabella dei movimenti per conto (visibile solo quando il checkbox 'Dettaglio movimenti' è attivo E il gruppo/conto è espanso) è inline nella tabella principale, non un popup separato.",
+        "La stampa (pulsante Stampa) usa il dialog di stampa nativo del browser (window.print()), non un componente React."
+      ],
+      "owner": "CONTABILITA",
+      "domain": "contabilita",
+      "canonicalDestination": "controllo.bilancio",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di controllo di quadratura contabile: costruisce il classico 'Bilancio di Verifica' (Trial Balance) elencando, per ciascun conto del piano dei conti coinvolto in almeno un movimento, i totali Dare/Avere dell'anno e il saldo (Dare o Avere) risultante, raggruppati per gruppo di conti (01 Attività, 02 Passività, 03 Patrimonio Netto, 04 Ricavi, 05 Costi). In fondo mostra il TOTALE GENERALE Dare/Avere e una card/riga di 'QUADRATURA' che segnala in verde 'OK' se Totale Dare = Totale Avere (entro 0,01€ di tolleranza) o in rosso lo sbilancio con l'invito a verificare le registrazioni. È una pagina di sola lettura/reportistica pensata per il controllo interno (nessuna correzione automatica): l'utente può filtrare per tipo conto, cercare per codice/nome, mostrare il dettaglio dei singoli movimenti per conto, esportare in CSV e stampare.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:corrispettivi",
+      "label": "Corrispettivi",
+      "route": "/fatture/corrispettivi",
+      "sourcePath": "memoria/pagine/corrispettivi.json",
+      "symbol": "corrispettivi",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Corrispettivi.jsx",
+        "frontend/src/pages/hub/FattureHub.jsx (contenitore/tab-switcher: monta Corrispettivi.jsx come lazy component quando l'URL contiene /corrispettivi, alternandolo con ArchivioFattureRicevute.jsx tramite display:none/block, senza smontarlo)",
+        "frontend/src/pages/CoerenzaPOSCorrispettivi.jsx (pagina DIVERSA, non fa parte dell'hub Fatture, ma è l'unico consumer reale dell'endpoint POST /api/corrispettivi/manuale che gestisce l'inserimento serale provvisorio)",
+        "frontend/src/pages/PrimaNota.jsx (consumer di GET /api/corrispettivi/{id}/view e /view-by-filename per mostrare lo 'scontrino' HTML)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/invoices/corrispettivi.py",
+        "app/routers/invoices/corrispettivi_helpers.py",
+        "app/services/business_rules.py (BusinessRules.can_delete_corrispettivo / can_modify_corrispettivo, righe 195-227)",
+        "app/handlers/corrispettivi.py (check coerenza POS, righe 110+)",
+        "app/router_registry.py:180 (mount app.include_router(corrispettivi.router, prefix=\"/api/corrispettivi\"))"
+      ],
+      "tabCount": 1,
+      "actionCount": 5,
+      "writeFlowCount": 4,
+      "popupMentions": [
+        "Pannello 'Dettaglio Corrispettivo' (non un vero modale, si apre inline sotto la lista quando si clicca l'icona occhio di una riga): 3 colonne — Dati Generali, Pagamenti, IVA — più tabella riepilogo IVA per aliquota se presente; sincronizzato con l'hash URL #selected=YYYY-MM-DD, quindi condivisibile/deep-linkabile tramite CopyLinkButton.",
+        "window.confirm() nativo del browser prima dell'eliminazione di un corrispettivo (nessun modale custom)."
+      ],
+      "owner": "CORRISPETTIVI_POS",
+      "domain": "corrispettivi_pos",
+      "canonicalDestination": "prima_nota.corrispettivi_pos",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Questa pagina mostra, in sola consultazione, l'elenco dei corrispettivi giornalieri già importati nel gestionale a partire dagli XML del registratore telematico (scontrino fiscale elettronico). Serve al titolare/commercialista per verificare rapidamente quanto è stato incassato ogni giorno (totale, quota contanti, quota elettronico/POS, IVA), aprire il dettaglio di una singola giornata e, se necessario, eliminare un corrispettivo importato per errore o duplicato. Non è la pagina dove si 'chiude la cassa' manualmente la sera: quella funzione (inserimento provvisorio con eventuale POS reale) vive in una pagina diversa, CoerenzaPOSCorrispettivi.jsx, che consuma un endpoint dedicato dello stesso backend. L'import vero e proprio dei file XML/ZIP dei corrispettivi avviene dalla pagina 'Import Documenti', richiamata dal link 'Importa' presente in alto.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:dashboard-relazionale",
+      "label": "Dashboard Relazionale",
+      "route": "/dashboard-relazionale",
+      "sourcePath": "memoria/pagine/dashboard-relazionale.json",
+      "symbol": "dashboard-relazionale",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/DashboardRelazionale.jsx (722 righe: componente unico con 4 tab interni — Panoramica, Alert, Partite Aperte, Riconciliazione — tutti definiti nello stesso file)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/alerts.py (montato su /api/alerts: lista, summary, segna-letto, risolvi, delete, fornitori-senza-metodo, risolvi-fornitore/{piva})",
+        "app/routers/partite_aperte_api.py (montato su /api/partite-aperte: stats, lista, scadute)",
+        "app/routers/riconciliazione_stats_api.py (montato su /api/riconciliazione: stats)"
+      ],
+      "tabCount": 4,
+      "actionCount": 4,
+      "writeFlowCount": 0,
+      "popupMentions": [
+        "Nessun modale: tutte le interazioni (filtri, tab) avvengono inline nella stessa pagina."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "È la 'vista di sistema' del gestionale relazionale: a differenza della Dashboard classica (che mostra KPI economici), questa pagina mette a fuoco lo STATO di salute dei processi — quanti alert sono aperti e di che gravità, quante partite (fatture, F24, stipendi, POS attesi, trasferimenti) sono ancora da chiudere e per quale importo, e a che punto è la riconciliazione bancaria automatica. Serve per capire in un colpo d'occhio 'cosa c'è ancora da fare' prima di poter considerare chiuso un periodo, incrociando dati che nella Dashboard normale sono sparsi in widget diversi. Il caricamento dati (caricaDati) usa Promise.allSettled così un fallimento di una sola chiamata non blocca le altre due.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:dashboard",
+      "label": "Dashboard",
+      "route": "/",
+      "sourcePath": "memoria/pagine/dashboard.json",
+      "symbol": "dashboard",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/DashboardHub.jsx (wrapper: React.lazy + Suspense che carica ../Dashboard.jsx, nessuna logica propria, solo spinner di caricamento)",
+        "frontend/src/pages/Dashboard.jsx (2499 righe: componente principale con tutti i widget, più i componenti interni POSCalendarWidget, ScadenzeWidget con relativo modale di pagamento, e AlertPagamentiWidget)",
+        "frontend/src/components/WidgetVerificaCoerenza.jsx (widget alert coerenza dati, incluso in cima alla pagina)",
+        "frontend/src/components/WidgetAgenti.jsx (widget contatori segnalazioni Agenti AI, incluso subito sotto)",
+        "frontend/src/api.js (funzioni health() e dashboardSummary(anno) usate all'avvio)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/reports/dashboard.py (montato su /api/dashboard: summary, kpi, stats, trend-mensile, spese-per-categoria, confronto-annuale, stato-riconciliazione, bilancio-istantaneo)",
+        "app/routers/bank/pos_accredito.py (montato su /api/pos-accredito: calendario-mensile/{anno}/{mese}, festivi/{anno})",
+        "app/routers/scadenze.py (montato su /api/scadenze: prossime)",
+        "app/routers/gestione_riservata.py (montato su /api/gestione-riservata: volume-affari-reale)",
+        "app/routers/accounting/contabilita_avanzata.py (montato su /api/contabilita: calcolo-imposte)",
+        "app/routers/f24/__init__.py e app/routers/public_api.py (montati su /api/f24-public: scadenze-prossime)",
+        "app/routers/fornitori_learning.py (montato su /api/fornitori-learning: stats)",
+        "app/routers/employees/dipendenti.py (montato su /api/paghe: buste-paga?stato=DA_PAGARE)",
+        "app/routers/f24_parser.py (montato su /api/paghe: distinte-f24?stato=DA_PAGARE)",
+        "app/routers/noleggio.py (montato su /api/noleggio: veicoli)",
+        "app/routers/email_download.py (montato su /api/email-download: statistiche)",
+        "app/routers/fatture_module/pagamento.py (funzioni paga_fattura_manuale e auto_ricostruisci_dati, montate in app/routers/fatture_module/__init__.py su /api/fatture-ricevute/paga-manuale e /auto-ricostruisci-dati)",
+        "app/routers/batch_operations.py (montato su /api/batch: auto-riconcilia-tutto)",
+        "app/routers/verifica_coerenza.py (montato su /api/verifica-coerenza: widget — usato da WidgetVerificaCoerenza)",
+        "app/routers/agenti.py (montato su /api/agenti: segnalazioni/summary — usato da WidgetAgenti)"
+      ],
+      "tabCount": 0,
+      "actionCount": 7,
+      "writeFlowCount": 2,
+      "popupMentions": [
+        "Modale 'Registra Pagamento' (interno a ScadenzeWidget): riepilogo scadenza + due grandi bottoni CASSA/BANCA con testo esplicativo sulla differenza (pagato subito vs da riconciliare), e bottone Annulla."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "È la home page del gestionale (route '/'): un cruscotto di sola lettura che aggrega in tempo reale i dati prodotti da tutti gli altri moduli (corrispettivi, fatture, banca, salari, F24, noleggio auto) per dare una fotografia immediata della situazione economico-finanziaria dell'anno selezionato (l'anno è globale, gestito da AnnoContext e non da questa pagina). Oltre alla semplice visualizzazione, offre alcune azioni operative dirette: un pulsante di 'auto-riparazione' dei dati, il pagamento rapido delle scadenze imminenti dalla stessa vista, e un toggle per rivelare il 'Volume Affari Reale' (dati riservati che includono incassi/spese extra-contabili). Il caricamento è organizzato in due fasi per percepire la pagina come veloce: prima i dati 'primari' (health, summary, trend mensile, calendario POS, scadenze, bilancio istantaneo) bloccano lo spinner iniziale; poi, in background e senza bloccare la UI, arrivano i grafici avanzati (spese per categoria, confronto annuale, stato riconciliazione, imposte, scadenze F24, learning machine, alert pagamenti) e infine le statistiche di noleggio/verbali.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:dati-provvisori",
+      "label": "Dati Provvisori",
+      "route": "/prima-nota/provvisori",
+      "sourcePath": "memoria/pagine/dati-provvisori.json",
+      "symbol": "dati-provvisori",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/DatiProvvisoriPage.jsx",
+        "frontend/src/pages/hub/PrimaNotaHub.jsx (wrapper che monta questa pagina in lazy-load mantenendola in vita quando si torna su Prima Nota)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/dati_provvisori.py (endpoint /api/genera-proposte, /api/proposte, /api/conferma/{id}, /api/conferma-tutte, /api/rifiuta/{id}, montato con prefisso /api in app/router_registry.py riga 265)",
+        "app/services/dati_provvisori_service.py (logica di matching e conferma: genera_proposte_pagamento, conferma_proposta, conferma_tutte, rifiuta_proposta)"
+      ],
+      "tabCount": 4,
+      "actionCount": 4,
+      "writeFlowCount": 2,
+      "popupMentions": [
+        "window.confirm prima di 'Conferma Tutte': chiede conferma esplicita indicando il numero di proposte che verranno confermate in blocco."
+      ],
+      "owner": "PRIMA_NOTA",
+      "domain": "prima_nota",
+      "canonicalDestination": "prima_nota.registro_saldi",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "ATTENZIONE — nome ingannevole: questa pagina NON è lo stesso concetto del tab 'Provvisori' dentro la pagina Prima Nota principale (quello lavora su invoices/prima_nota_cassa/banca in base al metodo pagamento del fornitore in anagrafica). Questa pagina è invece un motore di ABBINAMENTO AUTOMATICO tra fatture pagate con bonifico/SEPA/RID non ancora marcate come pagate e i movimenti di uscita già presenti nell'estratto conto bancario: propone dei match (con un punteggio di affidabilità) e li mette in staging nella collection 'dati_provvisori' con stato 'da_confermare', in attesa che l'utente confermi o rifiuti ogni proposta prima che diventi un movimento reale in Prima Nota Banca. Serve a evitare di dover cercare a mano, fattura per fattura, quale bonifico dell'estratto conto corrisponde a quale fattura da pagare. Nota tecnica: il file dati_provvisori.py contiene ANCHE endpoint per un flusso diverso e più vecchio (upload XML fatture da email, sposta-cassa/sposta-banca manuale, riconciliazione estratto conto) che NON sono usati da questa pagina React — quella UI usa solo /genera-proposte, /proposte, /conferma, /conferma-tutte, /rifiuta.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:dettaglio-verbale",
+      "label": "Dettaglio Verbale",
+      "route": "/verbali-noleggio/{numeroVerbale}",
+      "sourcePath": "memoria/pagine/dettaglio-verbale.json",
+      "symbol": "dettaglio-verbale",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/DettaglioVerbale.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/verbali_noleggio_api.py (GET /dettaglio/{numero_verbale}, POST /{verbale_id}/cerca-pagamento, GET /{verbale_id}/ricevuta-pdf, POST /scarica-posta)",
+        "app/routers/verbali_noleggio.py (GET /pdf/{numero_verbale}, registrato PRIMA di verbali_noleggio_api.py sotto lo stesso prefix: per i numeri verbale senza '/' questa versione vince sempre sull'omonima in verbali_noleggio_api.py, che infatti è stata rimossa dal codice — vedi commento nel file)",
+        "app/services/verbali_pagamento_finder.py (trova_pagamento_verbale/applica_pagamento_a_verbale, usati da cerca-pagamento; ricerca in cascata PayPal -> Gmail -> estratto conto, file non incluso in questo audit)"
+      ],
+      "tabCount": 0,
+      "actionCount": 6,
+      "writeFlowCount": 2,
+      "popupMentions": [],
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di drill-down/dettaglio per un singolo verbale (multa stradale) legato a un veicolo a noleggio aziendale. Mostra tutte le informazioni raccolte per quel verbale: dati del verbale stesso (numero, data, importo, fornitore, descrizione), fattura del noleggiatore che lo cita (se già associata), PDF disponibili (verbale originale + eventuale quietanza di pagamento), stato del pagamento (pagato / sospeso / da verificare) con dettaglio fonte/PSP/IUV se pagato, e informazioni sul veicolo/driver assegnato. È raggiunta principalmente dal bottone '📄 Dettaglio' della pagina Riconciliazione Verbali Noleggio (VerbaliRiconciliazione.jsx, si apre in una nuova scheda del browser) oppure navigando direttamente all'URL con il numero verbale.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:documenti-archivio",
+      "label": "Documenti - Archivio",
+      "route": "/documenti",
+      "sourcePath": "memoria/pagine/documenti-archivio.json",
+      "symbol": "documenti-archivio",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/DocumentiHub.jsx (wrapper con 2 tab a livello URL: 'archivio' su /documenti, 'import' su /documenti/import — il tab attivo è determinato dal path della route, non da uno stato locale; monta i due componenti con React.lazy e li tiene entrambi nel DOM una volta visitati, nascosti con display:none, per non perdere lo stato al cambio tab)",
+        "frontend/src/pages/Documenti.jsx (1957 righe — è il contenuto reale del tab 'archivio'; al suo interno ha 3 sotto-tab client-side gestiti con lo stato locale activeTab: 'categorie' → Per Mittente, 'email' → Tutti i Documenti, 'ai' → AI Estratti)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/documenti.py (2525 righe, prefix /api/documenti — lista/statistiche/download email, CRUD sul singolo documento, monitor automatico, sync F24/estratti conto/buste paga, upload-auto — quest'ultimo è usato dal tab Import, non da questa pagina)",
+        "app/routers/documenti_non_associati.py (prefix /api/documenti-non-associati — usato SOLO dal sotto-tab 'Per Mittente' tramite /categorie-mittente; legge dalla collection 'documenti_non_associati', DIVERSA da 'documents_inbox' usata dal sotto-tab 'Tutti i Documenti')",
+        "app/routers/document_ai.py (prefix /api/document-ai — usato dal sotto-tab 'AI Estratti': extract, process-all-classified, classified-documents-stats, extracted-documents, delete)",
+        "app/services/email_document_downloader.py (motore di download IMAP + categorizzazione documenti, chiamato dal bottone 'Scarica da Email')",
+        "app/services/email_classifier_service.py (process_documents_with_ai — logica dietro 'Processa Allegati Email con AI', legge dalla collection 'documents_classified', DIVERSA sia da 'documents_inbox' che da 'extracted_documents')",
+        "app/services/document_data_saver.py (save_extracted_data_to_gestionale — instrada i dati estratti dall'AI verso la collection gestionale corretta in base al document_type: f24→f24_models, busta_paga→cedolini, bonifico→archivio_bonifici, estratto_conto→estratto_conto_movimenti, verbale→verbali_noleggio, cartella_esattoriale→adr_definizione_agevolata, delibera_inps→delibere_fonsi, fattura→invoices)",
+        "app/services/document_ai_extractor.py (process_document / process_document_from_base64 — chiamata LLM che estrae i campi strutturati dal PDF, non letto riga per riga in questo audit)",
+        "app/services/email_monitor_service.py (motore di sync automatico in background, condivide download_documents_from_email con questa pagina ma non è azionato da alcun bottone qui — è collegato solo a /api/documenti/monitor/* e a run_full_sync)"
+      ],
+      "tabCount": 3,
+      "actionCount": 21,
+      "writeFlowCount": 4,
+      "popupMentions": [
+        "PDF Viewer Modal — visualizzatore inline con iframe, header con nome file/categoria/dimensione, bottoni Scarica e chiudi; usato sia dal tab 'Tutti i Documenti' (fetch remoto) sia da 'AI Estratti' (decodifica locale del base64 già in memoria).",
+        "Popup di stato download in background — card con spinner, messaggio di stato (pending/in_progress/completed/error) aggiornato dal polling ogni 2 secondi.",
+        "Pannello Impostazioni Importazione (comprimibile, non un vero modale) — periodo di ricerca, parole chiave predefinite/personalizzate.",
+        "alert()/confirm() nativi del browser per tutti i messaggi di esito (successo/errore) delle azioni — nessun modale custom di conferma per le azioni distruttive (Elimina documento non chiede conferma)."
+      ],
+      "owner": "INTAKE_DOCUMENTALE",
+      "domain": "documenti",
+      "canonicalDestination": "documenti.acquisizione_inbox",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di consultazione dell'archivio documenti scaricati automaticamente dalle email (o caricati manualmente) e classificati per categoria (F24, fatture, buste paga, estratti conto, quietanze, bonifici, cartelle esattoriali, satispay, INPS, certificazioni uniche, altro). Non è un unico elenco: la pagina giustappone TRE viste che leggono da TRE collection MongoDB diverse e quindi possono mostrare numeri diversi e non sincronizzati fra loro: 'Per Mittente' (collection documenti_non_associati, raggruppa per mittente attendibile es. INPS/Agenzia Entrate/Commercialista), 'Tutti i Documenti' (collection documents_inbox, l'archivio email 'classico' con filtri categoria/stato e azioni di download/cambio categoria/eliminazione), 'AI Estratti' (collection documents_classified + extracted_documents, dove un motore AI estrae dati strutturati dai PDF e li propaga automaticamente nelle collection operative del gestionale).",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:documenti-import",
+      "label": "Documenti - Import Documenti",
+      "route": "/documenti/import",
+      "sourcePath": "memoria/pagine/documenti-import.json",
+      "symbol": "documenti-import",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/DocumentiHub.jsx (wrapper 2 tab: 'archivio' su /documenti, 'import' su /documenti/import — il tab attivo è determinato dal path, non da uno stato locale)",
+        "frontend/src/pages/ImportDocumenti.jsx (862 righe — contenuto reale del tab 'Import Documenti': upload drag&drop/click con riconoscimento automatico del tipo, più 3 bottoni di importazione massiva da documenti già presenti in inbox)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/documenti.py (funzione detect_document_type + endpoint POST /upload-auto — riconoscimento automatico e instradamento per singolo file caricato)",
+        "app/routers/documents_inbox_classify.py (prefix /api/documenti-inbox — auto-classify, import-f24-from-inbox, import-dipendenti-from-cu: azionano i 3 bottoni blu/marrone/verde della pagina, che agiscono sui documenti GIÀ presenti in documents_inbox, non su nuovi file caricati)",
+        "app/routers/invoices/corrispettivi_helpers.py + app/parsers/corrispettivi_parser.py (ramo 'corrispettivo' dell'upload-auto)",
+        "app/routers/invoices/fatture_upload.py (ramo 'fattura' XML dell'upload-auto)",
+        "app/routers/f24_parser.py (ramo 'f24' — import_f24, workflow completo)",
+        "app/services/parser_f24.py (ramo 'quietanza_f24' — parse_f24_pdf_bytes)",
+        "app/routers/libro_unico_parser.py (ramo 'cedolino' — import_libro_unico, workflow completo LUL)",
+        "app/routers/distinte_bpm.py (ramo 'distinte_bpm')",
+        "app/routers/bank/estratto_conto.py (ramo 'estratto_conto' CSV Banco BPM)"
+      ],
+      "tabCount": 0,
+      "actionCount": 9,
+      "writeFlowCount": 4,
+      "popupMentions": [
+        "Nessun modale dedicato: la pagina usa solo alert() nativi del browser per i 3 bottoni di import massivo, e un pannello inline (non modale) per la lista file in coda con progress bar e per il riepilogo risultati dopo 'Carica Tutti'."
+      ],
+      "owner": "INTAKE_DOCUMENTALE",
+      "domain": "documenti",
+      "canonicalDestination": "documenti.acquisizione_inbox",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di caricamento file 'senza scelte da parte dell'utente' (come dichiarato nel commento in testa al componente React): l'utente trascina o seleziona uno o più file (anche uno o più .zip, estratti automaticamente lato client incluso lo scasso di zip annidati) e per ciascun file il backend riconosce autonomamente il tipo di documento analizzando nome file e contenuto binario, poi lo instrada al workflow di importazione completo specifico (F24, Libro Unico/cedolini, fattura XML, estratto conto, corrispettivo telematico, distinte BPM, bonifici) oppure lo mette in una coda di classificazione manuale se non riconosciuto. Accanto all'area di upload, tre bottoni aggiuntivi permettono di rielaborare in blocco i documenti già scaricati automaticamente dalle caselle Gmail/PEC (collection documents_inbox) senza doverli ricaricare manualmente.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:fatture",
+      "label": "Fatture (Archivio Fatture Ricevute)",
+      "route": "/fatture",
+      "sourcePath": "memoria/pagine/fatture.json",
+      "symbol": "fatture",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/FattureHub.jsx (hub/tab-switcher: monta ArchivioFattureRicevute.jsx quando l'URL NON contiene /corrispettivi, alternandolo con Corrispettivi.jsx tramite display:none/block senza smontarlo)",
+        "frontend/src/pages/ArchivioFattureRicevute.jsx",
+        "frontend/src/components/ModalFattura.jsx (usato da altre pagine per mostrare la stessa vista fattura in un iframe modale)",
+        "frontend/src/hooks/useData.js (contiene deleteFattura/payFattura ma risulta CODICE MORTO: non importato da nessuna pagina attiva)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/invoices/fatture_upload.py (montato su /api/fatture — import XML/ZIP/P7M, delete con cascade, pagamento legacy)",
+        "app/routers/invoices/invoices_main.py (montato su /api/invoices — sola lettura, dedup applicativo)",
+        "app/routers/invoices/invoices_emesse.py (fatture attive/emesse, modulo minimale/non completato)",
+        "app/routers/invoices/fatture_drive.py (montato su /api/fatture/drive — ingest automatico da Google Drive)",
+        "app/routers/invoices/__init__.py",
+        "app/routers/fatture_module/__init__.py (montato su /api/fatture-ricevute — È IL BACKEND REALMENTE CONSUMATO da ArchivioFattureRicevute.jsx: non fa parte della cartella app/routers/invoices/ ma è indispensabile per capire questa pagina)",
+        "app/routers/fatture_module/crud.py",
+        "app/routers/fatture_module/pagamento.py",
+        "app/routers/fatture_module/helpers.py",
+        "app/routers/fatture_module/metodo_pagamento.py",
+        "app/routers/fatture_module/ciclo_utils.py",
+        "app/routers/fatture_module/common.py",
+        "app/services/cascade_operations.py",
+        "app/services/business_rules.py (BusinessRules.can_delete_invoice)",
+        "app/router_registry.py (righe 177-179: mount dei tre prefissi /api/fatture, /api/fatture (drive), /api/fatture-ricevute)"
+      ],
+      "tabCount": 2,
+      "actionCount": 6,
+      "writeFlowCount": 4,
+      "popupMentions": [
+        "Nessun vero modale nativo di questa pagina: il 'dettaglio fattura' si apre sempre in una NUOVA SCHEDA del browser (target=\"_blank\" su /api/fatture-ricevute/fattura/{id}/view-assoinvoice), non in un overlay in-page.",
+        "Componente condiviso ModalFattura.jsx (usato da ALTRE pagine come Scadenze, Prima Nota Provvisori, Fornitori, non da ArchivioFattureRicevute.jsx stessa) che mostra la stessa vista AssoInvoice dentro un <iframe> in un vero modale in-page.",
+        "Banner di avviso (non un vero modale, un pannello inline) per il deep-link ?invoice_id= quando la fattura richiesta non è nell'anno correntemente filtrato o non esiste più."
+      ],
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Questa pagina è l'archivio consultabile di tutte le fatture passive (fatture ricevute dai fornitori) importate nel gestionale, via XML/P7M caricati manualmente, via sincronizzazione automatica da Google Drive (ogni 15 minuti) o via PEC/SDI attraverso la stessa casella email. Serve al titolare/amministrazione per cercare una fattura per fornitore/mese/numero, controllare lo stato (importata, pagata, anomala), vedere il documento originale renderizzato in stile 'AssoInvoice' e capire — tramite un badge — con quale metodo il fornitore viene solitamente pagato. È DELIBERATAMENTE una pagina di sola consultazione: le azioni di scrittura vere e proprie (pagare una fattura, eliminarla, cambiarne il metodo di pagamento, caricare nuovi XML) sono state spostate in altre pagine dedicate (Import Documenti per l'upload, Scadenze/Dashboard/Fornitori per il pagamento manuale) proprio per evitare che un click distratto sull'archivio generi una scrittura contabile.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:fornitori",
+      "label": "Fornitori",
+      "route": "/fornitori",
+      "sourcePath": "memoria/pagine/fornitori.json",
+      "symbol": "fornitori",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/FornitoriHub.jsx (wrapper React.lazy + Suspense, nessuna logica propria)",
+        "frontend/src/pages/Fornitori.jsx (3758 righe: componente monolitico con SupplierModal, StatCard, SupplierCard, e la vista principale con 3 modali aggiuntivi — Fatturato, Estratto Fatture, Schede Tecniche)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/suppliers_module/base.py (montato su /api/suppliers — CRUD principale, search-piva, fatturato, fatture, metodo-pagamento dedicato)",
+        "app/routers/suppliers_module/common.py (PAYMENT_METHODS, PAYMENT_TERMS, METODI_BANCARI, cache key)",
+        "app/routers/suppliers_module/bulk.py (azioni bulk — non raggiunte da alcun bottone in questa pagina)",
+        "app/routers/suppliers_module/iban.py (ricerca/validazione IBAN da fatture — non raggiunta da alcun bottone in questa pagina)",
+        "app/routers/suppliers_module/import_export.py (import/export Excel/CSV — non raggiunto da alcun bottone in questa pagina)",
+        "app/routers/suppliers_module/validation.py",
+        "app/routers/suppliers_module/__init__.py (assembla le route, montate con prefix=/api/suppliers in app/router_registry.py riga 241)",
+        "app/services/cascade_operations.py (contiene delete_fornitore_cascade, verificato essere CODICE MORTO non collegato a nessuna route reale)",
+        "app/routers/invoices/fatture_upload.py (righe 379-394, auto_registra_prima_nota — riferimento incrociato per il tema 'pagamento certo')",
+        "app/routers/prima_nota_module/sync.py (righe 39-46, 678-699, 1000-1121 — classificazione/auto-conferma provvisori, riferimento incrociato)"
+      ],
+      "tabCount": 1,
+      "actionCount": 12,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        "SupplierModal — form di creazione/modifica fornitore, con sotto-azioni 'Auto' (carica da OpenAPI Imprese) e 'Cerca in fatture'/'Popola da XML'.",
+        "Modale Fatturato — mostra il fatturato annuale (anno corrente o precedente) con dettaglio mensile.",
+        "Modale Estratto Fatture — tabella fatture del fornitore con filtri data/importo/tipo, stampa, e azioni rapide 'Segna pagata' (Cassa/Banca).",
+        "Modale Schede Tecniche — elenco schede tecniche dei prodotti del fornitore, ricerca automatica con polling, download PDF.",
+        "window.confirm() nativo del browser per la conferma di eliminazione fornitore (doppio confirm se ci sono fatture collegate, per forzare l'eliminazione)."
+      ],
+      "owner": "FATTURE_FORNITORI",
+      "domain": "fatture_fornitori",
+      "canonicalDestination": "documenti.fatture_fornitori",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Questa pagina è l'anagrafica completa dei fornitori dell'azienda: qui si crea, modifica ed elimina un fornitore, si configura il suo metodo di pagamento abituale, si consulta il fatturato annuo e l'estratto fatture, si verifica/completa l'anagrafica tramite ricerca P.IVA su VIES, e si gestiscono le schede tecniche dei prodotti collegati. È il punto centrale da cui dipende come le fatture di un fornitore vengono suggerite/instradate in Prima Nota (anche se, dopo la rimozione del 'pagamento certo', questo è ORA solo un suggerimento informativo e mai una scrittura contabile automatica).",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:gestione-riservata",
+      "label": "Gestione Riservata",
+      "route": "/gestione-riservata",
+      "sourcePath": "memoria/pagine/gestione-riservata.json",
+      "symbol": "gestione-riservata",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/GestioneRiservata.jsx (contiene sia il sotto-componente di login LoginGestioneRiservata sia la dashboard DashboardGestioneRiservata; il componente esportato di default sceglie quale mostrare in base a un flag salvato in localStorage)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/gestione_riservata.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 7,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        {
+          "nome": "Form Nuovo/Modifica Movimento (non un vero modale, pannello in-page sopra la tabella)",
+          "trigger": "bottone 'Nuovo Movimento' oppure icona matita su una riga",
+          "contenuto": "Data, Tipo (Incasso/Spesa), Importo (€), Descrizione, Categoria (Mance/Vendita Extra/Catering/Acquisti/Altro), Note. Bottoni Salva/Aggiorna e X per chiudere."
+        }
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Area riservata, protetta da un secondo codice di accesso INDIPENDENTE dal login principale dell'app (il PIN di Login.jsx), pensata per registrare incassi e spese 'non fatturati' — cioè movimenti di cassa reali che l'azienda vuole tracciare internamente ma che non transitano dalla fatturazione ufficiale (es. mance, vendite extra, catering, piccoli acquisti in contanti). Serve a calcolare il 'volume d'affari reale' dell'azienda (fatturato ufficiale/corrispettivi + incassi extra − spese extra), un dato riservato che non deve comparire nella contabilità visibile a tutti.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:impostazioni-f24-email",
+      "label": "Impostazioni Email (F24 Email Settings)",
+      "route": "/impostazioni-f24-email",
+      "sourcePath": "memoria/pagine/impostazioni-f24-email.json",
+      "symbol": "impostazioni-f24-email",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/ImpostazioniF24Email.jsx (1046 righe: componente principale ImpostazioniF24Email + sotto-componenti locali Toggle e GmailSettingsSection)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/f24_email_settings.py (montato su /api/f24-email-settings: impostazioni GET/POST, aggiungi-mittente, rimuovi-mittente/{email}, toggle-auto-scan, log-scansioni, scan-manuale, stato-sistema)",
+        "app/routers/settings_router.py (montato su /api/settings: gmail GET/POST, gmail/test — credenziali IMAP condivise per tutto il download email del gestionale)",
+        "app/routers/f24/email_f24.py (funzione scarica_e_processa, invocata da POST /api/f24-email-settings/scan-manuale — esegue il download IMAP effettivo e il parsing dei F24 dagli allegati)"
+      ],
+      "tabCount": 0,
+      "actionCount": 12,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        "Nessun vero modale: il form 'Nuovo Mittente' è un pannello espandibile inline (non un overlay) mostrato/nascosto con showAddMittente."
+      ],
+      "owner": "FISCO_F24",
+      "domain": "fiscalita",
+      "canonicalDestination": "controllo.affidabilita_fiscale",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di configurazione per il sistema di download automatico dei modelli F24 via email: da un lato permette di gestire le CREDENZIALI Gmail IMAP condivise (una sola casella per tutto il sistema, con App Password), dall'altro la LISTA DEI MITTENTI autorizzati (tipicamente commercialista e consulente del lavoro) con relative parole chiave usate per riconoscere quali email contengono F24 da scaricare, la frequenza di scansione automatica e lo storico delle scansioni eseguite. È una pagina puramente di configurazione: non elabora né mostra i F24 stessi (quello è compito di altri moduli, es. Riconciliazione F24), ma innesca/pilota il processo di acquisizione automatica.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:inserimento-rapido",
+      "label": "Inserimento Rapido",
+      "route": "/rapido",
+      "sourcePath": "memoria/pagine/inserimento-rapido.json",
+      "symbol": "inserimento-rapido",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/InserimentoRapido.jsx (1031 righe: componente unico con 7 form specializzati — corrispettivi, POS serale, versamenti banca, apporto soci, fatture da pagare, acconti dipendenti, presenze — pensato esplicitamente per uso da mobile, con stili inline dedicati (non usa lib/utils STYLES) per input grandi e touch-friendly)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/rapido.py (montato su /api/rapido: dipendenti-attivi, ultimi-inserimenti, corrispettivo, versamento-banca, apporto-soci, paga-fattura, acconto-dipendente, presenza)",
+        "app/routers/bank/pos_corrispettivi_check.py (probabile sorgente di PUT /api/pos-corrispettivi/chiusura-giornaliera, endpoint chiamato dal form POS Serale ma non letto in dettaglio in questa analisi mirata su app/routers/rapido.py)",
+        "app/routers/employees/dipendenti.py (fallback GET /api/dipendenti se /api/rapido/dipendenti-attivi fallisce)",
+        "collezioni lette per il form Fatture: invoices (via GET /api/invoices) con fallback a /api/fatture-ricevute/archivio"
+      ],
+      "tabCount": 0,
+      "actionCount": 7,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        "Nessun modale: ogni card apre un form a schermo intero all'interno della stessa pagina (activeSection sostituisce il contenuto, non è un overlay)."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "È una console di inserimento veloce pensata per operare da smartphone durante la giornata (subtitle: 'Gestione veloce da mobile'), pensata per ridurre al minimo i click: un menu a card (7 categorie) apre un form specifico e semplificato con data precompilata (oggi, o 1° gennaio se si sta lavorando su un anno diverso da quello corrente tramite AnnoContext), importo e poche note opzionali. Sotto al menu principale mostra sempre gli 'Ultimi Inserimenti' (ultimi 5) fatti tramite QUESTA pagina, per dare un feedback immediato e permettere controlli rapidi senza dover navigare altrove.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:integrazioni-openapi",
+      "label": "Integrazioni OpenAPI.it (XBRL Bilanci Camera di Commercio)",
+      "route": "/integrazioni-openapi",
+      "sourcePath": "memoria/pagine/integrazioni-openapi.json",
+      "symbol": "integrazioni-openapi",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/IntegrazioniHub.jsx",
+        "frontend/src/pages/IntegrazioniOpenAPI.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/openapi_it.py (montato su prefix /api/openapi in app/router_registry.py riga ~275)"
+      ],
+      "tabCount": 0,
+      "actionCount": 7,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun modale (dialog) HTML nella pagina.",
+        "Uso di alert() nativo del browser per: 'Inserisci la Partita IVA' (validazione mancante), errori delle chiamate API (richiediXbrl, checkXbrlStatus), e per mostrare l'esito di 'Verifica' (stato + messaggio)."
+      ],
+      "owner": "AMMINISTRAZIONE",
+      "domain": "amministrazione",
+      "canonicalDestination": "amministrazione.integrazioni_scheduler",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina che permette di richiedere bilanci ufficiali in formato XBRL (e PDF/verbale assemblea) dalla Camera di Commercio tramite il servizio a pagamento OpenAPI.it (endpoint 'bilancio-ottico'). L'utente inserisce la Partita IVA di un'azienda, opzionalmente l'anno di chiusura, e invia la richiesta; il bilancio viene elaborato in modo ASINCRONO da OpenAPI.it (10-15 minuti) e l'utente deve poi cliccare 'Verifica' sulla riga corrispondente per controllarne lo stato. La pagina mostra anche una tab 'Configurazione' puramente informativa su come impostare la API key. IMPORTANTE: nonostante il nome del componente e della cartella ('IntegrazioniOpenAPI'), questa pagina NON è collegata al router app/routers/openapi_imprese.py (montato su /api/openapi-imprese), che è un servizio DIVERSO — arricchimento anagrafico fornitori (ragione sociale, PEC, SDI, ATECO) — usato altrove nell'app (verosimilmente dalla scheda Fornitori), non da questa schermata.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:integrazioni-pagopa",
+      "label": "Gestione PagoPA",
+      "route": "/pagopa",
+      "sourcePath": "memoria/pagine/integrazioni-pagopa.json",
+      "symbol": "integrazioni-pagopa",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/IntegrazioniHub.jsx",
+        "frontend/src/pages/GestionePagoPA.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/pagopa.py (montato su prefix /api/pagopa in app/router_registry.py riga ~278)",
+        "app/routers/bank/bank_statement_import.py (montato su prefix /api/bank-statement, per la sola chiamata di supporto GET /movements)"
+      ],
+      "tabCount": 0,
+      "actionCount": 6,
+      "writeFlowCount": 3,
+      "popupMentions": [
+        "Nessun modale (dialog) presente nella pagina.",
+        "Feedback tramite toast (componente ui/sonner): toast.success/toast.error per Auto-Associa e per errori di caricamento ricevute/associazione."
+      ],
+      "owner": "RICONCILIAZIONE",
+      "domain": "paypal_pagopa",
+      "canonicalDestination": "riconciliazione.paypal_pagopa",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina per gestire le ricevute di pagamento PagoPA (es. rateizzazioni INPS, Agenzia Entrate-Riscossione/AdER, TARI, COSAP/TOSAP, IMU, bollo auto) e associarle automaticamente ai movimenti dell'estratto conto bancario usando il codice CBILL/identificativo bolletta presente sia nella ricevuta sia nella descrizione del movimento bancario. Mostra statistiche (ricevute totali, associate, da associare, importo totale), un pannello informativo sulle tipologie di pagamenti CBILL gestibili, filtri di ricerca/stato e la tabella delle ricevute caricate.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:learning-machine",
+      "label": "Learning Machine",
+      "route": "/learning-machine",
+      "sourcePath": "memoria/pagine/learning-machine.json",
+      "symbol": "learning-machine",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/LearningMachine.jsx (1499 righe — pagina centralizzata con 6 tab: Dashboard, Fornitori & Keywords, Pattern Assegni, Classificazione Documenti, ⚙️ Regole Categorizzazione (componente lazy separato), 🌐 Training Universale (componente lazy separato))",
+        "frontend/src/pages/RegoleCategorizzazione.jsx (892 righe — montato in lazy dentro il tab 'regole' di LearningMachine.jsx; la route diretta /regole-categorizzazione fa ora un redirect a /learning-machine/regole, quindi il file NON è più raggiungibile come pagina standalone)",
+        "frontend/src/pages/LearningMachineUniversale.jsx (391 righe — montato in lazy dentro il tab 'universale'; un solo bottone 'Impara Tutto' che avvia 5 sotto-moduli di apprendimento sull'intero dataset)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/fornitori_learning.py (prefix /api/fornitori-learning — stats, lista/non-classificati, salva/elimina keyword fornitore, riclassifica-con-keywords, suggerisci-keywords, centri-costo-disponibili, più endpoint su F24/magazzino non raggiunti da bottoni in questa pagina)",
+        "app/routers/bank/assegni_learning.py (prefix /api/assegni/learning — pulizia-duplicati, learn, associa-intelligente, associa-combinazioni-avanzato (non esposto da bottoni), stats-avanzate)",
+        "app/routers/learning_machine.py (prefix /api/learning-machine — dashboard, regole-apprese, usati dal tab 'Classificazione Documenti'; scan/feedback/documenti/statistiche-feedback/reset-learning esistono ma non sono raggiunti da alcun bottone in questa pagina, sono usati dalla pagina esterna /classificazione-email)",
+        "app/routers/learning_universal.py (prefix /api/learning-universal — status, train/all, results, usati dal tab 'Training Universale')",
+        "app/routers/accounting/regole_categorizzazione.py (prefix /api/regole — download/upload Excel, get regole, fornitore/descrizione/categorie CRUD, usati dal tab 'Regole Categorizzazione')",
+        "app/routers/accounting/contabilita_avanzata.py (POST /api/contabilita/ricategorizza-fatture — azionato dal bottone 'Applica alle Fatture' dentro il tab Regole)",
+        "app/services/learning_machine_cdc.py (CENTRI_COSTO, classifica_fattura_per_centro_costo, classifica_f24_per_centro_costo, calcola_importi_fiscali — motore di classificazione per centro di costo usato da fornitori_learning.py)",
+        "app/services/categorizzazione_contabile.py (PATTERNS_FORNITORE, categorizza_fattura_completa — motore di categorizzazione contabile usato sia dai default del tab Regole sia da ricategorizza-fatture)"
+      ],
+      "tabCount": 6,
+      "actionCount": 27,
+      "writeFlowCount": 8,
+      "popupMentions": [
+        "MessageBanner — banner colorato (verde successo / rosso errore) in cima alla pagina, condiviso da tutte le azioni dei tab Dashboard/Fornitori/Assegni/Documenti, con chiusura manuale (×).",
+        "Nel tab Regole Categorizzazione: banner di messaggio dedicato (stesso pattern ma componente locale), form inline 'Nuova Regola' (non un vero modale, sezione espandibile in pagina).",
+        "Nessun modale di conferma per azioni distruttive come 'Applica alle Fatture' (azzera tutti i movimenti contabili), 'Elimina fornitore', 'Elimina regola', 'Associa Automaticamente' (assegni) — window.confirm() nativo presente solo per 'Elimina fornitore configurato'."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "controllo",
+      "canonicalDestination": "controllo.anomalie",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina centralizzata di tutte le funzionalità di apprendimento automatico/euristico del gestionale: NON è un vero motore di machine learning statistico, ma un insieme di 6 sotto-sistemi indipendenti che condividono l'etichetta 'Learning Machine' — (1) associazione fornitore→keyword→centro di costo per la classificazione delle fatture, (2) apprendimento di pattern fornitore-importo dagli assegni già associati per suggerire automaticamente le associazioni future, (3) classificazione automatica documenti-email a 23 categorie con feedback loop manuale, (4) gestione delle regole di categorizzazione contabile fornitore/descrizione→conto+deducibilità con export/import Excel, (5) un modulo 'Training Universale' che ricalcola in un colpo solo pattern su fornitori/pagamenti/movimenti bancari/stagionalità vendite/assegni. Ogni sotto-sistema legge/scrive collection MongoDB proprie e indipendenti: non esiste un modello o uno storage unificato di 'apprendimento', quindi i progressi in un tab non influenzano gli altri.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:login",
+      "label": "Login",
+      "route": "/login",
+      "sourcePath": "memoria/pagine/login.json",
+      "symbol": "login",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Login.jsx",
+        "frontend/src/contexts/AuthContext.jsx (hook useAuth/loginWithPin/login/logout, RequireAuth per il redirect delle route protette)",
+        "frontend/src/api.js (interceptor axios: aggiunge Authorization Bearer da localStorage, redirect a /login su 401)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/pin_login.py (POST /api/auth/pin-login, endpoint EFFETTIVAMENTE usato da questa pagina)",
+        "app/routers/auth.py (POST /api/auth/login con email+password, GET /api/auth/verify, POST /api/auth/logout — usati da altri punti dell'app ma non da Login.jsx)",
+        "app/router_registry.py (registrazione dei due router entrambi sotto prefix /api/auth)"
+      ],
+      "tabCount": 0,
+      "actionCount": 1,
+      "writeFlowCount": 1,
+      "popupMentions": [],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di accesso rapido al gestionale tramite un PIN numerico di 6 cifre (niente username/email in questa schermata). È pensata per l'accesso 'da app mobile Ceraldi' ma è anche la login web standard: chi non è autenticato viene rediretto qui da RequireAuth. Il PIN concede sempre un JWT con ruolo admin — è un accesso 'ad uso interno' a singolo utente, non un vero sistema multi-utente con permessi differenziati.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:mappa-gestionale",
+      "label": "Mappa Gestionale",
+      "route": "/mappa-gestionale",
+      "sourcePath": "memoria/pagine/mappa-gestionale.json",
+      "symbol": "mappa-gestionale",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/MappaGestionale.jsx (1975 righe: pagina interamente statica/documentale, nessun router backend viene mai chiamato tranne un link di download diretto)"
+      ],
+      "sourceBackendPaths": [
+        "Nessuno specifico per questa pagina: l'unica interazione col server è il link statico di download '/api/download/ceraldi_erp_flussi_completo.md' (tag <a download>, non un fetch/axios — il backend che serve quel file non è stato identificato/letto in questa analisi, ma non esegue nessuna logica applicativa, serve presumibilmente un file markdown statico o generato)."
+      ],
+      "tabCount": 0,
+      "actionCount": 5,
+      "writeFlowCount": 0,
+      "popupMentions": [
+        "Nessun modale. Il pannello editor Mermaid (showEditor) è un pannello laterale inline, non un overlay/modale."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "È una pagina puramente didattica/documentale, pensata per far capire (a un umano, non per operare dati) come funziona l'intero flusso dati del gestionale Ceraldi ERP: da dove arriva ogni informazione, cosa fa ciascun modulo, cosa alimenta a valle e cosa aspetta per potersi considerare 'riconciliato'. Tutti i contenuti (16 sezioni FLUSSI: Prima Nota Cassa, Prima Nota Banca, Prima Nota Salari, Corrispettivi RT, Fatture Ricevute, Fornitori, Riconciliazione, Fisco & IVA, Bilancio, Cespiti, Dipendenti, Cedolini, Dashboard, Scadenze, Import Documenti, Strumenti) sono testo statico scritto direttamente nel codice React (oggetto costante FLUSSI), NON letto da nessun database. La pagina include anche un diagramma Mermaid.js interattivo e modificabile (editor di testo con debounce di 900ms) che rappresenta graficamente lo stesso flusso, e una sezione finale 'Stack Tecnologico' anch'essa hard-coded (elenco librerie backend/frontend/collezioni MongoDB con conteggi di record scritti a mano nel codice, quindi potenzialmente disallineati dai dati reali attuali del database).",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:noleggio-costi",
+      "label": "Noleggio Auto - Tab Riepilogo Costi",
+      "route": "/noleggio/costi",
+      "sourcePath": "memoria/pagine/noleggio-costi.json",
+      "symbol": "noleggio-costi",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/VeicoliHub.jsx (componente interno RiepilogoCosti)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/noleggio.py (endpoint GET /api/noleggio/veicoli e GET /api/noleggio/export-pdf-costi)",
+        "app/services/noleggio/processors.py (scan_fatture_noleggio, stessa logica di calcolo usata dalla tab Flotta)",
+        "app/services/noleggio/parsers.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 1,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun modal o popup: la tab è composta solo da un header con totale generale e link export PDF, una griglia di 6 card per categoria, e una tabella di dettaglio per veicolo con riga di totale."
+      ],
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Vista di sola lettura, pensata per la revisione economica rapida e per il commercialista: riepiloga in un'unica schermata il totale spesa noleggio dell'anno selezionato (filtro Anno globale dell'app), suddiviso per le 6 categorie di spesa (Canoni, Pedaggio, Verbali, Bollo, Costi Extra, Riparazioni) e per veicolo. Non introduce nessuna nuova logica di calcolo: è un componente frontend puro (RiepilogoCosti, definito direttamente dentro VeicoliHub.jsx, non un file separato) che richiama lo STESSO endpoint GET /api/noleggio/veicoli già usato dalla tab Flotta e ne renderizza i campi statistiche/veicoli in forma di cruscotto + tabella, aggiungendo solo l'export PDF per il commercialista.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:noleggio-flotta",
+      "label": "Noleggio Auto - Tab Flotta",
+      "route": "/noleggio",
+      "sourcePath": "memoria/pagine/noleggio-flotta.json",
+      "symbol": "noleggio-flotta",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/VeicoliHub.jsx",
+        "frontend/src/pages/NoleggioAuto.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/noleggio.py",
+        "app/services/noleggio/processors.py",
+        "app/services/noleggio/parsers.py",
+        "app/services/noleggio/constants.py"
+      ],
+      "tabCount": 0,
+      "actionCount": 10,
+      "writeFlowCount": 4,
+      "popupMentions": [
+        {
+          "nome": "Modal Modifica Veicolo",
+          "trigger": "✏️ Modifica (riga tabella o pannello dettaglio)",
+          "contenuto": "Sezione lookup OpenAPI Automotive (Cerca Dati / Applica), Marca, Modello, Driver (select da dipendenti), N° Contratto, Codice Cliente, Canone mensile, Anno immatricolazione, Alimentazione, Potenza(kW)/Cilindrata(cc), Centro Fatturazione, Inizio/Fine Noleggio, Note. Footer con 🗑️ Elimina (sinistra), Annulla e 💾 Salva (destra)."
+        },
+        {
+          "nome": "Modal Aggiungi Veicolo",
+          "trigger": "➕ Aggiungi Veicolo (header) oppure ➕ Associa da una riga del modal Fatture Non Associate (precompila il fornitore)",
+          "contenuto": "Targa* (max 7 char, uppercase), Fornitore* (select con icona ⚠️ per quelli senza targa in fattura), Marca, Modello, Numero Contratto. Footer Annulla / ➕ Aggiungi."
+        },
+        {
+          "nome": "Modal Fatture Non Associate",
+          "trigger": "👁️ Visualizza sul badge '⚠️ N fatture non associate'",
+          "contenuto": "Elenco fatture (fornitore, numero, data, importo, descrizione, contratto/codice cliente) con link 📄 Vedi (PDF fattura) e bottone ➕ Associa che apre il modal Aggiungi Veicolo precompilato col fornitore."
+        }
+      ],
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Vista principale della flotta veicoli a noleggio a lungo termine (ALD, ARVAL, Leasys, LeasePlan). Non esiste una tabella 'veicoli' scritta a mano dall'utente in modo primario: i veicoli vengono scoperti automaticamente leggendo le fatture XML importate (collezione 'invoices') dei 4 fornitori di noleggio, estraendo la targa dalla descrizione delle righe fattura con il pattern regex delle targhe italiane (XX000XX). La collezione 'veicoli_noleggio' contiene solo i dati 'anagrafici' che un utente può correggere a mano (driver assegnato, date contratto, canone mensile, dati tecnici) e viene fusa (merge) in tempo reale con i dati calcolati dalle fatture ad ogni GET. Non c'è quindi un pulsante 'importa fatture': l'aggancio veicolo-fattura-categoria di spesa avviene automaticamente ogni volta che si carica la pagina (o si preme Aggiorna), rileggendo tutte le fatture dei 4 fornitori.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:noleggio-verbali",
+      "label": "Noleggio Auto - Tab Verbali Noleggio (Riconciliazione)",
+      "route": "/noleggio/verbali",
+      "sourcePath": "memoria/pagine/noleggio-verbali.json",
+      "symbol": "noleggio-verbali",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/VeicoliHub.jsx",
+        "frontend/src/pages/VerbaliRiconciliazione.jsx",
+        "frontend/src/pages/DettaglioVerbale.jsx (pagina figlia, url /verbali-noleggio/{numero})"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/verbali_riconciliazione.py",
+        "app/routers/verbali_noleggio_api.py",
+        "app/routers/verbali_noleggio.py (endpoint /pdf, /stats shadowati, vedi note nel codice)",
+        "app/routers/auto_repair.py (collega-targa-driver)",
+        "app/routers/noleggio.py (get_verbali_dipendente, usato da HR)"
+      ],
+      "tabCount": 0,
+      "actionCount": 10,
+      "writeFlowCount": 5,
+      "popupMentions": [
+        {
+          "nome": "Modal Associazione Manuale (Targa <-> Driver)",
+          "trigger": "🔗 Associazione Manuale",
+          "contenuto": "Select Targa Veicolo (solo le targhe presenti nei verbali correnti che NON hanno ancora un driver_id), select Driver (Dipendente, popolato da GET /api/dipendenti). Footer Annulla / ✅ Associa (disabilitato finché non sono selezionati entrambi)."
+        },
+        {
+          "nome": "Pannello Dettaglio Verbale (non un vero modal, colonna laterale in-page)",
+          "trigger": "click su una riga della tabella verbali",
+          "contenuto": "Numero verbale, badge stato, targa, importo verbale/notifica, date verbale/pagamento, box Fattura Associata (numero+fornitore), box Driver Associato, bottoni 🔄 Riconcilia Automatico e 📄 Dettaglio (apre /verbali-noleggio/{numero} in nuova scheda)."
+        }
+      ],
+      "owner": "AMMINISTRAZIONE",
+      "domain": "veicoli",
+      "canonicalDestination": "amministrazione.cespiti_veicoli",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Gestione del ciclo di vita completo di ogni multa/verbale stradale legato a un veicolo a noleggio: dalla scoperta (email/PEC o fattura del noleggiatore) fino alla riconciliazione con pagamento e driver responsabile. La catena logica è: VERBALE (multa) -> FATTURA noleggiatore (contiene il numero verbale + spesa di notifica) -> PAGAMENTO (trovato in estratto conto/PayPal/Gmail) -> VEICOLO (targa) -> DRIVER (dipendente). Esistono due 'ingressi' possibili nel sistema (i due scenari spiegati anche nell'info-box della pagina): Scenario A 'Pago Prima' (il driver paga subito la multa, il verbale viene scaricato da posta e salvato, poi arriva la fattura del noleggiatore con la spesa di notifica da riconciliare) e Scenario B 'Fattura Prima' (arriva prima la fattura del noleggiatore con il numero verbale nella descrizione, poi si paga). La pagina lavora sulla collezione verbali_noleggio, alimentata da 8 percorsi diversi (scan email, scan fatture, trigger fattura, pipeline post-download, scanner PagoPA, ecc.) — per questo esiste anche un bottone di pulizia duplicati.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:prima-nota-pulizia",
+      "label": "Pulizia Prima Nota",
+      "route": "/prima-nota/pulizia",
+      "sourcePath": "memoria/pagine/prima-nota-pulizia.json",
+      "symbol": "prima-nota-pulizia",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/PuliziaPrimaNota.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/prima_nota_module/manutenzione.py (dedup_fatture_prima_nota, diagnostica_corrispettivi_vs_cassa)",
+        "app/routers/prima_nota_module/sync.py (_sync_corrispettivi_impl richiamata da sync_corrispettivi_anno, auto_conferma_provvisori_per_metodo, classifica_metodo_fornitore)",
+        "app/routers/prima_nota_module/__init__.py (mapping rotte)"
+      ],
+      "tabCount": 5,
+      "actionCount": 5,
+      "writeFlowCount": 2,
+      "popupMentions": [
+        "window.confirm prima di 'Elimina duplicati': riepiloga quanti movimenti verranno marcati eliminati (cassa+banca) e ribadisce che è reversibile (soft-delete).",
+        "window.confirm prima di 'Smista provvisorie': descrive il comportamento atteso (spostamento per metodo fornitore) — di fatto disallineato dal comportamento reale del backend, che è ormai solo di reportistica (vedi bottone 'Smista provvisorie')."
+      ],
+      "owner": "PRIMA_NOTA",
+      "domain": "prima_nota",
+      "canonicalDestination": "prima_nota.registro_saldi",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di manutenzione tecnica per l'amministrazione: serve a diagnosticare e correggere due problemi ricorrenti in Prima Nota — corrispettivi giornalieri mancanti in Cassa (per errori di sync) e fatture duplicate (stesso pagamento registrato due volte, es. una volta manualmente e una volta dal job automatico). Tutte le operazioni distruttive fanno SOLO soft-delete (i dati restano recuperabili nel database), mai cancellazione fisica. Pensata per essere usata in un ordine preciso e guidato (step 1→5), non per un uso quotidiano.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:prima-nota",
+      "label": "Prima Nota (Cassa / Banca / Provvisori)",
+      "route": "/prima-nota",
+      "sourcePath": "memoria/pagine/prima-nota.json",
+      "symbol": "prima-nota",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/PrimaNota.jsx",
+        "frontend/src/pages/hub/PrimaNotaHub.jsx (wrapper che monta PrimaNota.jsx e DatiProvvisoriPage.jsx senza rismontarli quando si cambia tab, per non perdere lo stato)"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/prima_nota_module/__init__.py (registrazione di tutte le rotte sotto prefisso /api/prima-nota)",
+        "app/routers/prima_nota_module/cassa.py (CRUD movimenti Cassa)",
+        "app/routers/prima_nota_module/banca.py (CRUD movimenti Banca)",
+        "app/routers/prima_nota_module/sync.py (conferma provvisori, registrazione pagamenti fattura, sync corrispettivi/estratto conto)",
+        "app/routers/prima_nota_module/manutenzione.py (sposta_movimento tra cassa/banca, dedup, diagnostica)",
+        "app/routers/prima_nota_module/common.py (costanti collection, calcolo saldo anni precedenti)",
+        "app/routers/prima_nota_module/stats.py (anni disponibili, saldo finale, export Excel)",
+        "app/routers/bank/estratto_conto.py (import CSV estratto conto, usato dal tab Banca per /api/estratto-conto-movimenti/*)",
+        "app/routers/multi_pagamento.py (POST /api/pagamenti/registra, usato dalla modale 'Pagamento parziale (Misto)')",
+        "app/services/business_rules.py (BusinessRules.can_delete_movement, regole di blocco/avviso sull'eliminazione di un movimento)",
+        "app/services/cascade_operations.py (CascadeOperations.delete_fattura_cascade: cosa succede a prima_nota_cassa/banca quando si elimina una FATTURA, non il movimento)"
+      ],
+      "tabCount": 3,
+      "actionCount": 19,
+      "writeFlowCount": 6,
+      "popupMentions": [
+        "Modale 'Pagamento parziale (Misto)': permette di dividere il pagamento di una fattura provvisoria tra Cassa e Banca, mostrando totale fattura, importo cassa da inserire e residuo banca calcolato in tempo reale.",
+        "EditMovimentoModal: form di modifica di un movimento Cassa o Banca esistente (data, tipo, importo, categoria, descrizione, riferimento, note), con navigazione automatica al movimento successivo dopo il salvataggio."
+      ],
+      "owner": "PRIMA_NOTA",
+      "domain": "prima_nota",
+      "canonicalDestination": "prima_nota.registro_saldi",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "È il registro di cassa e banca dell'azienda: tiene traccia di tutti i movimenti di denaro reale (contante in cassa e movimenti sul conto corrente) e li tiene separati per capire quanto contante c'è fisicamente in negozio e quanto c'è in banca. Serve all'amministrazione/contabilità per: registrare a fine giornata l'incasso (corrispettivo) e le uscite (POS, versamenti in banca, piccole spese), tenere sotto controllo il saldo cassa e banca anno per anno, e smaltire le fatture fornitore che arrivano via XML decidendo se sono state pagate in contanti o con bonifico/banca (tab 'Provvisori'). È il cuore contabile-operativo quotidiano del gestionale: da qui partono i collegamenti verso le fatture (stato_pagamento), l'estratto conto bancario e i corrispettivi elettronici.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:riconciliazione-bancaria",
+      "label": "Riconciliazione Bancaria (Riconciliazione Unificata) - contenuto di default dell'hub /riconciliazione",
+      "route": "/riconciliazione",
+      "sourcePath": "memoria/pagine/riconciliazione-bancaria.json",
+      "symbol": "riconciliazione-bancaria",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/RiconciliazioneHub.jsx",
+        "frontend/src/pages/RiconciliazioneUnificata.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/operazioni_module/__init__.py (registra le rotte /api/operazioni-da-confermare/smart/*)",
+        "app/routers/operazioni_module/smart.py (logica banca-veloce, analizza, riconcilia-manuale, riconcilia-auto, cerca-f24/fatture/stipendi, conferma-f24)",
+        "app/routers/operazioni_module/common.py (costanti QUERY_FATTURA_NON_PAGATA, set_fattura_pagata, modelli pydantic)",
+        "app/routers/bank/estratto_conto.py (DELETE /api/estratto-conto-movimenti/{id})",
+        "app/routers/documenti_non_associati.py (tab Documenti: /api/documenti-non-associati/*)",
+        "app/routers/bank/assegni.py (POST /api/assegni/{id}/incassa, usato dal tab Prelievi Assegno)",
+        "app/routers/fatture_module/pagamento.py (POST /api/fatture-ricevute/auto-ricostruisci-dati, bottone 🔧 Auto-Ripara)",
+        "app/routers/prima_nota_module/sync.py (registra_pagamento_fattura, chiamato da riconcilia-manuale e riconcilia-auto per scrivere in Prima Nota Banca)",
+        "app/services/event_bus.py (propagate_event/EventTypes.FATTURA_PAGATA, propagato dopo ogni riconciliazione fattura)"
+      ],
+      "tabCount": 0,
+      "actionCount": 17,
+      "writeFlowCount": 5,
+      "popupMentions": [
+        {
+          "nome": "Pannello Filtri Avanzati (non modale, sezione espandibile in-page)",
+          "trigger": "🔍 Filtri",
+          "contenuto": "Data Da, Data A, Importo Min (€), Importo Max (€), campo di ricerca testo libero (descrizione/tipo), bottone ✕ Reset. Applicato lato client alle tab Banca/Assegni/Stipendi."
+        },
+        {
+          "nome": "Pannello dettaglio documento (tab Documenti, colonna laterale in-page, non un vero modale)",
+          "trigger": "click su un documento nella lista",
+          "contenuto": "Bottone 👁️ Apri PDF, info file (nome/categoria/dimensione), box 'Proposta Intelligente' (tipo/anno/mese suggeriti), select 'Associa a collezione', textarea JSON per campi aggiuntivi, bottoni ✓ Associa e 🗑️ elimina."
+        }
+      ],
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina 'hub' di riconciliazione: mette in un'unica interfaccia a tab tutti i flussi di abbinamento tra i movimenti dell'estratto conto bancario (collezione estratto_conto_movimenti) e le entità che quei movimenti pagano (fatture ricevute, F24, stipendi, prelievi assegno). La tab di default utile all'operatore è 🏦 Banca: mostra i movimenti bancari non ancora riconciliati con, per ciascuno, i suggerimenti di match calcolati dal motore smart (app.services.riconciliazione_smart, invocato da GET /smart/analizza) — fornitore/importo fattura suggerita, eventuale scostamento importo, informazioni su pagamenti rateali. Le altre tab (Prelievi Assegno, F24, Stipendi, Documenti, PayPal) condividono lo stesso impianto UI (lista + bottoni Conferma/Ignora/Elimina) ma lavorano su collezioni diverse. Ogni volta che una riconciliazione fattura va a buon fine, la pagina propaga l'evento in tutto il gestionale: segna la fattura pagata (invoices), crea/aggiorna il movimento in Prima Nota Banca e chiude la relativa partita nello scadenziario fornitori tramite l'event bus (EventTypes.FATTURA_PAGATA).",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:riconciliazione-paypal",
+      "label": "Riconciliazione PayPal",
+      "route": "/riconciliazione/paypal",
+      "sourcePath": "memoria/pagine/riconciliazione-paypal.json",
+      "symbol": "riconciliazione-paypal",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/RiconciliazionePaypal.jsx",
+        "frontend/src/components/PaypalTransactionDetailModal.jsx",
+        "frontend/src/pages/hub/RiconciliazioneHub.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/paypal_statements.py",
+        "app/routers/paypal_api.py",
+        "app/services/paypal_riconciliazione.py",
+        "app/services/paypal_api_client.py",
+        "app/services/paypal_api_sync.py",
+        "app/parsers/paypal_msr_parser.py",
+        "app/parsers/paypal_csv_parser.py"
+      ],
+      "tabCount": 5,
+      "actionCount": 19,
+      "writeFlowCount": 6,
+      "popupMentions": [
+        {
+          "nome": "PaypalTransactionDetailModal (modale dettaglio transazione)",
+          "come_si_apre": "Click su una riga della tabella Transazioni, su una voce nel Report per Fornitore, o deep-link diretto impostando modalTxId dall'esterno.",
+          "cosa_mostra": "All'apertura chiama GET /api/paypal-statements/transazione/{transaction_id}/dettaglio. La risposta popola 4 sezioni: (1) 'Dettagli PayPal' — transaction ID, data, importo (lordo, colorato), controparte, email, tipo (tradotto dai codici evento PayPal T0000-T1201 tramite PAYPAL_TIPO_LABELS), stato (tradotto tramite PAYPAL_STATO_LABELS), descrizione, account PayPal controparte, riferimento fattura PayPal (invoice_id_fornitore), oggetto/campo personalizzato, flag riconciliato in banca; (2) 'Verbale collegato' — se esiste un verbale in verbali_noleggio con paypal_transaction_id uguale, mostra numero verbale/targa/ente/data/importo/stato con bottoni 'Apri PDF verbale' e 'Vai alla scheda verbale'; (3) 'Dipendente associato' — se il verbale ha un driver_id, mostra nome/cognome/CF/ruolo del dipendente da employees e l'eventuale trattenuta in busta paga da trattenute_dipendenti, con bottone 'Scheda dipendente'; (4) 'Fornitore e fatture' — mostra il fornitore mappato (da paypal_mapping_fornitori) e fino a 6 fatture correlate trovate con strategia multi-livello (0: match per numero fattura/invoice_id_fornitore esatto — priorità massima; A: match per P.IVA del fornitore mappato; B: match fuzzy sul nome controparte, parole >=4 lettere, esclusi suffissi societari; C: match per email controparte; D: fallback su qualsiasi anno per importo ±0.05€), con badge dorato per le fatture di importo identico e badge verde '✓ fattura indicata da PayPal' per il match diretto per riferimento; include anche una sotto-sezione 'Cerca su Gmail' per email esterne.",
+          "azioni_disponibili": [
+            "Apri PDF verbale — GET /api/verbali-noleggio/pdf/{numero_verbale}, decodifica il PDF base64 restituito e lo apre in una nuova scheda come blob",
+            "Vai alla scheda verbale — naviga a /verbali-noleggio/{numero_verbale} e chiude il modale",
+            "Scheda dipendente — naviga a /dipendenti?id={id} e chiude il modale",
+            "Mappa fornitore (link inline, mostrato solo se non c'è mapping) — naviga a /riconciliazione/paypal?tab=mapping e chiude il modale (deep-link gestito dal parent tramite query string tab)",
+            "Click su una riga fattura collegata — naviga a /fatture?invoice_id={id} e chiude il modale",
+            "📄 Vedi (dentro la riga fattura, con stopPropagation) — window.open diretto sulla view PDF della fattura senza chiudere il modale",
+            "Cerca fattura manualmente (mostrato se nessuna fattura trovata) — naviga a /fatture?fornitore=...&importo=... precompilando i filtri",
+            "✉️ Cerca su Gmail — GET /api/paypal-statements/transazione/{transaction_id}/cerca-gmail, che usa le credenziali Gmail admin e build_transaction_query() (importo + controparte + finestra data) per cercare email compatibili; i risultati (o quelli già trovati automaticamente in tx.gmail_candidati) sono elencati come link diretti al messaggio Gmail",
+            "Chiudi (X in alto o bottone footer, oppure tasto ESC, oppure click fuori dal riquadro) — chiude il modale senza side-effect"
+          ],
+          "casi_errore": "Se la transazione non viene trovata: 404 con banner rosso 'Transazione PayPal non trovata'. Se 'Apri PDF verbale' non trova un content_base64: alert 'PDF non disponibile'. Se la ricerca Gmail fallisce (nessun account configurato o errore IMAP): messaggio rosso con il dettaglio errore al posto dei risultati."
+        },
+        {
+          "nome": "CreaFornitorePaypalModal (crea fornitore inline + mappa)",
+          "come_si_apre": "Click su '➕ Crea nuovo' in una riga del tab Mapping Fornitori.",
+          "cosa_mostra": "Form con campi: Ragione sociale (obbligatoria, precompilata dal nome_controparte PayPal), P.IVA/VAT (uppercase automatico), Nazione (select con IT/IE/NL/DE/FR/ES/GB/US/LU/Altro), Email (precompilata), Note (precompilata con conteggio transazioni e totale), checkbox 'Escludi da magazzino' (default attivo, consigliato per fornitori PayPal SaaS/servizi/abbonamenti). Mostra l'Account ID PayPal e il numero di transazioni nel sottotitolo.",
+          "azioni_disponibili": [
+            "Annulla — chiude senza salvare",
+            "➕ Crea e mappa — POST /api/paypal-api/crea-fornitore-e-mappa con i dati del form + paypal_account_id di contesto; al successo chiude il modale, ricarica il mapping e mostra toast di conferma",
+            "X (chiusura in alto a destra) e click sull'overlay esterno — chiudono il modale senza salvare"
+          ],
+          "casi_errore": "Validazione client: 'La ragione sociale è obbligatoria' se il campo è vuoto. Errori server mostrati in un banner rosso dentro al modale: 409 se l'account PayPal è già mappato altrove, 409 se la P.IVA è già presente su un altro fornitore (con suggerimento di usare /mappa-fornitore su quel fornitore_id), 400 se mancano campi obbligatori lato server."
+        }
+      ],
+      "owner": "RICONCILIAZIONE",
+      "domain": "paypal_pagopa",
+      "canonicalDestination": "riconciliazione.paypal_pagopa",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "La pagina 'Gestione PayPal' (montata dentro l'hub di navigazione RiconciliazioneHub, che smista i contenuti in base al pathname) è il centro di controllo di tutto ciò che passa dal conto PayPal aziendale. Da qui si importano gli estratti conto PayPal (PDF ufficiali MSR/CSR oppure export CSV bulk), si sincronizzano le transazioni via API PayPal reale (OAuth2 client_credentials verso l'endpoint Reporting/Transaction Search di PayPal, non una simulazione), e si riconciliano automaticamente i pagamenti sia con i movimenti dell'estratto conto bancario aziendale sia con le fatture fornitori presenti nel gestionale. Esiste anche una parte di 'mapping' manuale: ogni beneficiario PayPal (paypal_account_id) va associato una volta sola a un fornitore dell'anagrafica, dopodiché la riconciliazione fatture diventa automatica. Il modale di dettaglio transazione mostra tutti i collegamenti risolti per un singolo movimento (fattura, verbale di noleggio/multa PagoPA, dipendente e trattenuta in busta paga, email trovate su Gmail) e permette azioni rapide di navigazione verso quegli oggetti. La pagina lavora sia su transazioni PayPal 'commerciali' (pagamenti a fornitori SaaS/beni) sia su multe PagoPA ",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:scadenze",
+      "label": "Scadenze e Notifiche",
+      "route": "/scadenze",
+      "sourcePath": "memoria/pagine/scadenze.json",
+      "symbol": "scadenze",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/Scadenze.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/scadenze.py",
+        "app/routers/scadenzario_fornitori.py (router alternativo /api/scadenzario-fornitori, NON usato da questa pagina ma tratta lo stesso dominio — vedi nota sotto)",
+        "app/routers/fatture_module/pagamento.py (endpoint paga-manuale, richiamato dal bottone Paga)",
+        "app/routers/email_scanner.py (statistiche/associa per il widget Documenti da Riconciliare)"
+      ],
+      "tabCount": 0,
+      "actionCount": 11,
+      "writeFlowCount": 6,
+      "popupMentions": [
+        {
+          "nome": "Modal Nuova Scadenza",
+          "trigger": "➕ Nuova Scadenza (header)",
+          "contenuto": "Data Scadenza* (date picker), Descrizione* (testo), Tipo (select: Personalizzata/Fattura/F24/IVA/INPS), Priorità (select: Bassa/Media/Alta/Critica), Importo (opzionale, numero), Note (opzionale, textarea). Footer Annulla / Salva Scadenza."
+        },
+        {
+          "nome": "Modal Visualizzazione Fattura (InvoiceXMLViewer)",
+          "trigger": "👁️ su una riga di tipo FATTURA",
+          "contenuto": "Componente esterno condiviso (frontend/src/components/InvoiceXMLViewer.jsx) che mostra il dettaglio strutturato della fattura XML caricata."
+        },
+        {
+          "nome": "Modal Registra Pagamento",
+          "trigger": "💰 Paga su una riga",
+          "contenuto": "Fornitore/descrizione con eventuale link PDF, importo in evidenza, due bottoni grandi 🏪 Paga in CASSA / 🏦 Paga in BANCA, e Annulla."
+        }
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Cruscotto unico di tutte le scadenze economico-fiscali dell'azienda: scadenze fiscali fisse italiane (F24 mensile il 16, IVA trimestrale/mensile), fatture fornitori da pagare (scadenza calcolata a 30 giorni dalla data fattura se non altrimenti indicata), e notifiche personalizzate create manualmente dall'utente (promemoria custom). La pagina aggrega inoltre due widget di riepilogo: un Alert Widget (conteggio F24 in scadenza 30gg + scadenze fiscali prossime, con link rapido al calendario contabilità) e un box 'Documenti da Riconciliare' che segnala verbali/PDF scaricati dalla posta ancora da abbinare a fatture. NOTA IMPORTANTE: esiste in parallelo un secondo router con logica simile ma dati diversi (app/routers/scadenzario_fornitori.py, prefix /api/scadenzario-fornitori) che lavora sulla stessa collezione 'invoices' con filtri leggermente diversi (usa il campo booleano 'pagato' e 'status' invece di 'stato_pagamento') più una collezione dedicata 'scadenziario_fornitori' popolata dall'integrazione ciclo passivo — QUESTA pagina (Scadenze.jsx) NON lo utilizza: chiama esclusivamente gli endpoint sotto /api/scadenze (app/routers/scadenze.py).",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:strumenti-commercialista",
+      "label": "Strumenti → Commercialista",
+      "route": "/strumenti/commercialista",
+      "sourcePath": "memoria/pagine/strumenti-commercialista.json",
+      "symbol": "strumenti-commercialista",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/StrumentiHub.jsx",
+        "frontend/src/pages/Commercialista.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/commercialista.py",
+        "app/routers/public_api.py (endpoint GET /api/assegni usato per i carnet)",
+        "app/router_registry.py (riga 248: include_router(commercialista.router, prefix=\"/api/commercialista\"))"
+      ],
+      "tabCount": 0,
+      "actionCount": 9,
+      "writeFlowCount": 2,
+      "popupMentions": [
+        "Nessun vero modale. C'è un banner di alert non bloccante (arancione) per il sollecito Prima Nota Cassa e un banner di messaggio (verde/rosso) per esito operazioni, entrambi inline nella pagina, non overlay."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina per generare e inviare via email al commercialista i tre documenti mensili/puntuali richiesti per la tenuta della contabilità: Prima Nota Cassa del mese, elenco delle Fatture pagate per cassa del mese, e riepilogo dei Carnet Assegni (raggruppati automaticamente per le prime 8 cifre del numero assegno). I PDF sono generati interamente lato client con jsPDF/jspdf-autotable — il backend non genera mai i PDF, li riceve già pronti in base64 e li allega alle email che invia via SMTP. La pagina espone anche un banner di alert che ricorda entro il giorno 2 del mese di inviare la Prima Nota Cassa del mese precedente se non è ancora stata inviata (o segnata come inviata), uno storico degli invii, e un pulsante di export Excel multi-foglio generato interamente sul server.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:strumenti-movimenti-banca",
+      "label": "Strumenti → Movimenti Banca",
+      "route": "/strumenti/movimenti-banca",
+      "sourcePath": "memoria/pagine/strumenti-movimenti-banca.json",
+      "symbol": "strumenti-movimenti-banca",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/StrumentiHub.jsx",
+        "frontend/src/pages/VerificaMovimentiBanca.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/prima_nota_module/__init__.py (registra le due route su router con prefix /api/prima-nota)",
+        "app/routers/prima_nota_module/manutenzione.py (funzioni lista_movimenti_ec_non_in_prima_nota e importa_movimento_ec_in_prima_nota)",
+        "app/router_registry.py (riga 103: include_router(prima_nota_router, prefix=\"/api/prima-nota\"))"
+      ],
+      "tabCount": 0,
+      "actionCount": 3,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun popup/modale. L'unico feedback bloccante è un alert() nativo del browser in caso di errore durante l'importazione."
+      ],
+      "owner": "TESORERIA",
+      "domain": "tesoreria",
+      "canonicalDestination": "documenti.estratti_banca_carte",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Sostituto moderno (introdotto nella PR fix/strumenti-pulizia-e-importa-ec, come indicato nel commento in testa al file JSX) dei vecchi riquadri aggregati 'Prima Nota vs Estratto Conto' e 'Bonifici vs Banca', giudicati fuorvianti perché mostravano solo numeri incomprensibili sempre a zero. Questa pagina elenca invece uno per uno i movimenti presenti nell'Estratto Conto bancario che NON risultano ancora registrati in Prima Nota Banca, permettendo all'utente di decidere, riga per riga, se importarli. Se un movimento simile esiste già in Prima Nota ma non è stato collegato (stesso importo e data ±1 giorno) viene segnalato con un'icona di attenzione, per suggerire che serva solo una riconciliazione e non un nuovo inserimento.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:strumenti-pianificazione",
+      "label": "Strumenti → Pianificazione",
+      "route": "/strumenti/pianificazione",
+      "sourcePath": "memoria/pagine/strumenti-pianificazione.json",
+      "symbol": "strumenti-pianificazione",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/StrumentiHub.jsx",
+        "frontend/src/pages/Pianificazione.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/public_api.py (righe 546-598: endpoint effettivamente usati da questa pagina, GET/POST /pianificazione/events, montato con prefix /api → percorso finale /api/pianificazione/events)",
+        "app/routers/pianificazione.py (router separato montato con prefix /api/pianificazione, espone SOLO /costi-previsionali — NON usato da questa pagina, vedi nota sotto)",
+        "app/router_registry.py (riga 48: include_router(public_api.router, prefix=\"/api\") ; riga 250: include_router(pianificazione.router, prefix=\"/api/pianificazione\"))"
+      ],
+      "tabCount": 0,
+      "actionCount": 5,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun vero modale/overlay: il 'Nuovo Evento' è una sezione (PageSection) che si espande/comprime inline nella pagina, non un popup separato."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Agenda personale/interna per annotare eventi legati all'attività aziendale (riunioni, scadenze fiscali, promemoria, attività da fare). Il testo esplicativo mostrato quando la lista è vuota chiarisce che NON è un calendario condiviso né sincronizzato con Google Calendar: è pensata come spazio unico per tenere traccia di date come scadenza IVA, rinnovo contratti, appuntamenti col commercialista. Permette solo creazione e visualizzazione degli eventi: non esistono, né in frontend né in backend, funzioni di modifica o cancellazione di un evento già creato.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:strumenti-verifica",
+      "label": "Strumenti → Verifica Coerenza",
+      "route": "/strumenti",
+      "sourcePath": "memoria/pagine/strumenti-verifica.json",
+      "symbol": "strumenti-verifica",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/StrumentiHub.jsx",
+        "frontend/src/pages/VerificaCoerenza.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/verifica_coerenza.py",
+        "app/services/verifica_coerenza.py",
+        "app/router_registry.py (riga 253: include_router(verifica_coerenza.router, prefix=\"/api/verifica-coerenza\"))"
+      ],
+      "tabCount": 0,
+      "actionCount": 2,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun popup o modale. La pagina è interamente a schermo intero con tre tab statiche e uno stato di caricamento a spinner."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "controllo",
+      "canonicalDestination": "controllo.anomalie",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di sola lettura (nessuna scrittura sul database) che esegue controlli incrociati automatici tra le varie sezioni del gestionale, per far emergere errori di inserimento prima che diventino un problema in dichiarazione IVA o in bilancio. Mostra uno stato generale semaforico (OK / ATTENZIONE / CRITICO) calcolato dal backend in base alla gravità delle discrepanze trovate, poi tre viste di dettaglio: il riepilogo dell'IVA annuale e dei versamenti Cassa vs Banca, il confronto IVA mese per mese, e l'elenco puntuale delle discrepanze rilevate con relativo suggerimento operativo. Il codice contiene un commento esplicito che ricorda che i vecchi riquadri 'Prima Nota vs Estratto Conto' e 'Bonifici vs Banca' sono stati rimossi perché fuorvianti (restituivano sempre zero o numeri incomprensibili) e sostituiti dalla scheda dedicata 'Movimenti Banca' (vedi pagina collegata) che elenca i singoli movimenti mancanti invece di un aggregato muto.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    },
+    {
+      "id": "page-spec:strumenti-visure",
+      "label": "Strumenti → Visure",
+      "route": "/strumenti/visure",
+      "sourcePath": "memoria/pagine/strumenti-visure.json",
+      "symbol": "strumenti-visure",
+      "sourceFrontendPaths": [
+        "frontend/src/pages/hub/StrumentiHub.jsx",
+        "frontend/src/pages/Visure.jsx"
+      ],
+      "sourceBackendPaths": [
+        "app/routers/openapi_imprese.py",
+        "app/services/openapi_company.py (classe OpenAPICompany, funzione map_company_to_fornitore)",
+        "app/router_registry.py (riga 274: include_router(openapi_imprese.router, prefix=\"/api/openapi-imprese\"))"
+      ],
+      "tabCount": 0,
+      "actionCount": 3,
+      "writeFlowCount": 1,
+      "popupMentions": [
+        "Nessun popup/modale: ricerca, scheda risultato e lista risultati multipli sono tutte sezioni inline nella stessa pagina a scorrimento verticale."
+      ],
+      "owner": "CONTROLLO",
+      "domain": "non_classificato",
+      "canonicalDestination": "controllo.anatomia",
+      "decision": "USARE_COME_REQUISITO_NON_COME_IMPLEMENTAZIONE",
+      "notes": "Pagina di ricerca anagrafica aziende italiane tramite l'API esterna a pagamento OpenAPI.com Company (dati equivalenti a una visura camerale semplificata: sede legale, PEC, codice SDI, ATECO, stato attività, fatturato, numero dipendenti). Permette di cercare per Partita IVA (11 cifre esatte) o per ragione sociale (ricerca parziale che restituisce un elenco di risultati cliccabili), visualizzare la scheda completa dell'azienda trovata, e con un click salvare/aggiornare automaticamente quei dati nell'anagrafica Fornitori del gestionale. Il servizio richiede un token API (OPENAPI_COMPANY_TOKEN) configurato lato server nelle variabili d'ambiente: senza token configurato tutte le chiamate rispondono 400.",
+      "acceptanceTests": [
+        "Ogni azione utile è coperta da requisito o esclusione esplicita.",
+        "Formule e scritture sono ricalcolate su entità canoniche con test.",
+        "Bug, stub e comportamenti distruttivi storici non sono replicati implicitamente."
+      ]
+    }
+  ]
+}
