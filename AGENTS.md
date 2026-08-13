@@ -1,42 +1,44 @@
-# Istruzioni permanenti — Impresa Semplice
+# Regola canonica del repository
 
-## Repository canonico
+Queste istruzioni si applicano all'intero progetto e prevalgono sulle indicazioni operative meno specifiche.
 
-Il solo repository di sviluppo e destinazione delle modifiche è:
+## Repository autorizzato
 
-`ceraldicontabilita/Gestionale`
-
-Ogni nuova funzionalità, correzione, test, documento tecnico, configurazione e migrazione di Impresa Semplice deve essere letta, progettata, implementata e pubblicata in questo repository.
-
-## Repository storico di sola consultazione
-
-`ceraldicontabilita/GestionaleCloud` è un archivio storico e una fonte di riferimento. Può essere letto soltanto per comprendere parser, formati documentali, regole di dominio o comportamenti precedenti.
-
-È vietato nel repository `GestionaleCloud`:
-
-- creare branch;
-- creare, modificare, rinominare o eliminare file;
-- eseguire commit o push;
-- aprire pull request contenenti modifiche;
-- usarlo come destinazione di deploy o come base del nuovo gestionale.
-
-Il codice estratto dal repository storico non va copiato automaticamente: deve essere riesaminato, adattato all'architettura corrente, coperto da test e scritto esclusivamente in `ceraldicontabilita/Gestionale`.
+- L'unico repository sul quale è consentito scrivere è `ceraldicontabilita/Gestionale`.
+- Il branch base e la destinazione delle pull request sono sempre `main`.
+- Le modifiche devono essere sviluppate su un branch dedicato con prefisso `codex/`, derivato da `main`; non eseguire commit diretti su `main`.
+- Qualunque altra sorgente può essere consultata esclusivamente in lettura e come riferimento. Non modificarla, non pubblicarvi branch e non usarla come destinazione di commit o pull request.
 
 ## Controllo obbligatorio prima di ogni scrittura
 
-Prima di qualsiasi operazione mutante, l'agente deve verificare che il repository risolto sia esattamente `ceraldicontabilita/Gestionale`. Se il repository è diverso, deve interrompere la scrittura e correggere il contesto. L'assenza di una nuova indicazione dell'utente non autorizza mai a scegliere `GestionaleCloud`.
+Prima di creare, modificare, rinominare o eliminare file, e prima di qualsiasi operazione Git che scriva dati, eseguire e verificare:
 
-## Flusso Git
+```bash
+git rev-parse --show-toplevel
+git remote get-url origin
+git remote get-url --push origin
+git branch --show-current
+```
 
-- Non modificare direttamente `main`.
-- Creare o riutilizzare un branch dedicato con prefisso `codex/`.
-- Eseguire controlli di sintassi e test pertinenti.
-- Aprire una pull request in bozza verso `main`.
-- Non effettuare il merge senza approvazione esplicita dell'utente.
-- Non includere documenti fiscali reali, credenziali, token o dati personali nelle fixture e nei commit.
+Gli URL di fetch e push di `origin`, normalizzati fra forma HTTPS e SSH, devono identificare entrambi esattamente `ceraldicontabilita/Gestionale`. Sono validi, ad esempio:
 
-## Richiamo iniziale per le nuove chat
+```text
+https://github.com/ceraldicontabilita/Gestionale.git
+git@github.com:ceraldicontabilita/Gestionale.git
+```
 
-All'avvio di un'attività sul progetto, considerare sempre questa frase come istruzione permanente:
+Se `origin` manca, uno degli URL di fetch o push punta altrove, il repository non è identificabile con certezza oppure il branch di lavoro non deriva da `main`, fermarsi senza effettuare scritture e chiedere conferma all'utente. Non correggere automaticamente il remote e non spostare le modifiche verso un altro repository.
 
-> Lavora esclusivamente su `ceraldicontabilita/Gestionale`. Usa `ceraldicontabilita/GestionaleCloud` soltanto in lettura come riferimento storico e non modificarlo mai.
+Prima di commit, push o apertura di una pull request, ripetere il controllo del remote e verificare che la destinazione sia `main` nello stesso repository canonico.
+
+## Flusso e dati protetti
+
+- Eseguire i controlli di sintassi e i test pertinenti prima di pubblicare.
+- Aprire le pull request inizialmente in bozza verso `main` e non unirle senza approvazione esplicita dell'utente.
+- Non inserire documenti fiscali reali, credenziali, token, identificativi privati o dati personali in codice, fixture, log e commit.
+
+## Richiamo iniziale
+
+All'inizio di ogni nuova attività sul progetto, il primo aggiornamento deve dichiarare:
+
+> Sto lavorando esclusivamente su `ceraldicontabilita/Gestionale`, con `main` come base e destinazione.

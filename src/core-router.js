@@ -173,7 +173,7 @@ export function registerCoreRoutes(app, { getDb }) {
     try {
       const db = requireDb(getDb, res); if (!db) return;
       await ensureIndexes(db);
-      const filter = {};
+      const filter = { recordKind: { $ne: 'DRIVE_SOURCE' }, sourceActive: { $ne: false } };
       if (req.query.tipo) filter.tipo = token(req.query.tipo);
       if (req.query.stato) filter.stato = token(req.query.stato);
       const rows = await db.collection('documenti').find(filter, {
@@ -303,7 +303,7 @@ export function registerCoreRoutes(app, { getDb }) {
       }
       const [daVerificare, documentiDaVerificare, f24DaRiscontrare, codiciTributoDaVerificare, riscossioneDaVerificare, riscossioneSenzaSnapshot] = await Promise.all([
         db.collection('movimenti').countDocuments({ stato: 'DA_VERIFICARE' }),
-        db.collection('documenti').countDocuments({ stato: 'DA_VERIFICARE' }),
+        db.collection('documenti').countDocuments({ stato: 'DA_VERIFICARE', recordKind: { $ne: 'DRIVE_SOURCE' }, sourceActive: { $ne: false } }),
         db.collection('f24_operazioni').countDocuments({ stato: { $in: ['IN_ATTESA_RISCONTRO', 'DA_VERIFICARE'] } }),
         db.collection('f24_righe').countDocuments({ 'classificazione.stato': 'DA_VERIFICARE' }),
         db.collection('atti_riscossione').countDocuments({ stato: 'DA_VERIFICARE' }),

@@ -2,13 +2,11 @@
 
 Nuova applicazione amministrativa indipendente per Ceraldi Group.
 
-Il repository `GestionaleCloud` è soltanto una fonte di riferimento per parser, formati documentali e casi operativi. Non è una dipendenza di runtime e non viene modificato da questo progetto.
+Il repository canonico del progetto è `ceraldicontabilita/Gestionale`. Codice, documentazione, branch e pull request devono essere pubblicati esclusivamente in questo repository.
 
 ## Stato
 
-Il ramo di sviluppo verificato è:
-
-`feat/impresa-semplice-clean`
+Il branch base e la destinazione delle pull request sono `main`. Le modifiche vengono sviluppate su branch dedicati derivati da `main` secondo le regole definite in `AGENTS.md`.
 
 Il progetto è una base di sviluppo protetta e testata, non ancora un ambiente di produzione autorizzato a sostituire tutte le procedure amministrative correnti.
 
@@ -56,6 +54,15 @@ importa documenti dell'indice, righe tributo, modelli F24, quietanze, dichiarazi
 corrispettivi RT. Le sole cartelle producono una classificazione proposta, non un pagamento o una
 registrazione contabile. Lo stato dell'ultimo import e disponibile in `/api/drive-data/status`.
 
+La scansione conserva anche l'albero delle cartelle, incluse quelle vuote. I report autenticati
+`/api/drive-data/duplicates` e `/api/drive-data/folder-plan` mostrano duplicati e proposte di
+tassonomia in modalità strettamente `READ_ONLY`: non eseguono spostamenti, rinomine o eliminazioni.
+Le regole complete sono in `docs/DRIVE_MANUTENZIONE.md`.
+
+In presenza di dati Drive già indicizzati prima della persistenza della radice, il primo avvio richiede la
+conferma una tantum `DRIVE_DATA_ROOT_ADOPTION_CONFIRM`, uguale a `DRIVE_DOCUMENT_INDEX_ROOT_FOLDER_ID`.
+Il dettaglio operativo e il lock contro scansioni concorrenti sono documentati nella guida di manutenzione.
+
 ## Pagine operative
 
 - **Riconciliazione** mostra soltanto movimenti finanziari non già utilizzati e richiede una scelta
@@ -83,7 +90,7 @@ L'applicazione resta in modalità fail-safe quando il PIN non è configurato: le
 
 ## Sicurezza
 
-Preferire `PIN_SCRYPT_ADMIN` rispetto al vecchio hash SHA-256 compatibile.
+Preferire `PIN_SCRYPT_ADMIN`; `PIN_HASH_ADMIN` resta disponibile soltanto come formato SHA-256 compatibile.
 
 Le operazioni sensibili richiedono anche `MFA_TOTP_SECRET` in formato Base32. Il PIN apre la sessione; il codice TOTP autorizza temporaneamente riporti, classificazioni tributarie e riconciliazioni.
 

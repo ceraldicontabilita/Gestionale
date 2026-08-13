@@ -38,9 +38,9 @@ export function verifyAdminPin(pin, env = process.env) {
     return safeEqualText(derived, expectedHex.toLowerCase());
   }
 
-  const legacy = String(env.PIN_HASH_ADMIN || '').trim().toLowerCase();
-  if (!/^[a-f0-9]{64}$/.test(legacy)) return null;
-  return safeEqualText(sha256(value), legacy);
+  const compatibleSha256 = String(env.PIN_HASH_ADMIN || '').trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(compatibleSha256)) return null;
+  return safeEqualText(sha256(value), compatibleSha256);
 }
 
 export function authConfigured(env = process.env) {
