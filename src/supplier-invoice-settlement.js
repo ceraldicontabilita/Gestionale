@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { publishDomainEventInSession } from './event-engine.js';
+import { changeAccountingPeriod, publishDomainEventInSession, registerPostingRule } from './event-engine.js';
 import {
   supplierInvoiceProcessId,
   SUPPLIER_INVOICE_EXPECTATION_TYPES,
@@ -11,6 +11,12 @@ import { allocateOpenItem, ensureObligationIndexes } from './obligation-engine.j
 import { hasRealFinancialEvidence } from './reconciliation-router.js';
 
 const ACCOUNT = /^[A-Z0-9_.:-]{1,120}$/;
+const AUTO_SETTLEMENT_RULE = Object.freeze({
+  id: 'FATTURA_PASSIVA_PAGAMENTO_AUTO',
+  version: '1',
+  payableAccount: 'DEBITI_FORNITORI',
+  financialAccounts: ['BANCA', 'MASTERCARD', 'CASSA']
+});
 
 function requiredText(value, label, max = 500) {
   const result = String(value ?? '').trim();
@@ -65,6 +71,32 @@ function allocationAmountCents(input, openItem) {
   const cents = Math.round(raw * 100);
   if (!Number.isFinite(raw) || !Number.isSafeInteger(cents) || cents <= 0) throw new Error('Importo allocazione non valido');
   return cents;
+}
+
+async function ensureAutomaticSettlementInfrastructure(context, registrationDate, now) {
+  const { db } = context;
+  const existing = await db.collection('accounting_posting_rules').findOne({ ruleId: AUTO_SETTLEMENT_RULE.id, version: AUTO_SETTLEMENT_RULE.version });
+  if (!existing) {
+    await registerPostingRule(context, {
+      ruleId: AUTO_SETTLEMENT_RULE.id,
+      version: AUTO_SETTLEMENT_RULE.version,
+      allowedEntryKinds: ['FINANCIAL_SETTLEMENT'],
+      allowedAccounts: [AUTO_SETTLEMENT_RULE.payableAccount, ...AUTO_SETTLEMENT_RULE.financialAccounts],
+      description: 'Regolamento fattura fornitore da movimento finanziario con prova riferita',
+      approvalReason: 'Regola tecnica limitata a conti finanziari gestiti e prova reale riferita'
+    }, { actor: 'SYSTEM_REFERENCED_SETTLEMENT', now });
+  }
+  const year = registrationDate.getUTCFullYear();
+  const month = registrationDate.getUTCMonth() + 1;
+  const period = await db.collection('accounting_periods').findOne({ year, month });
+  if (!period) {
+    await changeAccountingPeriod(context, {
+      year,
+      month,
+      action: 'OPEN',
+      reason: 'Apertura tecnica del periodo per regolamento fattura con prova finanziaria riferita'
+    }, { actor: 'SYSTEM_REFERENCED_SETTLEMENT', now });
+  }
 }
 
 function settlementEvent({ invoice, movement, reconciliationKey, allocationCents, residualCents, input, actor, now }) {
@@ -168,19 +200,36 @@ async function transitionSettlementExpectations(db, {
 export async function reconcileSupplierInvoicePayment({ client, db }, input, { actor, now = new Date() } = {}) {
   if (!client || !db) throw new Error('Riconciliazione fattura richiede MongoDB transazionale');
   await ensureObligationIndexes(db);
+  const preliminaryInvoice = await db.collection('invoice_suppliers').findOne({ invoiceId: requiredText(input?.invoiceId, 'ID fattura', 200), current: true });
+  if (!preliminaryInvoice) throw new Error('SUPPLIER_INVOICE_NOT_FOUND');
+  const preliminaryMovement = await db.collection('movimenti').findOne({ _id: movementQuery(input?.movementId) });
+  if (!preliminaryMovement) throw new Error('FINANCIAL_MOVEMENT_NOT_FOUND');
+  if (String(preliminaryMovement.direzione || '').toUpperCase() !== 'USCITA') throw new Error('FINANCIAL_MOVEMENT_NOT_OUTFLOW');
+  assertMovementIdentity(preliminaryMovement, input, preliminaryInvoice);
+  const registrationDate = date(input?.registrationDate || now, 'Data registrazione');
+  const automatic = !input?.postingRule?.id;
+  if (automatic) await ensureAutomaticSettlementInfrastructure({ client, db }, registrationDate, now);
+  const effectiveInput = {
+    ...input,
+    registrationDate,
+    payableAccountCode: input?.payableAccountCode || AUTO_SETTLEMENT_RULE.payableAccount,
+    financialAccountCode: input?.financialAccountCode || String(preliminaryMovement.conto || '').toUpperCase(),
+    postingRule: input?.postingRule?.id ? input.postingRule : { id: AUTO_SETTLEMENT_RULE.id, version: AUTO_SETTLEMENT_RULE.version },
+    reason: input?.reason || 'Riconciliazione confermata fra fattura e movimento con prova finanziaria riferita'
+  };
   return withMongoTransaction(client, async (session) => {
-    const invoiceId = requiredText(input?.invoiceId, 'ID fattura', 200);
+    const invoiceId = requiredText(effectiveInput.invoiceId, 'ID fattura', 200);
     const invoice = await db.collection('invoice_suppliers').findOne({ invoiceId, current: true }, { session });
     if (!invoice) throw new Error('SUPPLIER_INVOICE_NOT_FOUND');
     const obligationKey = `SUPPLIER_INVOICE:${invoice.invoiceId}:PAYABLE`;
     const openItem = await db.collection('open_items').findOne({ obligationKey }, { session });
     if (!openItem) throw new Error('SUPPLIER_OPEN_ITEM_NOT_FOUND');
-    const movement = await db.collection('movimenti').findOne({ _id: movementQuery(input?.movementId) }, { session });
+    const movement = await db.collection('movimenti').findOne({ _id: movementQuery(effectiveInput.movementId) }, { session });
     if (!movement) throw new Error('FINANCIAL_MOVEMENT_NOT_FOUND');
     if (String(movement.direzione || '').toUpperCase() !== 'USCITA') throw new Error('FINANCIAL_MOVEMENT_NOT_OUTFLOW');
-    const movementReference = assertMovementIdentity(movement, input, invoice);
-    const reconciliationVersion = requiredText(input?.version || '1', 'Versione riconciliazione', 120);
-    if (input?.allocationAmount === undefined || input?.allocationAmount === null) {
+    const movementReference = assertMovementIdentity(movement, effectiveInput, invoice);
+    const reconciliationVersion = requiredText(effectiveInput.version || '1', 'Versione riconciliazione', 120);
+    if (effectiveInput.allocationAmount === undefined || effectiveInput.allocationAmount === null) {
       const existingByIdentity = await db.collection('reconciliations').findOne({
         obligationKey,
         movementId: String(movement._id),
@@ -193,7 +242,7 @@ export async function reconcileSupplierInvoicePayment({ client, db }, input, { a
         return { invoice, movement, reconciliation: existingByIdentity, event, openItem, duplicate: true };
       }
     }
-    const allocationCents = allocationAmountCents(input, openItem);
+    const allocationCents = allocationAmountCents(effectiveInput, openItem);
     const movementCents = Math.round(Math.abs(Number(movement.importo || 0)) * 100);
     const reconciliationKey = stableFingerprint({
       movementId: String(movement._id),
@@ -215,7 +264,7 @@ export async function reconcileSupplierInvoicePayment({ client, db }, input, { a
     const availableMovementCents = movementCents - Number(prior[0]?.cents || 0);
     if (allocationCents > availableMovementCents) throw new Error('ALLOCATION_EXCEEDS_MOVEMENT');
     const residualCents = Number(openItem.residualCents) - allocationCents;
-    const event = settlementEvent({ invoice, movement, reconciliationKey, allocationCents, residualCents, input, actor, now });
+    const event = settlementEvent({ invoice, movement, reconciliationKey, allocationCents, residualCents, input: effectiveInput, actor, now });
     const published = await publishDomainEventInSession(db, event, { session, now });
     const reconciliation = {
       reconciliationKey,
@@ -230,7 +279,7 @@ export async function reconcileSupplierInvoicePayment({ client, db }, input, { a
       identityEvidence: { invoiceNaturalKey: invoice.naturalKey, movementReference },
       eventKey: published.event.eventKey,
       actor: String(actor || 'SYSTEM'),
-      reason: requiredText(input?.reason, 'Motivo riconciliazione', 500),
+      reason: requiredText(effectiveInput.reason, 'Motivo riconciliazione', 500),
       createdAt: now,
       updatedAt: now
     };

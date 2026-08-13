@@ -100,7 +100,7 @@ test('HTTP reale: anonimato, PIN, CSRF e riconferma PIN sulle operazioni sensibi
   const health = await jsonRequest(`${baseUrl}/api/health`);
   assert.equal(health.status, 200);
   const healthPayload = await health.json();
-  assert.equal(healthPayload.versione, '0.11.0');
+  assert.equal(healthPayload.versione, '0.12.0');
   assert.equal(healthPayload.database, 'connected');
 
   const anonymous = await jsonRequest(`${baseUrl}/api/config`);
@@ -154,15 +154,21 @@ test('HTTP reale: anonimato, PIN, CSRF e riconferma PIN sulle operazioni sensibi
   assert.equal(completedJob.totals.canonicalInvoices, 1);
   assert.equal(completedJob.totals.reviewInvoices, 0);
 
-  const [canonicalInvoices, stagingInvoices, supplierDirectory] = await Promise.all([
+  const [canonicalInvoices, stagingInvoices, supplierDirectory, openItems] = await Promise.all([
     jsonRequest(`${baseUrl}/api/supplier-invoices`, { cookie }).then((response) => response.json()),
     jsonRequest(`${baseUrl}/api/supplier-invoices/staging`, { cookie }).then((response) => response.json()),
-    jsonRequest(`${baseUrl}/api/supplier-invoices/suppliers/directory`, { cookie }).then((response) => response.json())
+    jsonRequest(`${baseUrl}/api/supplier-invoices/suppliers/directory`, { cookie }).then((response) => response.json()),
+    jsonRequest(`${baseUrl}/api/riconciliazione/partite-aperte?status=OPEN`, { cookie }).then((response) => response.json())
   ]);
   assert.equal(canonicalInvoices.length, 1);
   assert.equal(stagingInvoices.length, 0);
   assert.equal(supplierDirectory.counts.suppliers, 1);
   assert.equal(supplierDirectory.counts.canonicalInvoices, 1);
+  assert.ok(supplierDirectory.counts.residualCents > 0);
+  assert.equal(openItems.counts.open, 1);
+  assert.equal(openItems.candidates.length, 1);
+  assert.equal(openItems.candidates[0].invoiceId, canonicalInvoices[0].invoiceId);
+  assert.ok(openItems.candidates[0].residualCents > 0);
 
   const nestedZip = zipSync({ 'seconda.xml': strToU8(supplierInvoiceXml) });
   const duplicateArchive = Buffer.from(zipSync({ 'prima.xml': strToU8(supplierInvoiceXml), 'annidato.zip': nestedZip }));
@@ -199,6 +205,12 @@ test('HTTP reale: anonimato, PIN, CSRF e riconferma PIN sulle operazioni sensibi
   });
   assert.equal(accountingValidationWithoutPin.status, 428);
   assert.equal((await accountingValidationWithoutPin.json()).code, 'PIN_CONFIRMATION_REQUIRED');
+
+  const supplierSettlementWithoutPin = await jsonRequest(`${baseUrl}/api/supplier-invoices/not-relevant-before-auth-check/reconcile`, {
+    method: 'POST', cookie, csrf, body: {}
+  });
+  assert.equal(supplierSettlementWithoutPin.status, 428);
+  assert.equal((await supplierSettlementWithoutPin.json()).code, 'PIN_CONFIRMATION_REQUIRED');
 
   const sensitive = await jsonRequest(`${baseUrl}/api/tributi`, {
     method: 'POST', cookie, csrf,

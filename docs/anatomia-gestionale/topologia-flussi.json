@@ -3936,7 +3936,7 @@
     {
       "pageId": "home.scadenze_priorita",
       "owner": "CONTROLLO",
-      "implementationStatus": "ASSENTE",
+      "implementationStatus": "PARZIALE",
       "inputEvents": [
         "obligation.opened_or_adjusted",
         "open_item.recalculated",
@@ -3949,7 +3949,7 @@
         "anomaly"
       ],
       "projection": {
-        "kind": "MATERIALIZED_VIEW",
+        "kind": "QUERY_VIEW",
         "sourceEntities": [
           "obligation",
           "open_item",
@@ -3959,7 +3959,8 @@
           "riconciliazione.partite_aperte"
         ],
         "ownsCanonicalData": false,
-        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+        "refresh": "ON_DEMAND_QUERY",
+        "queryEndpoint": "/api/dashboard"
       },
       "allowedActions": [
         "VIEW_PROJECTION",
@@ -3968,9 +3969,9 @@
       ],
       "commands": [],
       "outputEvents": [],
-      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
-      "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
-      "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
+      "failureState": "DASHBOARD_DEADLINE_QUERY_UNAVAILABLE",
+      "failurePolicy": "SHOW_QUERY_FAILURE; NEVER_INVENT_OR_DUPLICATE_A_DEADLINE",
+      "approvalPolicy": "READ_ONLY_ON_DEMAND_QUERY; NO_CANONICAL_WRITE",
       "statusDoesNotImplyOwnership": true
     },
     {
@@ -5567,7 +5568,7 @@
     {
       "pageId": "riconciliazione.partite_aperte",
       "owner": "RICONCILIAZIONE",
-      "implementationStatus": "ASSENTE",
+      "implementationStatus": "PARZIALE",
       "inputEvents": [
         "open_item.recalculated",
         "reconciliation.confirmed",
@@ -5579,7 +5580,7 @@
         "allocation"
       ],
       "projection": {
-        "kind": "MATERIALIZED_VIEW",
+        "kind": "QUERY_VIEW",
         "sourceEntities": [
           "open_item",
           "obligation",
@@ -5589,7 +5590,8 @@
           "riconciliazione.coda_generale"
         ],
         "ownsCanonicalData": false,
-        "refresh": "EVENT_DRIVEN_INVALIDATION_AND_IDEMPOTENT_REBUILD"
+        "refresh": "ON_DEMAND_QUERY",
+        "queryEndpoint": "/api/riconciliazione/partite-aperte"
       },
       "allowedActions": [
         "VIEW_PROJECTION",
@@ -5670,7 +5672,7 @@
         "reconciliation.confirmed",
         "reconciliation.allocations_invalidated"
       ],
-      "failureState": "CAPABILITY_NOT_IMPLEMENTED",
+      "failureState": "PARTIAL_FLOW_OR_MISSING_LINK",
       "failurePolicy": "OPEN_OR_UPDATE_ANOMALY_AND_KEEP_LAST_VERIFIED_CANONICAL_FACT; NEVER_SILENT_OVERWRITE",
       "approvalPolicy": "AUTO_ONLY_ON_EXACT_KEYS_AND_QUADRATURE; OTHERWISE_HUMAN_REVIEW",
       "statusDoesNotImplyOwnership": true

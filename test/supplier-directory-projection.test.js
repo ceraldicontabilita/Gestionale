@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 
 import { buildSupplierDirectory } from '../src/supplier-directory-projection.js';
@@ -16,4 +17,10 @@ test('raggruppa fornitori solo per identificativo fiscale esatto', () => {
   assert.equal(result.counts.canonicalInvoices, 1);
   assert.equal(result.rows.find((row) => row.vatId).residualCents, 1000);
   assert.equal(result.rows.find((row) => !row.vatId).identityStatus, 'IDENTITA_DA_VERIFICARE');
+});
+
+test('la directory recupera i residui tramite la chiave canonica della fattura', () => {
+  const source = fs.readFileSync(new URL('../src/supplier-invoice-router.js', import.meta.url), 'utf8');
+  assert.match(source, /SUPPLIER_INVOICE:\$\{row\.invoiceId\}:PAYABLE/);
+  assert.doesNotMatch(source, /collection\('open_items'\)\.find\(\{ sourceEntityType:/);
 });

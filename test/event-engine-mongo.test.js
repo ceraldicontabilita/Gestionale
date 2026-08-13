@@ -229,11 +229,6 @@ test('ramo fatture MongoDB: obbligo, competenza, prova finanziaria e chiusura so
     allowedAccounts: ['COSTI_MERCI', 'IVA_CREDITO', 'DEBITI_FORNITORI'],
     description: 'Competenza fattura fornitore sintetica', approvalReason: 'Fixture automatica'
   }, { actor: 'TEST', now: new Date('2026-08-03T08:00:00Z') });
-  await registerPostingRule(context, {
-    ruleId: 'PAGAMENTO_FORNITORE_E2E', version: '1', allowedEntryKinds: ['FINANCIAL_SETTLEMENT'],
-    allowedAccounts: ['DEBITI_FORNITORI', 'BANCA_CC'],
-    description: 'Regolamento fattura fornitore sintetico', approvalReason: 'Fixture automatica'
-  }, { actor: 'TEST', now: new Date('2026-08-03T08:01:00Z') });
   await db.collection('fatture').insertOne({
     sourceKey: 'UPLOAD:fixture-supplier-e2e:1', extractionVersion: 'FATTURAPA_XML_V2',
     quadraturaEstrazione: { status: 'EXACT' },
@@ -272,11 +267,7 @@ test('ramo fatture MongoDB: obbligo, competenza, prova finanziaria e chiusura so
     movementId: String(movement.insertedId),
     movementReference,
     version: '1',
-    payableAccountCode: 'DEBITI_FORNITORI',
-    financialAccountCode: 'BANCA_CC',
-    registrationDate: '2026-08-05',
-    postingRule: { id: 'PAGAMENTO_FORNITORE_E2E', version: '1' },
-    reason: 'Riconciliazione sintetica riferita'
+    registrationDate: '2026-08-05'
   };
   const settled = await reconcileSupplierInvoicePayment(context, settlementInput, { actor: 'TEST', now: new Date('2026-08-05T10:00:00Z') });
   const settlementRetry = await reconcileSupplierInvoicePayment(context, settlementInput, { actor: 'TEST', now: new Date('2026-08-05T10:00:05Z') });
@@ -290,6 +281,9 @@ test('ramo fatture MongoDB: obbligo, competenza, prova finanziaria e chiusura so
   assert.equal(await db.collection('ledger_entries').countDocuments(), 1);
   assert.equal(await db.collection('reconciliations').countDocuments(), 1);
   assert.equal(await db.collection('allocations').countDocuments(), 1);
+  const automaticSettlementRule = await db.collection('accounting_posting_rules').findOne({ ruleId: 'FATTURA_PASSIVA_PAGAMENTO_AUTO', version: '1' });
+  assert.equal(automaticSettlementRule.status, 'APPROVED');
+  assert.deepEqual(automaticSettlementRule.allowedAccounts.sort(), ['BANCA', 'CASSA', 'DEBITI_FORNITORI', 'MASTERCARD']);
   const openItem = await db.collection('open_items').findOne({ obligationKey: `SUPPLIER_INVOICE:${validated.invoice.invoiceId}:PAYABLE` });
   assert.equal(openItem.status, 'CLOSED');
   assert.equal(openItem.residualCents, 0);

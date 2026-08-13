@@ -45,6 +45,13 @@ Il fornitore è raggruppato soltanto per identificativo fiscale esatto. Nome
 simile o importo uguale non autorizzano fusione di anagrafiche, deduplicazione o
 riconciliazione.
 
+La partita aperta fornitore deriva dall'obbligo della fattura canonica. La UI
+può compilare automaticamente i campi contabili tecnici del regolamento, ma la
+conferma richiede sempre la chiave naturale della fattura, un riferimento
+presente nel movimento, una prova finanziaria reale compatibile e un importo in
+centesimi non superiore sia al residuo sia alla disponibilità del movimento.
+L'eccedenza non viene assorbita né collegata implicitamente ad altre cause.
+
 ## SumUp
 
 Incasso POS, payout SumUp e accredito bancario sono eventi distinti. La chiusura POS non prova l'accredito sul conto corrente. Commissioni e differenze devono restare esplicite.

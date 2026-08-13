@@ -129,10 +129,15 @@
       <div class="hero compact-hero"><div><p class="eyebrow">RICONCILIAZIONE</p><h2>Una prova finanziaria.<br>Una causa verificata.</h2><p>Nessun collegamento viene proposto o confermato usando soltanto l'importo.</p></div><select id="reconciliationYear" aria-label="Anno riconciliazione"></select></div>
       <section class="cards" id="reconciliationCards"></section>
       <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">PARTITE APERTE</p><h3>Debiti fornitori nati dalle fatture</h3></div><div class="filters"><select id="openItemStatus"><option value="OPEN">Aperte e parziali</option><option value="ALL">Tutte</option><option value="CLOSED">Chiuse</option></select><button id="reloadOpenItems" type="button">Aggiorna</button></div></div>
+        <p id="openItemMessage" class="muted"></p>
+        <div class="table-wrap"><table><thead><tr><th>Fornitore</th><th>Fattura</th><th>Scadenza</th><th>Stato</th><th class="num">Originario</th><th class="num">Allocato</th><th class="num">Residuo</th><th>Processo</th></tr></thead><tbody id="openItemRows"></tbody></table></div>
+      </section>
+      <section class="panel">
         <div class="panel-head"><div><p class="eyebrow">SELEZIONE MANUALE</p><h3>Movimento finanziario ↔ causa amministrativa</h3></div><button id="reloadReconciliation" type="button">Aggiorna</button></div>
         <div class="reconciliation-grid">
           <div><h4>1. Movimento non utilizzato</h4><p class="muted">Sono selezionabili soltanto addebiti con una prova finanziaria reale.</p><div class="table-wrap selection-table"><table><thead><tr><th>Seleziona</th><th>Movimento</th><th>Conto</th><th class="num">Importo</th><th>Prova</th></tr></thead><tbody id="reconciliationMovementRows"></tbody></table></div></div>
-          <div><div class="cause-heading"><div><h4>2. Causa amministrativa</h4><p class="muted">Scegli il documento identificato, non un semplice importo.</p></div><select id="reconciliationCauseType"><option value="F24">F24</option><option value="RISCOSSIONE_ATTO">Riscossione</option></select></div><div class="table-wrap selection-table"><table><thead><tr><th>Seleziona</th><th>Identità</th><th>Stato</th><th class="num">Importo</th></tr></thead><tbody id="reconciliationCauseRows"></tbody></table></div></div>
+          <div><div class="cause-heading"><div><h4>2. Causa amministrativa</h4><p class="muted">Scegli il documento identificato, non un semplice importo.</p></div><select id="reconciliationCauseType"><option value="FATTURA_FORNITORE">Fatture fornitori</option><option value="F24">F24</option><option value="RISCOSSIONE_ATTO">Riscossione</option></select></div><div class="table-wrap selection-table"><table><thead><tr><th>Seleziona</th><th>Identità</th><th>Stato</th><th class="num">Importo</th></tr></thead><tbody id="reconciliationCauseRows"></tbody></table></div></div>
         </div>
         <div id="reconciliationSelection" class="selection-summary muted">Seleziona un movimento e una causa.</div>
         <div class="action-row"><button id="confirmReconciliation" class="primary" type="button" disabled>Conferma collegamento</button><span id="reconciliationResult" class="muted"></span></div>
